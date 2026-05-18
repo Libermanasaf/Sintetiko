@@ -5,6 +5,7 @@ import { pagesConfig } from './pages.config'
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { ThemeProvider } from '@/lib/ThemeContext';
+import { AuthProvider } from '@/lib/AuthContext';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -17,30 +18,32 @@ const LayoutWrapper = ({ children, currentPageName }) => Layout
 function App() {
   return (
     <ThemeProvider>
-      <QueryClientProvider client={queryClientInstance}>
-        <Router>
-          <Routes>
-            <Route path="/" element={
-              <LayoutWrapper currentPageName={mainPageKey}>
-                <MainPage />
-              </LayoutWrapper>
-            } />
-            {Object.entries(Pages).map(([path, Page]) => (
-              <Route
-                key={path}
-                path={`/${path}`}
-                element={
-                  <LayoutWrapper currentPageName={path}>
-                    <Page />
-                  </LayoutWrapper>
-                }
-              />
-            ))}
-            <Route path="*" element={<PageNotFound />} />
-          </Routes>
-        </Router>
-        <Toaster />
-      </QueryClientProvider>
+      <AuthProvider>
+        <QueryClientProvider client={queryClientInstance}>
+          <Router>
+            <Routes>
+              <Route path="/" element={
+                <LayoutWrapper currentPageName={mainPageKey}>
+                  <MainPage />
+                </LayoutWrapper>
+              } />
+              {Object.entries(Pages).map(([path, Page]) => (
+                <Route
+                  key={path}
+                  path={`/${path}`}
+                  element={
+                    <LayoutWrapper currentPageName={path}>
+                      <Page />
+                    </LayoutWrapper>
+                  }
+                />
+              ))}
+              <Route path="*" element={<PageNotFound />} />
+            </Routes>
+          </Router>
+          <Toaster />
+        </QueryClientProvider>
+      </AuthProvider>
     </ThemeProvider>
   );
 }

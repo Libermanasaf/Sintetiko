@@ -2,9 +2,20 @@ import React, { useState } from 'react';
 import { Menu } from 'lucide-react';
 import Sidebar from '@/components/navigation/Sidebar';
 import BottomNav from '@/components/navigation/BottomNav';
+import { useAuth } from '@/lib/AuthContext';
+import LandingPage from '@/components/auth/LandingPage';
 
 export default function Layout({ children, currentPageName }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { role, isInitializing } = useAuth();
+
+  if (isInitializing) {
+    return null; // or a loading spinner
+  }
+
+  if (!role) {
+    return <LandingPage />;
+  }
 
   return (
     <div dir="rtl" className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/30 dark:from-slate-950 dark:via-slate-900 dark:to-emerald-950/30 transition-colors duration-300">

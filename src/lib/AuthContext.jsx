@@ -1,12 +1,38 @@
-import React, { createContext, useContext } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const AuthContext = createContext();
 
-export const AuthProvider = ({ children }) => (
-  <AuthContext.Provider value={{ user: null, isAuthenticated: false }}>
-    {children}
-  </AuthContext.Provider>
-);
+export const AuthProvider = ({ children }) => {
+  const [role, setRole] = useState(null);
+  const [isInitializing, setIsInitializing] = useState(true);
+
+  useEffect(() => {
+    const savedRole = localStorage.getItem('sintetiko_role');
+    if (savedRole) {
+      setRole(savedRole);
+    }
+    setIsInitializing(false);
+  }, []);
+
+  const login = (selectedRole) => {
+    localStorage.setItem('sintetiko_role', selectedRole);
+    setRole(selectedRole);
+  };
+
+  const logout = () => {
+    localStorage.removeItem('sintetiko_role');
+    setRole(null);
+  };
+
+  const isAdmin = role === 'admin';
+  const isPlayer = role === 'player';
+
+  return (
+    <AuthContext.Provider value={{ role, login, logout, isAdmin, isPlayer, isInitializing }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
 
 export const useAuth = () => {
   const context = useContext(AuthContext);

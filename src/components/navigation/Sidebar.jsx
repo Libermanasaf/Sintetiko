@@ -1,8 +1,9 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { Home, Users, BarChart3, Shuffle, X, History, Trophy, CreditCard, Shield } from 'lucide-react';
+import { Home, Users, BarChart3, Shuffle, X, History, Trophy, CreditCard, Shield, LogOut } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '@/lib/AuthContext';
 
 const menuItems = [
   { name: 'עמוד הבית', page: 'Home', icon: Home },
@@ -16,6 +17,8 @@ const menuItems = [
 ];
 
 export default function Sidebar({ isOpen, onClose, currentPage }) {
+  const { logout } = useAuth();
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -33,9 +36,9 @@ export default function Sidebar({ isOpen, onClose, currentPage }) {
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed top-0 right-0 h-full w-72 bg-gradient-to-b from-emerald-900 to-emerald-950 z-50 shadow-2xl"
+            className="fixed top-0 right-0 h-full w-72 bg-gradient-to-b from-emerald-900 to-emerald-950 z-50 shadow-2xl flex flex-col"
           >
-            <div className="p-6">
+            <div className="p-6 flex-1 overflow-y-auto">
               <button
                 onClick={onClose}
                 className="absolute top-4 left-4 p-2 text-white/70 hover:text-white transition-colors"
@@ -74,10 +77,17 @@ export default function Sidebar({ isOpen, onClose, currentPage }) {
               </nav>
             </div>
             
-            <div className="absolute bottom-8 left-0 right-0 px-6">
-              <div className="text-center text-white/40 text-sm">
-                ⚽ בהצלחה במשחק!
-              </div>
+            <div className="p-6 border-t border-white/10">
+              <button
+                onClick={() => {
+                  logout();
+                  onClose();
+                }}
+                className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-rose-300 hover:text-rose-200 transition-colors border border-rose-500/20"
+              >
+                <LogOut className="w-5 h-5" />
+                <span className="font-bold">התנתקות</span>
+              </button>
             </div>
           </motion.div>
         </>
