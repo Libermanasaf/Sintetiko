@@ -1,0 +1,28 @@
+{
+  "name": "Payment",
+  "type": "object",
+  "properties": {
+    "roundId": {
+      "type": "string",
+      "description": "ID of the round"
+    },
+    "roundDate": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Date of the round"
+    },
+    "payments": {
+      "type": "object",
+      "description": "Map of playerId -> boolean (paid or not)"
+    },
+    "pricePerPlayer": {
+      "type": "number",
+      "default": 40,
+      "description": "Price per player in NIS"
+    }
+  },
+  "required": [
+    "roundId",
+    "roundDate"
+  ]
+}

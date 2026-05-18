@@ -1,0 +1,150 @@
+import React from 'react';
+import { motion } from 'framer-motion';
+import { Target, ArrowLeft, Save, Shuffle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+
+const TEAM_COLORS = [
+  { header: 'bg-yellow-500', card: 'bg-yellow-400', text: 'text-white' },
+  { header: 'bg-blue-700', card: 'bg-blue-600', text: 'text-white' },
+  { header: 'bg-orange-600', card: 'bg-orange-500', text: 'text-white' },
+  { header: 'bg-yellow-500', card: 'bg-yellow-400', text: 'text-white' },
+  { header: 'bg-blue-700', card: 'bg-blue-600', text: 'text-white' },
+  { header: 'bg-orange-600', card: 'bg-orange-500', text: 'text-white' },
+];
+
+const TEAM_NAMES = ['הצהובים', 'הכחולים', 'הכתומים', 'הצהובים', 'הכחולים', 'הכתומים'];
+
+export default function StepTeamsPreview({ teams, players, onSave, onReshuffle, onTeamsChange }) {
+
+  const handleDragEnd = (result) => {
+    const { source, destination } = result;
+    if (!destination) return;
+
+    const sourceTeamIndex = parseInt(source.droppableId);
+    const destTeamIndex = parseInt(destination.droppableId);
+
+    if (sourceTeamIndex === destTeamIndex && source.index === destination.index) return;
+
+    const newTeams = teams.map(team => [...team]);
+    const [movedPlayerId] = newTeams[sourceTeamIndex].splice(source.index, 1);
+    newTeams[destTeamIndex].splice(destination.index, 0, movedPlayerId);
+
+    onTeamsChange(newTeams);
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+      className="space-y-6"
+    >
+      {/* Info Card */}
+      <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+        <p className="text-slate-600 text-center leading-relaxed">
+          הקבוצות נוצרו בהצלחה!
+          <br />
+          גרור שחקנים בין קבוצות או ערבב מחדש
+        </p>
+      </div>
+
+      {/* Teams Grid */}
+      <DragDropContext onDragEnd={handleDragEnd}>
+        <div className="grid grid-cols-3 gap-4">
+          {teams.map((teamPlayerIds, teamIndex) => {
+            const color = TEAM_COLORS[teamIndex % TEAM_COLORS.length];
+            const teamRating = teamPlayerIds.reduce((sum, playerId) => {
+              const player = players.find(p => p.id === playerId);
+              return sum + (player?.rating || 3);
+            }, 0);
+            const teamAverage = teamPlayerIds.length > 0 ? teamRating / teamPlayerIds.length : 0;
+
+            return (
+              <div key={teamIndex} className="space-y-3">
+                {/* Team Header */}
+                <div className={`${color.header} rounded-2xl p-4 shadow-lg`}>
+                  <h3 className={`font-bold ${color.text} text-xl text-center`}>
+                    {TEAM_NAMES[teamIndex]} ({teamAverage.toFixed(1)})
+                  </h3>
+                </div>
+
+                {/* Players Drop Zone */}
+                <Droppable droppableId={String(teamIndex)}>
+                  {(provided, snapshot) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.droppableProps}
+                      className={`space-y-3 min-h-[60px] rounded-2xl transition-colors ${
+                        snapshot.isDraggingOver ? 'bg-white/60 ring-2 ring-emerald-400' : ''
+                      }`}
+                    >
+                      {teamPlayerIds.map((playerId, playerIndex) => {
+                        const player = players.find((p) => p.id === playerId);
+                        if (!player) return null;
+
+                        return (
+                          <Draggable key={playerId} draggableId={playerId} index={playerIndex}>
+                            {(provided, snapshot) => (
+                              <div
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                {...provided.dragHandleProps}
+                                className={`${color.card} rounded-2xl p-4 shadow-md flex items-center gap-3 transition-opacity ${
+                                  snapshot.isDragging ? 'opacity-70 shadow-2xl scale-105' : ''
+                                }`}
+                              >
+                                {player.image ? (
+                                  <img
+                                    src={player.image}
+                                    alt={player.name}
+                                    className="w-10 h-10 rounded-full object-cover ring-2 ring-white flex-shrink-0"
+                                  />
+                                ) : (
+                                  <div className="w-10 h-10 rounded-full bg-white/30 flex items-center justify-center ring-2 ring-white flex-shrink-0">
+                                    <span className={`${color.text} text-sm font-bold`}>
+                                      {player.name.charAt(0)}
+                                    </span>
+                                  </div>
+                                )}
+                                <p className={`${color.text} text-base font-bold`}>
+                                  {player.name}
+                                </p>
+                              </div>
+                            )}
+                          </Draggable>
+                        );
+                      })}
+                      {provided.placeholder}
+                    </div>
+                  )}
+                </Droppable>
+              </div>
+            );
+          })}
+        </div>
+      </DragDropContext>
+
+      {/* Action Buttons */}
+      <div className="space-y-3">
+        <Button
+          onClick={onReshuffle}
+          variant="outline"
+          className="w-full h-14 text-lg border-2 border-blue-300 bg-blue-50 hover:bg-blue-100"
+        >
+          <Shuffle className="w-5 h-5 ml-2" />
+          ערבב כוחות מחדש
+        </Button>
+
+        <Button
+          onClick={onSave}
+          className="w-full h-16 text-xl font-bold bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 shadow-xl rounded-2xl"
+        >
+          <Save className="w-6 h-6 ml-3" />
+          שמור כוחות
+          <ArrowLeft className="w-6 h-6 mr-3" />
+        </Button>
+      </div>
+    </motion.div>
+  );
+}
