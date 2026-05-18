@@ -1,0 +1,2677 @@
+{
+  "version": "1.0",
+  "exportedAt": "2026-05-18T22:21:20.064Z",
+  "appName": "סינתטיקו חולון",
+  "data": {
+    "players": [
+      {
+        "id": "6a098470eb7665f8c779813c",
+        "name": "עודד קדוש",
+        "rating": 2.5,
+        "image": null,
+        "wins": 0,
+        "appearances": 1,
+        "created_date": "2026-05-17T09:03:44.721000",
+        "updated_date": "2026-05-17T16:03:47.585000"
+      },
+      {
+        "id": "6a05ee484ab74e0244d47763",
+        "name": "אריאל ארמוני",
+        "rating": 2.5,
+        "image": null,
+        "wins": 0,
+        "appearances": 1,
+        "created_date": "2026-05-14T15:46:16.424000",
+        "updated_date": "2026-05-14T16:03:57.388000"
+      },
+      {
+        "id": "6a05ee28568ace69ac586c24",
+        "name": "שמואל גוטליב",
+        "rating": 2.5,
+        "image": null,
+        "wins": 1,
+        "appearances": 1,
+        "created_date": "2026-05-14T15:45:44.504000",
+        "updated_date": "2026-05-14T22:46:04.572000"
+      },
+      {
+        "id": "6a05ee0c2ae4a91f8dd30d09",
+        "name": "מרדכי חן",
+        "rating": 2,
+        "image": null,
+        "wins": 0,
+        "appearances": 1,
+        "created_date": "2026-05-14T15:45:16.275000",
+        "updated_date": "2026-05-14T16:03:57.388000"
+      },
+      {
+        "id": "6a05edf1ebbe0f80818aed03",
+        "name": "שי נחמיאס",
+        "rating": 2.5,
+        "image": null,
+        "wins": 1,
+        "appearances": 1,
+        "created_date": "2026-05-14T15:44:49.903000",
+        "updated_date": "2026-05-14T22:46:04.571000"
+      },
+      {
+        "id": "6a04ae8b75c921e2eeaf8012",
+        "name": "מתן לילה",
+        "rating": 3,
+        "image": null,
+        "wins": 1,
+        "appearances": 1,
+        "created_date": "2026-05-13T17:02:03.383000",
+        "updated_date": "2026-05-14T22:45:04.665000"
+      },
+      {
+        "id": "6a0413a7ad21a705450541c3",
+        "name": "אסף ליברמן",
+        "rating": 2,
+        "image": null,
+        "wins": 5,
+        "appearances": 18,
+        "created_date": "2026-05-13T06:01:11.350000",
+        "updated_date": "2026-05-14T16:03:57.385000"
+      },
+      {
+        "id": "6a0413a7c5937ec144b7f9f2",
+        "name": "אבי פריינד",
+        "rating": 2,
+        "image": null,
+        "wins": 2,
+        "appearances": 3,
+        "created_date": "2026-05-13T06:01:11.043000",
+        "updated_date": "2026-05-13T06:01:11.043000"
+      },
+      {
+        "id": "6a0413a675dc302080d2d3ed",
+        "name": "אביאל פולט",
+        "rating": 3,
+        "image": null,
+        "wins": 0,
+        "appearances": 1,
+        "created_date": "2026-05-13T06:01:10.714000",
+        "updated_date": "2026-05-13T06:01:10.714000"
+      },
+      {
+        "id": "6a0413a642ddc7c200a8b555",
+        "name": "אביחי שרה קאן",
+        "rating": 3,
+        "image": "https://base44.app/api/apps/6964c289c9fc075fbc2abedd/files/public/6964c289c9fc075fbc2abedd/beff41aaf_.png",
+        "wins": 2,
+        "appearances": 8,
+        "created_date": "2026-05-13T06:01:10.460000",
+        "updated_date": "2026-05-17T16:03:47.623000"
+      },
+      {
+        "id": "6a0413a6ab08e981de3c1758",
+        "name": "אביתר שם טוב",
+        "rating": 2,
+        "image": null,
+        "wins": 0,
+        "appearances": 5,
+        "created_date": "2026-05-13T06:01:10.187000",
+        "updated_date": "2026-05-13T17:11:49.886000"
+      },
+      {
+        "id": "6a0413a5630cb93e0f61be16",
+        "name": "אופיר אוחיון",
+        "rating": 4,
+        "image": "https://base44.app/api/apps/6964c289c9fc075fbc2abedd/files/public/6964c289c9fc075fbc2abedd/b4ed65c2c_.png",
+        "wins": 2,
+        "appearances": 8,
+        "created_date": "2026-05-13T06:01:09.926000",
+        "updated_date": "2026-05-17T16:03:47.581000"
+      },
+      {
+        "id": "6a0413a546c8f057b815751c",
+        "name": "אור נחמיאס",
+        "rating": 1.5,
+        "image": "https://base44.app/api/apps/6964c289c9fc075fbc2abedd/files/public/6964c289c9fc075fbc2abedd/5ea916b70_.png",
+        "wins": 2,
+        "appearances": 8,
+        "created_date": "2026-05-13T06:01:09.660000",
+        "updated_date": "2026-05-14T22:46:04.572000"
+      },
+      {
+        "id": "6a0413a5c1b6dd9d31120175",
+        "name": "אוראל יוחנן",
+        "rating": 2,
+        "image": null,
+        "wins": 1,
+        "appearances": 4,
+        "created_date": "2026-05-13T06:01:09.403000",
+        "updated_date": "2026-05-14T22:45:04.666000"
+      },
+      {
+        "id": "6a0413a5a18b9b286209492d",
+        "name": "אוראל מטוטי",
+        "rating": 3,
+        "image": null,
+        "wins": 0,
+        "appearances": 1,
+        "created_date": "2026-05-13T06:01:09.150000",
+        "updated_date": "2026-05-13T06:01:09.150000"
+      },
+      {
+        "id": "6a0413a45b6825e0322814b2",
+        "name": "אושרי יצחק",
+        "rating": 2,
+        "image": null,
+        "wins": 0,
+        "appearances": 0,
+        "created_date": "2026-05-13T06:01:08.866000",
+        "updated_date": "2026-05-13T06:01:08.866000"
+      },
+      {
+        "id": "6a0413a4882e944b1fccdd89",
+        "name": "אייל רוזנבאום",
+        "rating": 3.5,
+        "image": null,
+        "wins": 0,
+        "appearances": 0,
+        "created_date": "2026-05-13T06:01:08.597000",
+        "updated_date": "2026-05-13T06:01:08.597000"
+      },
+      {
+        "id": "6a0413a48e1c2eb27aed8b85",
+        "name": "אלי יוחנן",
+        "rating": 3,
+        "image": null,
+        "wins": 0,
+        "appearances": 5,
+        "created_date": "2026-05-13T06:01:08.305000",
+        "updated_date": "2026-05-13T06:01:08.305000"
+      },
+      {
+        "id": "6a0413a47cd527d8f27f6c3e",
+        "name": "אליעד שחב",
+        "rating": 2.5,
+        "image": null,
+        "wins": 0,
+        "appearances": 1,
+        "created_date": "2026-05-13T06:01:08.066000",
+        "updated_date": "2026-05-13T06:01:08.066000"
+      },
+      {
+        "id": "6a0413a31e36e8de185f4488",
+        "name": "אלכס מור",
+        "rating": 3.5,
+        "image": "https://base44.app/api/apps/6964c289c9fc075fbc2abedd/files/public/6964c289c9fc075fbc2abedd/5693e6ea3_.png",
+        "wins": 3,
+        "appearances": 11,
+        "created_date": "2026-05-13T06:01:07.734000",
+        "updated_date": "2026-05-17T16:03:47.608000"
+      },
+      {
+        "id": "6a0413a3e531682e611e50f1",
+        "name": "אנדו דירס",
+        "rating": 2,
+        "image": null,
+        "wins": 2,
+        "appearances": 14,
+        "created_date": "2026-05-13T06:01:07.511000",
+        "updated_date": "2026-05-13T06:01:07.511000"
+      },
+      {
+        "id": "6a0413a3beb54f63ea8a6f9e",
+        "name": "אסף פרינס",
+        "rating": 3,
+        "image": null,
+        "wins": 0,
+        "appearances": 2,
+        "created_date": "2026-05-13T06:01:07.261000",
+        "updated_date": "2026-05-13T06:01:07.261000"
+      },
+      {
+        "id": "6a0413a2beb54f63ea8a6f9d",
+        "name": "ארז דיין",
+        "rating": 2.5,
+        "image": null,
+        "wins": 2,
+        "appearances": 8,
+        "created_date": "2026-05-13T06:01:06.947000",
+        "updated_date": "2026-05-14T22:46:04.572000"
+      },
+      {
+        "id": "6a0413a2f6b43218c2b389d2",
+        "name": "אריאל בכור",
+        "rating": 3.5,
+        "image": null,
+        "wins": 0,
+        "appearances": 0,
+        "created_date": "2026-05-13T06:01:06.690000",
+        "updated_date": "2026-05-13T06:01:06.690000"
+      },
+      {
+        "id": "6a0413a2bb2b4478b0b8df08",
+        "name": "אריאל רביבו",
+        "rating": 2.5,
+        "image": null,
+        "wins": 1,
+        "appearances": 9,
+        "created_date": "2026-05-13T06:01:06.356000",
+        "updated_date": "2026-05-17T16:03:47.586000"
+      },
+      {
+        "id": "6a0413a2d1cbb4bc979876e8",
+        "name": "בן חגאי",
+        "rating": 2.5,
+        "image": "https://base44.app/api/apps/6964c289c9fc075fbc2abedd/files/public/6964c289c9fc075fbc2abedd/3e30bfd49_.png",
+        "wins": 3,
+        "appearances": 16,
+        "created_date": "2026-05-13T06:01:06.004000",
+        "updated_date": "2026-05-14T16:03:56.987000"
+      },
+      {
+        "id": "6a0413a10440590db2790e3a",
+        "name": "בר מרון",
+        "rating": 2,
+        "image": null,
+        "wins": 0,
+        "appearances": 1,
+        "created_date": "2026-05-13T06:01:05.723000",
+        "updated_date": "2026-05-13T06:01:05.723000"
+      },
+      {
+        "id": "6a0413a1b04434f16acfea37",
+        "name": "בר ממן",
+        "rating": 2.5,
+        "image": "https://base44.app/api/apps/6964c289c9fc075fbc2abedd/files/public/6964c289c9fc075fbc2abedd/a5a245c5c_.png",
+        "wins": 7,
+        "appearances": 21,
+        "created_date": "2026-05-13T06:01:05.360000",
+        "updated_date": "2026-05-18T10:14:05.614000"
+      },
+      {
+        "id": "6a0413a154474d7b08ef638c",
+        "name": "גל דניאל",
+        "rating": 4,
+        "image": "https://base44.app/api/apps/6964c289c9fc075fbc2abedd/files/public/6964c289c9fc075fbc2abedd/adb22c401_.png",
+        "wins": 5,
+        "appearances": 15,
+        "created_date": "2026-05-13T06:01:05.101000",
+        "updated_date": "2026-05-18T10:14:05.629000"
+      },
+      {
+        "id": "6a0413a0b37e8f4d72b58d61",
+        "name": "גל לוי",
+        "rating": 3.5,
+        "image": "https://base44.app/api/apps/6964c289c9fc075fbc2abedd/files/public/6964c289c9fc075fbc2abedd/5be6ff87f_.png",
+        "wins": 1,
+        "appearances": 3,
+        "created_date": "2026-05-13T06:01:04.839000",
+        "updated_date": "2026-05-13T06:01:04.839000"
+      },
+      {
+        "id": "6a0413a0ed9a7cddfe5b536e",
+        "name": "דוד דסלין",
+        "rating": 5,
+        "image": "https://base44.app/api/apps/6964c289c9fc075fbc2abedd/files/mp/public/6964c289c9fc075fbc2abedd/c06beffeb_.png",
+        "wins": 9,
+        "appearances": 18,
+        "created_date": "2026-05-13T06:01:04.575000",
+        "updated_date": "2026-05-17T16:03:47.638000"
+      },
+      {
+        "id": "6a0413a068176df62fabd556",
+        "name": "דור בוצ'ה",
+        "rating": 3,
+        "image": "https://base44.app/api/apps/6964c289c9fc075fbc2abedd/files/public/6964c289c9fc075fbc2abedd/405d6335e_.png",
+        "wins": 1,
+        "appearances": 2,
+        "created_date": "2026-05-13T06:01:04.267000",
+        "updated_date": "2026-05-13T06:01:04.267000"
+      },
+      {
+        "id": "6a04139fd3348fc4ef4cb8ab",
+        "name": "דור דוד",
+        "rating": 2.5,
+        "image": null,
+        "wins": 0,
+        "appearances": 0,
+        "created_date": "2026-05-13T06:01:03.958000",
+        "updated_date": "2026-05-13T06:01:03.958000"
+      },
+      {
+        "id": "6a04139fd749aae172ec1f88",
+        "name": "דניאל רוטרו",
+        "rating": 2.5,
+        "image": null,
+        "wins": 1,
+        "appearances": 3,
+        "created_date": "2026-05-13T06:01:03.688000",
+        "updated_date": "2026-05-13T17:11:49.946000"
+      },
+      {
+        "id": "6a04139fbb952083164c7ba6",
+        "name": "חן נצר",
+        "rating": 3,
+        "image": null,
+        "wins": 5,
+        "appearances": 15,
+        "created_date": "2026-05-13T06:01:03.394000",
+        "updated_date": "2026-05-18T10:14:05.626000"
+      },
+      {
+        "id": "6a04139f010ee22c44358f8a",
+        "name": "יהונתן קפאש",
+        "rating": 2,
+        "image": null,
+        "wins": 1,
+        "appearances": 1,
+        "created_date": "2026-05-13T06:01:03.052000",
+        "updated_date": "2026-05-13T06:01:03.052000"
+      },
+      {
+        "id": "6a04139e45177fba9f354fe3",
+        "name": "יניב אזולאי",
+        "rating": 1.5,
+        "image": "https://base44.app/api/apps/6964c289c9fc075fbc2abedd/files/public/6964c289c9fc075fbc2abedd/3fc1ff905_.png",
+        "wins": 3,
+        "appearances": 15,
+        "created_date": "2026-05-13T06:01:02.715000",
+        "updated_date": "2026-05-13T17:11:49.912000"
+      },
+      {
+        "id": "6a04139e5454f8be1b9b4397",
+        "name": "יניב ג'מילי",
+        "rating": 2,
+        "image": null,
+        "wins": 0,
+        "appearances": 0,
+        "created_date": "2026-05-13T06:01:02.307000",
+        "updated_date": "2026-05-13T06:01:02.307000"
+      },
+      {
+        "id": "6a04139e07706475be75d897",
+        "name": "ירין אצלן",
+        "rating": 3.5,
+        "image": null,
+        "wins": 0,
+        "appearances": 0,
+        "created_date": "2026-05-13T06:01:02.077000",
+        "updated_date": "2026-05-13T06:01:02.077000"
+      },
+      {
+        "id": "6a04139dfd22cd9f52e0dc80",
+        "name": "ליאור חג'ג'",
+        "rating": 2,
+        "image": null,
+        "wins": 0,
+        "appearances": 1,
+        "created_date": "2026-05-13T06:01:01.811000",
+        "updated_date": "2026-05-13T06:01:01.811000"
+      },
+      {
+        "id": "6a04139d7a0d8b45b485dd26",
+        "name": "לידור סעדון",
+        "rating": 3,
+        "image": null,
+        "wins": 0,
+        "appearances": 0,
+        "created_date": "2026-05-13T06:01:01.556000",
+        "updated_date": "2026-05-13T06:01:01.556000"
+      },
+      {
+        "id": "6a04139ddda029401693a54c",
+        "name": "לירן לוי",
+        "rating": 3,
+        "image": "https://base44.app/api/apps/6964c289c9fc075fbc2abedd/files/public/6964c289c9fc075fbc2abedd/e63f38c25_.png",
+        "wins": 7,
+        "appearances": 17,
+        "created_date": "2026-05-13T06:01:01.281000",
+        "updated_date": "2026-05-14T16:03:57.381000"
+      },
+      {
+        "id": "6a04139d006d97fd784efeff",
+        "name": "מאור ברוכים",
+        "rating": 2,
+        "image": null,
+        "wins": 0,
+        "appearances": 1,
+        "created_date": "2026-05-13T06:01:01.024000",
+        "updated_date": "2026-05-13T06:01:01.024000"
+      },
+      {
+        "id": "6a04139c3ab2ae0f026ede70",
+        "name": "מאור חימי",
+        "rating": 2,
+        "image": "https://base44.app/api/apps/6964c289c9fc075fbc2abedd/files/public/6964c289c9fc075fbc2abedd/f20584a29_.png",
+        "wins": 6,
+        "appearances": 17,
+        "created_date": "2026-05-13T06:01:00.750000",
+        "updated_date": "2026-05-18T10:14:05.635000"
+      },
+      {
+        "id": "6a04139cb9b55838bbfb2cfe",
+        "name": "מאור קאקולי",
+        "rating": 2,
+        "image": "https://base44.app/api/apps/6964c289c9fc075fbc2abedd/files/public/6964c289c9fc075fbc2abedd/e040f66e3_.png",
+        "wins": 5,
+        "appearances": 22,
+        "created_date": "2026-05-13T06:01:00.468000",
+        "updated_date": "2026-05-17T16:03:47.586000"
+      },
+      {
+        "id": "6a04139ce44d6999a0dc1a76",
+        "name": "מאור רוז'ה",
+        "rating": 2.5,
+        "image": null,
+        "wins": 0,
+        "appearances": 0,
+        "created_date": "2026-05-13T06:01:00.218000",
+        "updated_date": "2026-05-13T06:01:00.218000"
+      },
+      {
+        "id": "6a04139b4bcaad21da028af0",
+        "name": "מידד חליבה",
+        "rating": 3,
+        "image": "https://base44.app/api/apps/6964c289c9fc075fbc2abedd/files/public/6964c289c9fc075fbc2abedd/93c8adebe_.png",
+        "wins": 1,
+        "appearances": 9,
+        "created_date": "2026-05-13T06:00:59.900000",
+        "updated_date": "2026-05-14T16:03:56.994000"
+      },
+      {
+        "id": "6a04139ba9dc8c7c7746b829",
+        "name": "משה אישטה",
+        "rating": 3,
+        "image": null,
+        "wins": 0,
+        "appearances": 2,
+        "created_date": "2026-05-13T06:00:59.642000",
+        "updated_date": "2026-05-13T06:00:59.642000"
+      },
+      {
+        "id": "6a04139bd6c4e22464840460",
+        "name": "מתן גינאדי",
+        "rating": 2.5,
+        "image": "https://base44.app/api/apps/6964c289c9fc075fbc2abedd/files/public/6964c289c9fc075fbc2abedd/177f2c893_.png",
+        "wins": 3,
+        "appearances": 7,
+        "created_date": "2026-05-13T06:00:59.309000",
+        "updated_date": "2026-05-13T06:00:59.309000"
+      },
+      {
+        "id": "6a04139b7e239df18cb752ab",
+        "name": "נועם בראנץ",
+        "rating": 2,
+        "image": null,
+        "wins": 0,
+        "appearances": 2,
+        "created_date": "2026-05-13T06:00:59.037000",
+        "updated_date": "2026-05-13T06:00:59.037000"
+      },
+      {
+        "id": "6a04139a4e8301e0dfab9542",
+        "name": "ניב מזרחי",
+        "rating": 3.5,
+        "image": null,
+        "wins": 2,
+        "appearances": 7,
+        "created_date": "2026-05-13T06:00:58.708000",
+        "updated_date": "2026-05-13T06:00:58.708000"
+      },
+      {
+        "id": "6a04139a35dabe49fe068ea0",
+        "name": "נתי לביא",
+        "rating": 2.5,
+        "image": null,
+        "wins": 0,
+        "appearances": 1,
+        "created_date": "2026-05-13T06:00:58.339000",
+        "updated_date": "2026-05-13T06:00:58.339000"
+      },
+      {
+        "id": "6a04139ad3348fc4ef4cb8a7",
+        "name": "סהר נוימן",
+        "rating": 2.5,
+        "image": null,
+        "wins": 0,
+        "appearances": 0,
+        "created_date": "2026-05-13T06:00:58.076000",
+        "updated_date": "2026-05-13T06:00:58.076000"
+      },
+      {
+        "id": "6a041399fec25b02cfdb9f05",
+        "name": "סתיו אבן",
+        "rating": 2.5,
+        "image": null,
+        "wins": 6,
+        "appearances": 20,
+        "created_date": "2026-05-13T06:00:57.818000",
+        "updated_date": "2026-05-18T10:14:05.617000"
+      },
+      {
+        "id": "6a041399116011d71f881f11",
+        "name": "עדן קוניחובסקי",
+        "rating": 2,
+        "image": null,
+        "wins": 0,
+        "appearances": 1,
+        "created_date": "2026-05-13T06:00:57.569000",
+        "updated_date": "2026-05-13T06:00:57.569000"
+      },
+      {
+        "id": "6a041399221d6f482e97318d",
+        "name": "עידן טל",
+        "rating": 2.5,
+        "image": "https://base44.app/api/apps/6964c289c9fc075fbc2abedd/files/public/6964c289c9fc075fbc2abedd/52843de22_.png",
+        "wins": 5,
+        "appearances": 17,
+        "created_date": "2026-05-13T06:00:57.305000",
+        "updated_date": "2026-05-14T16:03:56.991000"
+      },
+      {
+        "id": "6a041399f3cd27cec113d36f",
+        "name": "עידן מרמור",
+        "rating": 3,
+        "image": null,
+        "wins": 2,
+        "appearances": 5,
+        "created_date": "2026-05-13T06:00:57.052000",
+        "updated_date": "2026-05-14T22:45:04.665000"
+      },
+      {
+        "id": "6a041398cb38fc65de1d3e91",
+        "name": "ראם כהן",
+        "rating": 2.5,
+        "image": "https://base44.app/api/apps/6964c289c9fc075fbc2abedd/files/public/6964c289c9fc075fbc2abedd/b5cc3d3c4_.png",
+        "wins": 3,
+        "appearances": 10,
+        "created_date": "2026-05-13T06:00:56.767000",
+        "updated_date": "2026-05-13T06:00:56.767000"
+      },
+      {
+        "id": "6a041398e44d990ba9e50ea5",
+        "name": "רחמים רומן",
+        "rating": 2,
+        "image": null,
+        "wins": 2,
+        "appearances": 5,
+        "created_date": "2026-05-13T06:00:56.503000",
+        "updated_date": "2026-05-14T22:45:04.694000"
+      },
+      {
+        "id": "6a0413986e2fc7d5421024e3",
+        "name": "תמיר אברהם",
+        "rating": 3.5,
+        "image": null,
+        "wins": 2,
+        "appearances": 10,
+        "created_date": "2026-05-13T06:00:56.242000",
+        "updated_date": "2026-05-17T16:03:47.594000"
+      },
+      {
+        "id": "6a0413972ef5a3eb60403210",
+        "name": "נתנאל כהן",
+        "rating": 2.5,
+        "image": null,
+        "wins": 2,
+        "appearances": 4,
+        "created_date": "2026-05-13T06:00:55.925000",
+        "updated_date": "2026-05-13T06:00:55.925000"
+      },
+      {
+        "id": "6a041397a37c1085cb853b8c",
+        "name": "דניאל יוסיפוב",
+        "rating": 2,
+        "image": null,
+        "wins": 2,
+        "appearances": 4,
+        "created_date": "2026-05-13T06:00:55.673000",
+        "updated_date": "2026-05-13T17:11:49.953000"
+      },
+      {
+        "id": "6a04139748f5e49284985eee",
+        "name": "עדן הרשקו",
+        "rating": 2.5,
+        "image": null,
+        "wins": 3,
+        "appearances": 10,
+        "created_date": "2026-05-13T06:00:55.424000",
+        "updated_date": "2026-05-17T16:03:48"
+      },
+      {
+        "id": "6a04139737b997795d8f3074",
+        "name": "רפי אריאל",
+        "rating": 2,
+        "image": null,
+        "wins": 1,
+        "appearances": 6,
+        "created_date": "2026-05-13T06:00:55.118000",
+        "updated_date": "2026-05-14T22:45:04.278000"
+      },
+      {
+        "id": "6a041396f8e9a576e8076503",
+        "name": "קוסטיה אלפיורב",
+        "rating": 1.5,
+        "image": null,
+        "wins": 0,
+        "appearances": 0,
+        "created_date": "2026-05-13T06:00:54.828000",
+        "updated_date": "2026-05-13T06:00:54.828000"
+      },
+      {
+        "id": "6a041396e7e866122f340dc8",
+        "name": "יוסף אנטנך",
+        "rating": 2.5,
+        "image": null,
+        "wins": 0,
+        "appearances": 0,
+        "created_date": "2026-05-13T06:00:54.559000",
+        "updated_date": "2026-05-13T06:00:54.559000"
+      },
+      {
+        "id": "6a04139663d30c0d597c8991",
+        "name": "גטנך אדוניה",
+        "rating": 3,
+        "image": null,
+        "wins": 0,
+        "appearances": 0,
+        "created_date": "2026-05-13T06:00:54.269000",
+        "updated_date": "2026-05-13T06:00:54.269000"
+      },
+      {
+        "id": "6a041396fc75e4bd81c8a9a4",
+        "name": "דסטאו טייצ׳או",
+        "rating": 2.5,
+        "image": null,
+        "wins": 0,
+        "appearances": 0,
+        "created_date": "2026-05-13T06:00:54.025000",
+        "updated_date": "2026-05-13T06:00:54.025000"
+      },
+      {
+        "id": "6a041395f364b09f64a831de",
+        "name": "יוסף משומר",
+        "rating": 2.5,
+        "image": "https://base44.app/api/apps/6964c289c9fc075fbc2abedd/files/public/6964c289c9fc075fbc2abedd/a00e73051_.png",
+        "wins": 1,
+        "appearances": 6,
+        "created_date": "2026-05-13T06:00:53.775000",
+        "updated_date": "2026-05-13T06:00:53.775000"
+      },
+      {
+        "id": "6a0413958f5f6fc58fafdcaa",
+        "name": "ניק ירושנקו",
+        "rating": 3,
+        "image": null,
+        "wins": 2,
+        "appearances": 6,
+        "created_date": "2026-05-13T06:00:53.525000",
+        "updated_date": "2026-05-13T17:11:49.872000"
+      },
+      {
+        "id": "6a041395c35be2f8ced15d32",
+        "name": "עידן לוי",
+        "rating": 2,
+        "image": null,
+        "wins": 0,
+        "appearances": 0,
+        "created_date": "2026-05-13T06:00:53.208000",
+        "updated_date": "2026-05-13T06:00:53.208000"
+      },
+      {
+        "id": "6a04139434fbdd9c223e0755",
+        "name": "עידן אליאב",
+        "rating": 2.5,
+        "image": null,
+        "wins": 0,
+        "appearances": 0,
+        "created_date": "2026-05-13T06:00:52.937000",
+        "updated_date": "2026-05-13T06:00:52.937000"
+      },
+      {
+        "id": "6a04139496a0739b4f98b17c",
+        "name": "אוהד סנדיק",
+        "rating": 2,
+        "image": null,
+        "wins": 0,
+        "appearances": 4,
+        "created_date": "2026-05-13T06:00:52.615000",
+        "updated_date": "2026-05-13T17:11:49.897000"
+      },
+      {
+        "id": "6a04139442e9fe3a43afdf55",
+        "name": "גל בן חמו",
+        "rating": 2.5,
+        "image": null,
+        "wins": 2,
+        "appearances": 6,
+        "created_date": "2026-05-13T06:00:52.060000",
+        "updated_date": "2026-05-13T06:00:52.060000"
+      },
+      {
+        "id": "6a0413938d7c7ef00929d76c",
+        "name": "שוער",
+        "rating": 2.5,
+        "image": null,
+        "wins": 0,
+        "appearances": 2,
+        "created_date": "2026-05-13T06:00:51.771000",
+        "updated_date": "2026-05-13T06:00:51.771000"
+      },
+      {
+        "id": "6a041393706f2ba05510db06",
+        "name": "מיכאל שרי",
+        "rating": 5,
+        "image": null,
+        "wins": 0,
+        "appearances": 0,
+        "created_date": "2026-05-13T06:00:51.507000",
+        "updated_date": "2026-05-13T06:00:51.507000"
+      },
+      {
+        "id": "6a04139300ccec370db9c450",
+        "name": "אלמוג שדמי",
+        "rating": 3.5,
+        "image": null,
+        "wins": 0,
+        "appearances": 0,
+        "created_date": "2026-05-13T06:00:51.181000",
+        "updated_date": "2026-05-13T06:00:51.181000"
+      },
+      {
+        "id": "6a041392ed648e492fc1f04d",
+        "name": "דור ביטון",
+        "rating": 2,
+        "image": null,
+        "wins": 2,
+        "appearances": 6,
+        "created_date": "2026-05-13T06:00:50.884000",
+        "updated_date": "2026-05-13T06:00:50.884000"
+      },
+      {
+        "id": "6a041392177f79a3269ab777",
+        "name": "אוריאל דקט",
+        "rating": 1.5,
+        "image": null,
+        "wins": 0,
+        "appearances": 1,
+        "created_date": "2026-05-13T06:00:50.629000",
+        "updated_date": "2026-05-13T06:00:50.629000"
+      },
+      {
+        "id": "6a0413926d960ff84b56a91b",
+        "name": "טל דלאל",
+        "rating": 2.5,
+        "image": null,
+        "wins": 2,
+        "appearances": 2,
+        "created_date": "2026-05-13T06:00:50.361000",
+        "updated_date": "2026-05-14T22:45:04.661000"
+      },
+      {
+        "id": "6a041392ed5bedf55689f6e9",
+        "name": "אייל קלאס",
+        "rating": 2.5,
+        "image": null,
+        "wins": 1,
+        "appearances": 3,
+        "created_date": "2026-05-13T06:00:50.093000",
+        "updated_date": "2026-05-13T06:00:50.093000"
+      },
+      {
+        "id": "6a04139145391f9ac42c026f",
+        "name": "אסף אמרטלי",
+        "rating": 2.5,
+        "image": null,
+        "wins": 1,
+        "appearances": 4,
+        "created_date": "2026-05-13T06:00:49.830000",
+        "updated_date": "2026-05-13T06:00:49.830000"
+      },
+      {
+        "id": "6a041391929dbb51d1fb0bcc",
+        "name": "תומר שושני",
+        "rating": 3,
+        "image": null,
+        "wins": 0,
+        "appearances": 3,
+        "created_date": "2026-05-13T06:00:49.582000",
+        "updated_date": "2026-05-17T16:03:47.581000"
+      },
+      {
+        "id": "6a04139187fa22ab667a9ebc",
+        "name": "תומר בובו",
+        "rating": 2.5,
+        "image": null,
+        "wins": 0,
+        "appearances": 3,
+        "created_date": "2026-05-13T06:00:49.322000",
+        "updated_date": "2026-05-17T16:03:47.597000"
+      },
+      {
+        "id": "6a041391f172ac793c27fc17",
+        "name": "יהונתן ויצמן",
+        "rating": 2,
+        "image": null,
+        "wins": 1,
+        "appearances": 1,
+        "created_date": "2026-05-13T06:00:49.053000",
+        "updated_date": "2026-05-13T06:00:49.053000"
+      },
+      {
+        "id": "6a041390562762c5650fc6dc",
+        "name": "בר לנדאו",
+        "rating": 3,
+        "image": null,
+        "wins": 3,
+        "appearances": 5,
+        "created_date": "2026-05-13T06:00:48.796000",
+        "updated_date": "2026-05-13T06:00:48.796000"
+      },
+      {
+        "id": "6a041390eee5e3a1d409d77b",
+        "name": "אושרי כהן",
+        "rating": 2.5,
+        "image": null,
+        "wins": 1,
+        "appearances": 1,
+        "created_date": "2026-05-13T06:00:48.494000",
+        "updated_date": "2026-05-13T06:00:48.494000"
+      },
+      {
+        "id": "6a04139069e2937aa7b52029",
+        "name": "איתי כהן",
+        "rating": 1.5,
+        "image": null,
+        "wins": 1,
+        "appearances": 1,
+        "created_date": "2026-05-13T06:00:48.232000",
+        "updated_date": "2026-05-13T06:00:48.232000"
+      },
+      {
+        "id": "6a04138f3dab796e10045e22",
+        "name": "דורון פנחס",
+        "rating": 3,
+        "image": null,
+        "wins": 0,
+        "appearances": 1,
+        "created_date": "2026-05-13T06:00:47.942000",
+        "updated_date": "2026-05-13T06:00:47.942000"
+      },
+      {
+        "id": "6a04138f512323c66bd62f02",
+        "name": "אורי גל",
+        "rating": 2.5,
+        "image": null,
+        "wins": 0,
+        "appearances": 1,
+        "created_date": "2026-05-13T06:00:47.679000",
+        "updated_date": "2026-05-13T06:00:47.679000"
+      },
+      {
+        "id": "6a04138fe3fb1735ac5c926d",
+        "name": "נתי לביא",
+        "rating": 2,
+        "image": null,
+        "wins": 0,
+        "appearances": 0,
+        "created_date": "2026-05-13T06:00:47.418000",
+        "updated_date": "2026-05-13T06:00:47.418000"
+      },
+      {
+        "id": "6a04138feee5e3a1d409d745",
+        "name": "רון ברמר",
+        "rating": 1.5,
+        "image": null,
+        "wins": 0,
+        "appearances": 1,
+        "created_date": "2026-05-13T06:00:47.162000",
+        "updated_date": "2026-05-13T06:00:47.162000"
+      },
+      {
+        "id": "6a04138eb95f701eab3f4e14",
+        "name": "זיו איסרס",
+        "rating": 2,
+        "image": null,
+        "wins": 0,
+        "appearances": 5,
+        "created_date": "2026-05-13T06:00:46.886000",
+        "updated_date": "2026-05-13T17:11:49.903000"
+      },
+      {
+        "id": "6a04138ef8143fd4474a6e60",
+        "name": "רועי בובו",
+        "rating": 2.5,
+        "image": null,
+        "wins": 0,
+        "appearances": 1,
+        "created_date": "2026-05-13T06:00:46.614000",
+        "updated_date": "2026-05-13T06:00:46.614000"
+      },
+      {
+        "id": "6a04138e0b788f207a38003d",
+        "name": "יקיר",
+        "rating": 3,
+        "image": null,
+        "wins": 0,
+        "appearances": 1,
+        "created_date": "2026-05-13T06:00:46.359000",
+        "updated_date": "2026-05-13T06:00:46.359000"
+      },
+      {
+        "id": "6a04138ec6dbe51529f4d620",
+        "name": "עילאי סגל",
+        "rating": 3.5,
+        "image": null,
+        "wins": 0,
+        "appearances": 1,
+        "created_date": "2026-05-13T06:00:46.089000",
+        "updated_date": "2026-05-13T06:00:46.089000"
+      },
+      {
+        "id": "6a04138df067635954831f56",
+        "name": "ליעד סלמן",
+        "rating": 5,
+        "image": null,
+        "wins": 0,
+        "appearances": 2,
+        "created_date": "2026-05-13T06:00:45.837000",
+        "updated_date": "2026-05-13T06:00:45.837000"
+      },
+      {
+        "id": "6a04138df4ef276b6547d768",
+        "name": "תומר יד שלום",
+        "rating": 2.5,
+        "image": null,
+        "wins": 0,
+        "appearances": 1,
+        "created_date": "2026-05-13T06:00:45.577000",
+        "updated_date": "2026-05-13T06:00:45.577000"
+      },
+      {
+        "id": "6a04138d4caad043eb0ce283",
+        "name": "אשר בן זימן",
+        "rating": 2.5,
+        "image": null,
+        "wins": 1,
+        "appearances": 1,
+        "created_date": "2026-05-13T06:00:45.325000",
+        "updated_date": "2026-05-13T06:00:45.325000"
+      },
+      {
+        "id": "6a04138df898382e8fae2c11",
+        "name": "רון מנדלסון",
+        "rating": 2,
+        "image": null,
+        "wins": 3,
+        "appearances": 7,
+        "created_date": "2026-05-13T06:00:45.066000",
+        "updated_date": "2026-05-14T16:03:57.075000"
+      },
+      {
+        "id": "6a04138c7d59fa000b631b6c",
+        "name": "תומר שוורץ",
+        "rating": 3,
+        "image": null,
+        "wins": 0,
+        "appearances": 1,
+        "created_date": "2026-05-13T06:00:44.814000",
+        "updated_date": "2026-05-13T06:00:44.814000"
+      },
+      {
+        "id": "6a04138cd5232d8e30500b47",
+        "name": "שגיא אביטל",
+        "rating": 3.5,
+        "image": null,
+        "wins": 0,
+        "appearances": 1,
+        "created_date": "2026-05-13T06:00:44.558000",
+        "updated_date": "2026-05-13T06:00:44.558000"
+      },
+      {
+        "id": "6a04138ca18b9b2862094726",
+        "name": "שלו אריה",
+        "rating": 2.5,
+        "image": null,
+        "wins": 0,
+        "appearances": 1,
+        "created_date": "2026-05-13T06:00:44.291000",
+        "updated_date": "2026-05-13T06:00:44.291000"
+      },
+      {
+        "id": "6a04138cb8c821c105121407",
+        "name": "יוסף אנטנק",
+        "rating": 3,
+        "image": null,
+        "wins": 0,
+        "appearances": 1,
+        "created_date": "2026-05-13T06:00:44.037000",
+        "updated_date": "2026-05-13T06:00:44.037000"
+      },
+      {
+        "id": "6a04138b3fda94f5aa44ac77",
+        "name": "גלעד עוזיאל",
+        "rating": 3.5,
+        "image": null,
+        "wins": 2,
+        "appearances": 6,
+        "created_date": "2026-05-13T06:00:43.788000",
+        "updated_date": "2026-05-18T10:14:05.634000"
+      },
+      {
+        "id": "6a04138b851c24bb35b9bfb9",
+        "name": "מתן עקרון",
+        "rating": 2.5,
+        "image": null,
+        "wins": 0,
+        "appearances": 3,
+        "created_date": "2026-05-13T06:00:43.529000",
+        "updated_date": "2026-05-13T17:11:49.884000"
+      },
+      {
+        "id": "6a04138b9d81c913a3e9b502",
+        "name": "ינון בן שאול",
+        "rating": 3,
+        "image": null,
+        "wins": 0,
+        "appearances": 2,
+        "created_date": "2026-05-13T06:00:43.270000",
+        "updated_date": "2026-05-13T06:00:43.270000"
+      },
+      {
+        "id": "6a04138b8a75dd123e650178",
+        "name": "עידו לדרמן",
+        "rating": 3,
+        "image": null,
+        "wins": 0,
+        "appearances": 1,
+        "created_date": "2026-05-13T06:00:43.028000",
+        "updated_date": "2026-05-13T06:00:43.028000"
+      },
+      {
+        "id": "6a04138a5094d3a3b82c4841",
+        "name": "אופיר ביזבי",
+        "rating": 2.5,
+        "image": null,
+        "wins": 2,
+        "appearances": 6,
+        "created_date": "2026-05-13T06:00:42.773000",
+        "updated_date": "2026-05-13T06:00:42.773000"
+      },
+      {
+        "id": "6a04138ab95f701eab3f4e0f",
+        "name": "אלמקן צקולה",
+        "rating": 2.5,
+        "image": null,
+        "wins": 0,
+        "appearances": 1,
+        "created_date": "2026-05-13T06:00:42.512000",
+        "updated_date": "2026-05-13T06:00:42.512000"
+      },
+      {
+        "id": "6a04138a1b8579a5d7233187",
+        "name": "שגב ביטון",
+        "rating": 3,
+        "image": null,
+        "wins": 0,
+        "appearances": 2,
+        "created_date": "2026-05-13T06:00:42.237000",
+        "updated_date": "2026-05-13T06:00:42.237000"
+      },
+      {
+        "id": "6a0413896a5927468614545a",
+        "name": "איתי בן בסט",
+        "rating": 2.5,
+        "image": null,
+        "wins": 0,
+        "appearances": 1,
+        "created_date": "2026-05-13T06:00:41.975000",
+        "updated_date": "2026-05-13T06:00:41.975000"
+      },
+      {
+        "id": "6a041389b45869053b4a125f",
+        "name": "אסף אליהו",
+        "rating": 2.5,
+        "image": null,
+        "wins": 0,
+        "appearances": 1,
+        "created_date": "2026-05-13T06:00:41.692000",
+        "updated_date": "2026-05-13T06:00:41.692000"
+      },
+      {
+        "id": "6a041389cb54d53538554bdd",
+        "name": "אשר זלקה",
+        "rating": 2,
+        "image": null,
+        "wins": 1,
+        "appearances": 1,
+        "created_date": "2026-05-13T06:00:41.378000",
+        "updated_date": "2026-05-13T06:00:41.378000"
+      },
+      {
+        "id": "6a041389571211cbd0f8b7cf",
+        "name": "אלכס קאפארולין",
+        "rating": 2,
+        "image": null,
+        "wins": 0,
+        "appearances": 1,
+        "created_date": "2026-05-13T06:00:41.123000",
+        "updated_date": "2026-05-13T06:00:41.123000"
+      },
+      {
+        "id": "6a041388b589b3456048cc1f",
+        "name": "גורדן מאיימבו",
+        "rating": 2,
+        "image": null,
+        "wins": 0,
+        "appearances": 3,
+        "created_date": "2026-05-13T06:00:40.838000",
+        "updated_date": "2026-05-17T16:03:47.585000"
+      }
+    ],
+    "rounds": [
+      {
+        "id": "6a09e6e21055203405d9d45e",
+        "date": "2026-05-17T16:03:47.147Z",
+        "teams": [
+          [
+            "6a0413a2bb2b4478b0b8df08",
+            "6a0413a0ed9a7cddfe5b536e",
+            "6a04139cb9b55838bbfb2cfe",
+            "6a041391929dbb51d1fb0bcc",
+            "6a0413a642ddc7c200a8b555",
+            "6a04139187fa22ab667a9ebc"
+          ],
+          [
+            "6a041388b589b3456048cc1f",
+            "6a098470eb7665f8c779813c",
+            "6a0413a31e36e8de185f4488",
+            "6a0413a5630cb93e0f61be16",
+            "6a0413986e2fc7d5421024e3",
+            "6a04139748f5e49284985eee"
+          ],
+          [
+            "6a04139c3ab2ae0f026ede70",
+            "6a0413a1b04434f16acfea37",
+            "6a04138b3fda94f5aa44ac77",
+            "6a041399fec25b02cfdb9f05",
+            "6a0413a154474d7b08ef638c",
+            "6a04139fbb952083164c7ba6"
+          ]
+        ],
+        "goalkeepers": {
+          "0": "6a04139187fa22ab667a9ebc",
+          "1": "6a0413986e2fc7d5421024e3",
+          "2": "6a04139c3ab2ae0f026ede70"
+        },
+        "openingTeams": [
+          1,
+          0
+        ],
+        "winningTeam": 2,
+        "teamWins": {
+          "0": 3,
+          "1": 2,
+          "2": 7
+        },
+        "victoryPhoto": "https://base44.app/api/apps/6a041309e52f672b12073dea/files/mp/public/6a041309e52f672b12073dea/2e2404623_66fde41e-2817-4701-b283-4db614a8092d.jpg",
+        "created_date": "2026-05-17T16:03:46.974000",
+        "updated_date": "2026-05-18T10:14:05.363000"
+      },
+      {
+        "id": "6a05f26cb4509bb922607db1",
+        "date": "2026-05-14T16:03:59.810Z",
+        "teams": [
+          [
+            "6a0413a2beb54f63ea8a6f9d",
+            "6a041399fec25b02cfdb9f05",
+            "6a05edf1ebbe0f80818aed03",
+            "6a0413a0ed9a7cddfe5b536e",
+            "6a0413a546c8f057b815751c",
+            "6a05ee28568ace69ac586c24"
+          ],
+          [
+            "6a041399221d6f482e97318d",
+            "6a04139b4bcaad21da028af0",
+            "6a04139cb9b55838bbfb2cfe",
+            "6a0413a7ad21a705450541c3",
+            "6a05ee0c2ae4a91f8dd30d09",
+            "6a0413a154474d7b08ef638c"
+          ],
+          [
+            "6a04138df898382e8fae2c11",
+            "6a04139ddda029401693a54c",
+            "6a0413a1b04434f16acfea37",
+            "6a05ee484ab74e0244d47763",
+            "6a041388b589b3456048cc1f",
+            "6a0413a2d1cbb4bc979876e8"
+          ]
+        ],
+        "goalkeepers": {
+          "0": "6a0413a546c8f057b815751c",
+          "1": "6a0413a7ad21a705450541c3",
+          "2": "6a04138df898382e8fae2c11"
+        },
+        "openingTeams": [
+          0,
+          1
+        ],
+        "winningTeam": 0,
+        "teamWins": {
+          "0": 7,
+          "1": 3,
+          "2": 5
+        },
+        "victoryPhoto": "https://base44.app/api/apps/6a041309e52f672b12073dea/files/mp/public/6a041309e52f672b12073dea/4c12a38f6_bd98a39c-69a2-4ed2-aba0-c2bf02c8212d.jpg",
+        "created_date": "2026-05-14T16:03:56.385000",
+        "updated_date": "2026-05-14T22:46:04.320000"
+      },
+      {
+        "id": "6a04b0d56957852199f82962",
+        "date": "2026-05-13T17:11:49.254Z",
+        "teams": [
+          [
+            "6a04139e45177fba9f354fe3",
+            "6a04139fd749aae172ec1f88",
+            "6a04138b851c24bb35b9bfb9",
+            "6a04139c3ab2ae0f026ede70",
+            "6a0413958f5f6fc58fafdcaa",
+            "6a041397a37c1085cb853b8c"
+          ],
+          [
+            "6a04139b4bcaad21da028af0",
+            "6a041399221d6f482e97318d",
+            "6a04139496a0739b4f98b17c",
+            "6a04139fbb952083164c7ba6",
+            "6a04138eb95f701eab3f4e14",
+            "6a0413a6ab08e981de3c1758"
+          ],
+          [
+            "6a041398e44d990ba9e50ea5",
+            "6a041399f3cd27cec113d36f",
+            "6a0413926d960ff84b56a91b",
+            "6a04ae8b75c921e2eeaf8012",
+            "6a04139737b997795d8f3074",
+            "6a0413a5c1b6dd9d31120175"
+          ]
+        ],
+        "goalkeepers": {
+          "0": "6a0413958f5f6fc58fafdcaa",
+          "1": "6a04138eb95f701eab3f4e14",
+          "2": "6a04ae8b75c921e2eeaf8012"
+        },
+        "openingTeams": [
+          2,
+          1
+        ],
+        "winningTeam": 2,
+        "teamWins": {
+          "0": 4,
+          "1": 4,
+          "2": 5
+        },
+        "victoryPhoto": "https://base44.app/api/apps/6a041309e52f672b12073dea/files/mp/public/6a041309e52f672b12073dea/d626c513e_b708f5f9-7fb5-462e-ad37-c78409f4be0c.jpg",
+        "created_date": "2026-05-13T17:11:49.307000",
+        "updated_date": "2026-05-14T22:45:04.015000"
+      },
+      {
+        "id": "6a0413ae7297fc57a10459cd",
+        "date": "2026-02-11T18:28:53.906Z",
+        "teams": [
+          [
+            "6a0413986e2fc7d5421024e3",
+            "6a0413a6ab08e981de3c1758",
+            "6a04139737b997795d8f3074",
+            "6a04139442e9fe3a43afdf55",
+            "6a041399116011d71f881f11",
+            "6a0413a3beb54f63ea8a6f9e"
+          ],
+          [
+            "6a04139748f5e49284985eee",
+            "6a041399221d6f482e97318d",
+            "6a041398e44d990ba9e50ea5",
+            "6a0413a5c1b6dd9d31120175",
+            "6a04139c3ab2ae0f026ede70",
+            "6a04139b4bcaad21da028af0"
+          ],
+          [
+            "6a0413972ef5a3eb60403210",
+            "6a0413958f5f6fc58fafdcaa",
+            "6a04139f010ee22c44358f8a",
+            "6a0413a1b04434f16acfea37",
+            "6a041397a37c1085cb853b8c",
+            "6a0413926d960ff84b56a91b"
+          ]
+        ],
+        "goalkeepers": {
+          "0": "6a04139737b997795d8f3074",
+          "1": "6a0413a6ab08e981de3c1758",
+          "2": "6a04139c3ab2ae0f026ede70"
+        },
+        "openingTeams": [
+          1,
+          0
+        ],
+        "winningTeam": 2,
+        "teamWins": {
+          "0": 6,
+          "1": 2,
+          "2": 7
+        },
+        "victoryPhoto": null,
+        "created_date": "2026-05-13T06:01:18.766000",
+        "updated_date": "2026-05-13T06:01:18.766000"
+      },
+      {
+        "id": "6a0413aeeb4f815f127c72ab",
+        "date": "2026-02-15T16:53:05.576Z",
+        "teams": [
+          [
+            "6a0413a154474d7b08ef638c",
+            "6a04139cb9b55838bbfb2cfe",
+            "6a0413a5630cb93e0f61be16",
+            "6a0413a068176df62fabd556",
+            "6a04139bd6c4e22464840460",
+            "6a041398cb38fc65de1d3e91"
+          ],
+          [
+            "6a0413a0ed9a7cddfe5b536e",
+            "6a0413a31e36e8de185f4488",
+            "6a041395f364b09f64a831de",
+            "6a0413a1b04434f16acfea37",
+            "6a04139187fa22ab667a9ebc",
+            "6a0413a642ddc7c200a8b555"
+          ],
+          [
+            "6a0413a0b37e8f4d72b58d61",
+            "6a04139b4bcaad21da028af0",
+            "6a04139c3ab2ae0f026ede70",
+            "6a0413a2bb2b4478b0b8df08",
+            "6a04139ddda029401693a54c",
+            "6a0413a2d1cbb4bc979876e8"
+          ]
+        ],
+        "goalkeepers": {
+          "0": "6a0413a31e36e8de185f4488",
+          "1": "6a041395f364b09f64a831de",
+          "2": "6a0413a154474d7b08ef638c"
+        },
+        "openingTeams": [
+          2,
+          0
+        ],
+        "winningTeam": 0,
+        "teamWins": {
+          "0": 8,
+          "1": 4,
+          "2": 1
+        },
+        "victoryPhoto": null,
+        "created_date": "2026-05-13T06:01:18.528000",
+        "updated_date": "2026-05-13T06:01:18.528000"
+      },
+      {
+        "id": "6a0413ae0d2d487a666d09a7",
+        "date": "2026-02-18T18:17:15.620Z",
+        "teams": [
+          [
+            "6a0413a48e1c2eb27aed8b85",
+            "6a0413a1b04434f16acfea37",
+            "6a0413a47cd527d8f27f6c3e",
+            "6a04139748f5e49284985eee",
+            "6a04139b7e239df18cb752ab",
+            "6a041392177f79a3269ab777"
+          ],
+          [
+            "6a041392ed5bedf55689f6e9",
+            "6a0413a3beb54f63ea8a6f9e",
+            "6a0413a6ab08e981de3c1758",
+            "6a04139c3ab2ae0f026ede70",
+            "6a041398e44d990ba9e50ea5",
+            "6a04139e45177fba9f354fe3"
+          ],
+          [
+            "6a0413972ef5a3eb60403210",
+            "6a04139ddda029401693a54c",
+            "6a041390562762c5650fc6dc",
+            "6a041390eee5e3a1d409d77b",
+            "6a041391f172ac793c27fc17",
+            "6a041397a37c1085cb853b8c"
+          ]
+        ],
+        "goalkeepers": {
+          "0": "6a0413a48e1c2eb27aed8b85",
+          "1": "6a04139c3ab2ae0f026ede70",
+          "2": "6a041390eee5e3a1d409d77b"
+        },
+        "openingTeams": [
+          1,
+          0
+        ],
+        "winningTeam": 2,
+        "teamWins": {
+          "0": 1,
+          "1": 2,
+          "2": 3
+        },
+        "victoryPhoto": null,
+        "created_date": "2026-05-13T06:01:18.194000",
+        "updated_date": "2026-05-13T06:01:18.194000"
+      },
+      {
+        "id": "6a0413ad7cd527d8f27f6c40",
+        "date": "2026-02-22T13:45:37.725Z",
+        "teams": [
+          [
+            "6a0413a5630cb93e0f61be16",
+            "6a04139187fa22ab667a9ebc",
+            "6a0413a2d1cbb4bc979876e8",
+            "6a041398cb38fc65de1d3e91",
+            "6a04139bd6c4e22464840460",
+            "6a04139e45177fba9f354fe3"
+          ],
+          [
+            "6a0413a31e36e8de185f4488",
+            "6a0413a0b37e8f4d72b58d61",
+            "6a04139ddda029401693a54c",
+            "6a0413a1b04434f16acfea37",
+            "6a0413a2bb2b4478b0b8df08",
+            "6a04139cb9b55838bbfb2cfe"
+          ],
+          [
+            "6a0413a642ddc7c200a8b555",
+            "6a04139b4bcaad21da028af0",
+            "6a0413a068176df62fabd556",
+            "6a04138f3dab796e10045e22",
+            "6a041395f364b09f64a831de",
+            "6a0413a7c5937ec144b7f9f2"
+          ]
+        ],
+        "goalkeepers": {
+          "0": "6a04139187fa22ab667a9ebc",
+          "1": "6a0413a2bb2b4478b0b8df08",
+          "2": "6a04139b4bcaad21da028af0"
+        },
+        "openingTeams": [
+          1,
+          2
+        ],
+        "winningTeam": 1,
+        "teamWins": {
+          "0": 1,
+          "1": 4
+        },
+        "victoryPhoto": "https://base44.app/api/apps/6964c289c9fc075fbc2abedd/files/mp/public/6964c289c9fc075fbc2abedd/fceefec0e_80b8d434-91a6-460f-8ca2-4345fd32b68f.jpg",
+        "created_date": "2026-05-13T06:01:17.626000",
+        "updated_date": "2026-05-13T06:01:17.626000"
+      },
+      {
+        "id": "6a0413adade62b508ce6a2a7",
+        "date": "2026-02-26T20:00:00.000Z",
+        "teams": [
+          [
+            "6a0413a154474d7b08ef638c",
+            "6a0413a48e1c2eb27aed8b85",
+            "6a0413a2beb54f63ea8a6f9d",
+            "6a04138f512323c66bd62f02",
+            "6a04139a35dabe49fe068ea0",
+            "6a0413a546c8f057b815751c"
+          ],
+          [
+            "6a0413a0ed9a7cddfe5b536e",
+            "6a0413a2d1cbb4bc979876e8",
+            "6a04139cb9b55838bbfb2cfe",
+            "6a0413a7ad21a705450541c3",
+            "6a0413a7c5937ec144b7f9f2",
+            "6a041399221d6f482e97318d"
+          ],
+          [
+            "6a0413a5a18b9b286209492d",
+            "6a04139ba9dc8c7c7746b829",
+            "6a04139ddda029401693a54c",
+            "6a041399fec25b02cfdb9f05",
+            "6a0413a1b04434f16acfea37",
+            "6a0413a3e531682e611e50f1"
+          ]
+        ],
+        "goalkeepers": {},
+        "openingTeams": [],
+        "winningTeam": 1,
+        "teamWins": {
+          "0": 2,
+          "1": 4,
+          "2": 3
+        },
+        "victoryPhoto": "https://base44.app/api/apps/6964c289c9fc075fbc2abedd/files/mp/public/6964c289c9fc075fbc2abedd/30edbf221_aa212ace-0d09-41bd-8c40-9c23f1819dc2.jpg",
+        "created_date": "2026-05-13T06:01:17.376000",
+        "updated_date": "2026-05-13T06:01:17.376000"
+      },
+      {
+        "id": "6a0413ade531682e611e5103",
+        "date": "2026-03-19T18:09:03.770Z",
+        "teams": [
+          [
+            "6a0413a154474d7b08ef638c",
+            "6a0413a1b04434f16acfea37",
+            "6a041399fec25b02cfdb9f05",
+            "6a04139cb9b55838bbfb2cfe",
+            "6a0413a7ad21a705450541c3",
+            "6a04139e45177fba9f354fe3"
+          ],
+          [
+            "6a0413a0ed9a7cddfe5b536e",
+            "6a041398cb38fc65de1d3e91",
+            "6a04139c3ab2ae0f026ede70",
+            "6a04139bd6c4e22464840460",
+            "6a041392ed648e492fc1f04d",
+            "6a0413a546c8f057b815751c"
+          ],
+          [
+            "6a04139ddda029401693a54c",
+            "6a0413a2d1cbb4bc979876e8",
+            "6a041399221d6f482e97318d",
+            "6a0413938d7c7ef00929d76c",
+            "6a0413a3e531682e611e50f1",
+            "6a04138feee5e3a1d409d745"
+          ]
+        ],
+        "goalkeepers": {
+          "0": "6a04139cb9b55838bbfb2cfe",
+          "1": "6a04139bd6c4e22464840460",
+          "2": "6a0413a3e531682e611e50f1"
+        },
+        "openingTeams": [
+          1,
+          2
+        ],
+        "winningTeam": null,
+        "teamWins": {},
+        "victoryPhoto": null,
+        "created_date": "2026-05-13T06:01:17.104000",
+        "updated_date": "2026-05-13T06:01:17.104000"
+      },
+      {
+        "id": "6a0413acceba0157d84366f1",
+        "date": "2026-03-19T16:50:27.450Z",
+        "teams": [
+          [
+            "6a0413a1b04434f16acfea37",
+            "6a04139cb9b55838bbfb2cfe",
+            "6a0413a7ad21a705450541c3",
+            "6a0413a154474d7b08ef638c",
+            "6a04138feee5e3a1d409d745",
+            "6a041398cb38fc65de1d3e91"
+          ],
+          [
+            "6a04139c3ab2ae0f026ede70",
+            "6a041399221d6f482e97318d",
+            "6a041399fec25b02cfdb9f05",
+            "6a041392ed648e492fc1f04d",
+            "6a0413a0ed9a7cddfe5b536e",
+            "6a0413a546c8f057b815751c"
+          ],
+          [
+            "6a0413a2d1cbb4bc979876e8",
+            "6a04139ddda029401693a54c",
+            "6a04139bd6c4e22464840460",
+            "6a0413a3e531682e611e50f1",
+            "6a0413938d7c7ef00929d76c",
+            "6a04139e45177fba9f354fe3"
+          ]
+        ],
+        "goalkeepers": {
+          "0": "6a0413938d7c7ef00929d76c",
+          "1": "6a041399fec25b02cfdb9f05",
+          "2": "6a0413a1b04434f16acfea37"
+        },
+        "openingTeams": [
+          1,
+          0
+        ],
+        "winningTeam": 1,
+        "teamWins": {
+          "0": 2,
+          "1": 5,
+          "2": 2
+        },
+        "victoryPhoto": "https://base44.app/api/apps/6964c289c9fc075fbc2abedd/files/mp/public/6964c289c9fc075fbc2abedd/68bb81e9d_7e1d339c-66a6-45c6-b201-3188ca0871dd.jpg",
+        "created_date": "2026-05-13T06:01:16.836000",
+        "updated_date": "2026-05-13T06:01:16.836000"
+      },
+      {
+        "id": "6a0413acf61228d848289cf7",
+        "date": "2026-03-22T16:55:49.203Z",
+        "teams": [
+          [
+            "6a0413a154474d7b08ef638c",
+            "6a04139a4e8301e0dfab9542",
+            "6a04139ddda029401693a54c",
+            "6a04139e45177fba9f354fe3",
+            "6a041398cb38fc65de1d3e91",
+            "6a041399221d6f482e97318d"
+          ],
+          [
+            "6a0413a0ed9a7cddfe5b536e",
+            "6a0413a2d1cbb4bc979876e8",
+            "6a0413a642ddc7c200a8b555",
+            "6a0413a7ad21a705450541c3",
+            "6a041399fec25b02cfdb9f05",
+            "6a0413a1b04434f16acfea37"
+          ],
+          [
+            "6a0413a5630cb93e0f61be16",
+            "6a041392ed648e492fc1f04d",
+            "6a041395f364b09f64a831de",
+            "6a04139cb9b55838bbfb2cfe",
+            "6a0413a2bb2b4478b0b8df08",
+            "6a0413a0b37e8f4d72b58d61"
+          ]
+        ],
+        "goalkeepers": {
+          "0": "6a04139e45177fba9f354fe3",
+          "1": "6a0413a2bb2b4478b0b8df08",
+          "2": "6a0413a5630cb93e0f61be16"
+        },
+        "openingTeams": [
+          0,
+          1
+        ],
+        "winningTeam": 1,
+        "teamWins": {
+          "0": 3,
+          "1": 4
+        },
+        "victoryPhoto": "https://base44.app/api/apps/6964c289c9fc075fbc2abedd/files/mp/public/6964c289c9fc075fbc2abedd/b542b69d8_7cdf4e40-b388-4959-83ca-5a1b735805ae.jpg",
+        "created_date": "2026-05-13T06:01:16.582000",
+        "updated_date": "2026-05-13T06:01:16.582000"
+      },
+      {
+        "id": "6a0413ac0440590db2790e40",
+        "date": "2026-03-26T17:57:43.448Z",
+        "teams": [
+          [
+            "6a0413a0ed9a7cddfe5b536e",
+            "6a04139748f5e49284985eee",
+            "6a041399fec25b02cfdb9f05",
+            "6a041399221d6f482e97318d",
+            "6a04139cb9b55838bbfb2cfe",
+            "6a04138d4caad043eb0ce283"
+          ],
+          [
+            "6a04139fbb952083164c7ba6",
+            "6a0413958f5f6fc58fafdcaa",
+            "6a04138c7d59fa000b631b6c",
+            "6a0413a3e531682e611e50f1",
+            "6a04139c3ab2ae0f026ede70",
+            "6a0413938d7c7ef00929d76c"
+          ],
+          [
+            "6a04139ddda029401693a54c",
+            "6a041398cb38fc65de1d3e91",
+            "6a0413a7ad21a705450541c3",
+            "6a04138df4ef276b6547d768",
+            "6a04138df898382e8fae2c11",
+            "6a0413a2d1cbb4bc979876e8"
+          ]
+        ],
+        "goalkeepers": {
+          "0": "6a04139c3ab2ae0f026ede70",
+          "1": "6a04139fbb952083164c7ba6",
+          "2": "6a041399221d6f482e97318d"
+        },
+        "openingTeams": [
+          2,
+          1
+        ],
+        "winningTeam": 0,
+        "teamWins": {
+          "0": 8,
+          "1": 4,
+          "2": 3
+        },
+        "victoryPhoto": "https://base44.app/api/apps/6964c289c9fc075fbc2abedd/files/mp/public/6964c289c9fc075fbc2abedd/9fe0a126f_0a7b8090-5f44-4a65-9977-3be4f9ef9f8c.jpg",
+        "created_date": "2026-05-13T06:01:16.323000",
+        "updated_date": "2026-05-13T06:01:16.323000"
+      },
+      {
+        "id": "6a0413ac63d30c0d597c89a1",
+        "date": "2026-03-29T17:04:23.029Z",
+        "teams": [
+          [
+            "6a0413a2bb2b4478b0b8df08",
+            "6a04139cb9b55838bbfb2cfe",
+            "6a04139c3ab2ae0f026ede70",
+            "6a0413a154474d7b08ef638c",
+            "6a0413a642ddc7c200a8b555",
+            "6a04138cd5232d8e30500b47"
+          ],
+          [
+            "6a04139e45177fba9f354fe3",
+            "6a0413a1b04434f16acfea37",
+            "6a041399fec25b02cfdb9f05",
+            "6a0413a0ed9a7cddfe5b536e",
+            "6a041391929dbb51d1fb0bcc",
+            "6a0413a31e36e8de185f4488"
+          ],
+          [
+            "6a041398cb38fc65de1d3e91",
+            "6a04139bd6c4e22464840460",
+            "6a0413986e2fc7d5421024e3",
+            "6a04139ddda029401693a54c",
+            "6a0413a5630cb93e0f61be16",
+            "6a0413a2d1cbb4bc979876e8"
+          ]
+        ],
+        "goalkeepers": {
+          "0": "6a04139c3ab2ae0f026ede70",
+          "1": "6a0413a0ed9a7cddfe5b536e",
+          "2": "6a0413986e2fc7d5421024e3"
+        },
+        "openingTeams": [
+          2,
+          0
+        ],
+        "winningTeam": 2,
+        "teamWins": {
+          "0": 3,
+          "1": 3,
+          "2": 6
+        },
+        "victoryPhoto": "https://base44.app/api/apps/6964c289c9fc075fbc2abedd/files/mp/public/6964c289c9fc075fbc2abedd/0ac077cfd_61e3fd63-48e5-4b35-85a5-066c0d731245.jpg",
+        "created_date": "2026-05-13T06:01:16.069000",
+        "updated_date": "2026-05-13T06:01:16.069000"
+      },
+      {
+        "id": "6a0413abb45869053b4a12b7",
+        "date": "2026-03-31T17:06:31.692Z",
+        "teams": [
+          [
+            "6a04139fbb952083164c7ba6",
+            "6a041399fec25b02cfdb9f05",
+            "6a04139442e9fe3a43afdf55",
+            "6a04138ca18b9b2862094726",
+            "6a04138eb95f701eab3f4e14",
+            "6a0413a546c8f057b815751c"
+          ],
+          [
+            "6a041399f3cd27cec113d36f",
+            "6a0413986e2fc7d5421024e3",
+            "6a0413a3e531682e611e50f1",
+            "6a0413a1b04434f16acfea37",
+            "6a04139c3ab2ae0f026ede70",
+            "6a04139737b997795d8f3074"
+          ],
+          [
+            "6a04139748f5e49284985eee",
+            "6a0413a675dc302080d2d3ed",
+            "6a04139496a0739b4f98b17c",
+            "6a041399221d6f482e97318d",
+            "6a04139cb9b55838bbfb2cfe",
+            "6a0413a7ad21a705450541c3"
+          ]
+        ],
+        "goalkeepers": {
+          "0": "6a04139fbb952083164c7ba6",
+          "1": "6a0413986e2fc7d5421024e3",
+          "2": "6a041399221d6f482e97318d"
+        },
+        "openingTeams": [
+          0,
+          1
+        ],
+        "winningTeam": 0,
+        "teamWins": {
+          "0": 4,
+          "1": 4,
+          "2": 2
+        },
+        "victoryPhoto": null,
+        "created_date": "2026-05-13T06:01:15.728000",
+        "updated_date": "2026-05-13T06:01:15.728000"
+      },
+      {
+        "id": "6a0413ab8e1c2eb27aed8b8b",
+        "date": "2026-02-19T17:00:00.000Z",
+        "teams": [
+          [
+            "6a04139145391f9ac42c026f",
+            "6a04139069e2937aa7b52029",
+            "6a0413a7c5937ec144b7f9f2",
+            "6a041392ed648e492fc1f04d",
+            "6a041399221d6f482e97318d",
+            "6a0413a0ed9a7cddfe5b536e"
+          ],
+          [
+            "6a0413a1b04434f16acfea37",
+            "6a04138cb8c821c105121407",
+            "6a0413a546c8f057b815751c",
+            "6a0413a2beb54f63ea8a6f9d",
+            "6a04139cb9b55838bbfb2cfe",
+            "6a04139ddda029401693a54c"
+          ],
+          [
+            "6a0413a10440590db2790e3a",
+            "6a0413a3e531682e611e50f1",
+            "6a0413a7ad21a705450541c3",
+            "6a041399f3cd27cec113d36f",
+            "6a0413a2d1cbb4bc979876e8",
+            "6a041399fec25b02cfdb9f05"
+          ]
+        ],
+        "goalkeepers": {},
+        "openingTeams": [],
+        "winningTeam": 0,
+        "teamWins": {
+          "0": 4,
+          "1": 1,
+          "2": 2
+        },
+        "victoryPhoto": "https://base44.app/api/apps/6964c289c9fc075fbc2abedd/files/mp/public/6964c289c9fc075fbc2abedd/74b7f6099_de1efad3-c4ba-4661-9cae-af9e893f584c.jpg",
+        "created_date": "2026-05-13T06:01:15.451000",
+        "updated_date": "2026-05-13T06:01:15.451000"
+      },
+      {
+        "id": "6a0413ab081eda6a70c6e163",
+        "date": "2026-04-05T17:06:05.219Z",
+        "teams": [
+          [
+            "6a0413a154474d7b08ef638c",
+            "6a0413a1b04434f16acfea37",
+            "6a0413a7ad21a705450541c3",
+            "6a0413986e2fc7d5421024e3",
+            "6a04139e45177fba9f354fe3",
+            "6a04138eb95f701eab3f4e14"
+          ],
+          [
+            "6a04139a4e8301e0dfab9542",
+            "6a04139c3ab2ae0f026ede70",
+            "6a04139bd6c4e22464840460",
+            "6a04139fbb952083164c7ba6",
+            "6a041399fec25b02cfdb9f05",
+            "6a04139748f5e49284985eee"
+          ],
+          [
+            "6a041399221d6f482e97318d",
+            "6a0413a5630cb93e0f61be16",
+            "6a0413a3e531682e611e50f1",
+            "6a04139cb9b55838bbfb2cfe",
+            "6a0413a2d1cbb4bc979876e8",
+            "6a0413a31e36e8de185f4488"
+          ]
+        ],
+        "goalkeepers": {
+          "0": "6a04138eb95f701eab3f4e14",
+          "1": "6a04139748f5e49284985eee",
+          "2": "6a04139cb9b55838bbfb2cfe"
+        },
+        "openingTeams": [
+          0,
+          1
+        ],
+        "winningTeam": null,
+        "teamWins": {},
+        "victoryPhoto": null,
+        "created_date": "2026-05-13T06:01:15.170000",
+        "updated_date": "2026-05-13T06:01:15.170000"
+      },
+      {
+        "id": "6a0413aa526df50ebbd6da35",
+        "date": "2026-04-05T17:06:15.897Z",
+        "teams": [
+          [
+            "6a0413a154474d7b08ef638c",
+            "6a0413a1b04434f16acfea37",
+            "6a0413a7ad21a705450541c3",
+            "6a0413986e2fc7d5421024e3",
+            "6a04139e45177fba9f354fe3",
+            "6a04138eb95f701eab3f4e14"
+          ],
+          [
+            "6a04139a4e8301e0dfab9542",
+            "6a04139c3ab2ae0f026ede70",
+            "6a04139bd6c4e22464840460",
+            "6a04139fbb952083164c7ba6",
+            "6a041399fec25b02cfdb9f05",
+            "6a04139748f5e49284985eee"
+          ],
+          [
+            "6a041399221d6f482e97318d",
+            "6a0413a5630cb93e0f61be16",
+            "6a0413a3e531682e611e50f1",
+            "6a04139cb9b55838bbfb2cfe",
+            "6a0413a2d1cbb4bc979876e8",
+            "6a0413a31e36e8de185f4488"
+          ]
+        ],
+        "goalkeepers": {
+          "0": "6a04138eb95f701eab3f4e14",
+          "1": "6a04139748f5e49284985eee",
+          "2": "6a04139cb9b55838bbfb2cfe"
+        },
+        "openingTeams": [
+          0,
+          1
+        ],
+        "winningTeam": 1,
+        "teamWins": {
+          "0": 3,
+          "1": 4,
+          "2": 3
+        },
+        "victoryPhoto": "https://base44.app/api/apps/6964c289c9fc075fbc2abedd/files/mp/public/6964c289c9fc075fbc2abedd/42aaa4139_f869d7d5-2005-4799-a7d5-072f7bb671c9.jpg",
+        "created_date": "2026-05-13T06:01:14.914000",
+        "updated_date": "2026-05-13T06:01:14.914000"
+      },
+      {
+        "id": "6a0413aa5454f8be1b9b4402",
+        "date": "2026-04-09T16:48:18.734Z",
+        "teams": [
+          [
+            "6a0413986e2fc7d5421024e3",
+            "6a04139496a0739b4f98b17c",
+            "6a0413a1b04434f16acfea37",
+            "6a04139145391f9ac42c026f",
+            "6a041398cb38fc65de1d3e91",
+            "6a04139e45177fba9f354fe3"
+          ],
+          [
+            "6a04139fbb952083164c7ba6",
+            "6a04138b3fda94f5aa44ac77",
+            "6a04138b851c24bb35b9bfb9",
+            "6a04139fd749aae172ec1f88",
+            "6a0413a7ad21a705450541c3",
+            "6a0413a3e531682e611e50f1"
+          ],
+          [
+            "6a0413a2beb54f63ea8a6f9d",
+            "6a0413958f5f6fc58fafdcaa",
+            "6a041399221d6f482e97318d",
+            "6a041390562762c5650fc6dc",
+            "6a04138df898382e8fae2c11",
+            "6a04139cb9b55838bbfb2cfe"
+          ]
+        ],
+        "goalkeepers": {
+          "0": "6a04139145391f9ac42c026f",
+          "1": "6a0413a3e531682e611e50f1",
+          "2": "6a0413a2beb54f63ea8a6f9d"
+        },
+        "openingTeams": [
+          0,
+          1
+        ],
+        "winningTeam": 2,
+        "teamWins": {
+          "0": 2,
+          "1": 2,
+          "2": 3
+        },
+        "victoryPhoto": "https://base44.app/api/apps/6964c289c9fc075fbc2abedd/files/mp/public/6964c289c9fc075fbc2abedd/298e8c412_1619116d-5033-4297-90da-a860cebed933.jpg",
+        "created_date": "2026-05-13T06:01:14.618000",
+        "updated_date": "2026-05-13T06:01:14.618000"
+      },
+      {
+        "id": "6a0413aafec25b02cfdb9f14",
+        "date": "2026-04-12T16:14:03.408Z",
+        "teams": [
+          [
+            "6a04139c3ab2ae0f026ede70",
+            "6a0413a642ddc7c200a8b555",
+            "6a04139442e9fe3a43afdf55",
+            "6a04139ddda029401693a54c",
+            "6a041390562762c5650fc6dc",
+            "6a0413a154474d7b08ef638c"
+          ],
+          [
+            "6a04139e45177fba9f354fe3",
+            "6a04139fbb952083164c7ba6",
+            "6a04138b8a75dd123e650178",
+            "6a041395f364b09f64a831de",
+            "6a0413a1b04434f16acfea37",
+            "6a0413a0ed9a7cddfe5b536e"
+          ],
+          [
+            "6a0413a7ad21a705450541c3",
+            "6a04139cb9b55838bbfb2cfe",
+            "6a041399fec25b02cfdb9f05",
+            "6a04138b9d81c913a3e9b502",
+            "6a0413a31e36e8de185f4488",
+            "6a0413a5630cb93e0f61be16"
+          ]
+        ],
+        "goalkeepers": {
+          "0": "6a041390562762c5650fc6dc",
+          "1": "6a0413a0ed9a7cddfe5b536e",
+          "2": "6a0413a5630cb93e0f61be16"
+        },
+        "openingTeams": [
+          1,
+          0
+        ],
+        "winningTeam": 0,
+        "teamWins": {
+          "0": 6,
+          "1": 3,
+          "2": 2
+        },
+        "victoryPhoto": "https://base44.app/api/apps/6964c289c9fc075fbc2abedd/files/mp/public/6964c289c9fc075fbc2abedd/7bdc1a40f_28622245-c48a-402c-8200-7c13dbf45bb0.jpg",
+        "created_date": "2026-05-13T06:01:14.377000",
+        "updated_date": "2026-05-13T06:01:14.377000"
+      },
+      {
+        "id": "6a0413aa9b397e1b278a068c",
+        "date": "2026-04-15T17:37:32.869Z",
+        "teams": [
+          [
+            "6a04139e45177fba9f354fe3",
+            "6a04139fbb952083164c7ba6",
+            "6a041392ed5bedf55689f6e9",
+            "6a041399f3cd27cec113d36f",
+            "6a041398e44d990ba9e50ea5",
+            "6a04139442e9fe3a43afdf55"
+          ],
+          [
+            "6a04139b7e239df18cb752ab",
+            "6a0413a6ab08e981de3c1758",
+            "6a041397a37c1085cb853b8c",
+            "6a0413a5c1b6dd9d31120175",
+            "6a04138a5094d3a3b82c4841",
+            "6a0413a48e1c2eb27aed8b85"
+          ],
+          [
+            "6a04139737b997795d8f3074",
+            "6a04139748f5e49284985eee",
+            "6a04138eb95f701eab3f4e14",
+            "6a04139c3ab2ae0f026ede70",
+            "6a0413972ef5a3eb60403210",
+            "6a0413a2beb54f63ea8a6f9d"
+          ]
+        ],
+        "goalkeepers": {
+          "0": "6a041398e44d990ba9e50ea5",
+          "1": "6a04138a5094d3a3b82c4841",
+          "2": "6a04139c3ab2ae0f026ede70"
+        },
+        "openingTeams": [
+          0,
+          2
+        ],
+        "winningTeam": 0,
+        "teamWins": {
+          "0": 7,
+          "1": 3,
+          "2": 1
+        },
+        "victoryPhoto": "https://base44.app/api/apps/6964c289c9fc075fbc2abedd/files/mp/public/6964c289c9fc075fbc2abedd/b05900650_d5027a88-f3e7-420a-a319-d9f89793dc2f.jpg",
+        "created_date": "2026-05-13T06:01:14.113000",
+        "updated_date": "2026-05-13T06:01:14.113000"
+      },
+      {
+        "id": "6a0413a9a17cac536f96c406",
+        "date": "2026-04-16T16:42:57.316Z",
+        "teams": [
+          [
+            "6a0413a7ad21a705450541c3",
+            "6a04138a1b8579a5d7233187",
+            "6a04139ba9dc8c7c7746b829",
+            "6a04138ab95f701eab3f4e0f",
+            "6a041399fec25b02cfdb9f05",
+            "6a0413a0ed9a7cddfe5b536e"
+          ],
+          [
+            "6a0413a1b04434f16acfea37",
+            "6a04138df898382e8fae2c11",
+            "6a041392ed648e492fc1f04d",
+            "6a04139ddda029401693a54c",
+            "6a04139a4e8301e0dfab9542",
+            "6a0413986e2fc7d5421024e3"
+          ],
+          [
+            "6a041398cb38fc65de1d3e91",
+            "6a0413a3e531682e611e50f1",
+            "6a04138b3fda94f5aa44ac77",
+            "6a04139b4bcaad21da028af0",
+            "6a041399221d6f482e97318d",
+            "6a0413a2d1cbb4bc979876e8"
+          ]
+        ],
+        "goalkeepers": {
+          "0": "6a04138a1b8579a5d7233187",
+          "1": "6a04138df898382e8fae2c11",
+          "2": "6a04139b4bcaad21da028af0"
+        },
+        "openingTeams": [
+          0,
+          2
+        ],
+        "winningTeam": 0,
+        "teamWins": {
+          "0": 4,
+          "1": 3,
+          "2": 4
+        },
+        "victoryPhoto": null,
+        "created_date": "2026-05-13T06:01:13.813000",
+        "updated_date": "2026-05-13T06:01:13.813000"
+      },
+      {
+        "id": "6a0413a9722933fe05d3ee4d",
+        "date": "2026-04-19T16:47:15.726Z",
+        "teams": [
+          [
+            "6a0413a154474d7b08ef638c",
+            "6a041390562762c5650fc6dc",
+            "6a0413958f5f6fc58fafdcaa",
+            "6a041399221d6f482e97318d",
+            "6a04139737b997795d8f3074",
+            "6a04139cb9b55838bbfb2cfe"
+          ],
+          [
+            "6a0413a0ed9a7cddfe5b536e",
+            "6a04138a5094d3a3b82c4841",
+            "6a04139ddda029401693a54c",
+            "6a04139748f5e49284985eee",
+            "6a0413a3e531682e611e50f1",
+            "6a0413a7ad21a705450541c3"
+          ],
+          [
+            "6a0413a31e36e8de185f4488",
+            "6a04139fbb952083164c7ba6",
+            "6a0413a2bb2b4478b0b8df08",
+            "6a041399fec25b02cfdb9f05",
+            "6a04139145391f9ac42c026f",
+            "6a04139c3ab2ae0f026ede70"
+          ]
+        ],
+        "goalkeepers": {
+          "0": "6a04139cb9b55838bbfb2cfe",
+          "1": "6a0413a3e531682e611e50f1",
+          "2": "6a04139c3ab2ae0f026ede70"
+        },
+        "openingTeams": [
+          1,
+          2
+        ],
+        "winningTeam": 1,
+        "teamWins": {
+          "0": 4,
+          "1": 7,
+          "2": 1
+        },
+        "victoryPhoto": "https://base44.app/api/apps/6964c289c9fc075fbc2abedd/files/mp/public/6964c289c9fc075fbc2abedd/9945f78aa_e17f949a-1f4e-4c5d-bc3d-962123f6d8fa.jpg",
+        "created_date": "2026-05-13T06:01:13.560000",
+        "updated_date": "2026-05-13T06:01:13.560000"
+      },
+      {
+        "id": "6a0413a90b788f207a38004b",
+        "date": "2026-04-23T16:43:50.519Z",
+        "teams": [
+          [
+            "6a04138df898382e8fae2c11",
+            "6a0413a2beb54f63ea8a6f9d",
+            "6a04139442e9fe3a43afdf55",
+            "6a041399221d6f482e97318d",
+            "6a0413a0ed9a7cddfe5b536e",
+            "6a0413a546c8f057b815751c"
+          ],
+          [
+            "6a04138a5094d3a3b82c4841",
+            "6a04138a1b8579a5d7233187",
+            "6a0413a2d1cbb4bc979876e8",
+            "6a041399fec25b02cfdb9f05",
+            "6a0413a7ad21a705450541c3",
+            "6a0413896a5927468614545a"
+          ],
+          [
+            "6a041390562762c5650fc6dc",
+            "6a0413a48e1c2eb27aed8b85",
+            "6a04139ddda029401693a54c",
+            "6a04139fbb952083164c7ba6",
+            "6a04139cb9b55838bbfb2cfe",
+            "6a0413a3e531682e611e50f1"
+          ]
+        ],
+        "goalkeepers": {
+          "0": "6a0413a546c8f057b815751c",
+          "1": "6a0413896a5927468614545a",
+          "2": "6a041390562762c5650fc6dc"
+        },
+        "openingTeams": [
+          2,
+          0
+        ],
+        "winningTeam": null,
+        "teamWins": {
+          "0": 5,
+          "1": 5,
+          "2": 3
+        },
+        "victoryPhoto": "https://base44.app/api/apps/6964c289c9fc075fbc2abedd/files/mp/public/6964c289c9fc075fbc2abedd/cd9337a69_fe3df3f1-c911-4ad5-b1cb-1b9481e96f58.jpg",
+        "created_date": "2026-05-13T06:01:13.262000",
+        "updated_date": "2026-05-13T06:01:13.262000"
+      },
+      {
+        "id": "6a0413a8e4adbdcfa72a9775",
+        "date": "2026-04-26T16:56:06.722Z",
+        "teams": [
+          [
+            "6a04139e45177fba9f354fe3",
+            "6a0413a3e531682e611e50f1",
+            "6a0413a0ed9a7cddfe5b536e",
+            "6a041395f364b09f64a831de",
+            "6a041398cb38fc65de1d3e91",
+            "6a04139fbb952083164c7ba6"
+          ],
+          [
+            "6a0413a154474d7b08ef638c",
+            "6a0413a1b04434f16acfea37",
+            "6a0413a642ddc7c200a8b555",
+            "6a041399fec25b02cfdb9f05",
+            "6a0413a2bb2b4478b0b8df08",
+            "6a0413a7ad21a705450541c3"
+          ],
+          [
+            "6a04139748f5e49284985eee",
+            "6a04139cb9b55838bbfb2cfe",
+            "6a04138b851c24bb35b9bfb9",
+            "6a0413a31e36e8de185f4488",
+            "6a04139b4bcaad21da028af0",
+            "6a04139a4e8301e0dfab9542"
+          ]
+        ],
+        "goalkeepers": {
+          "0": "6a041395f364b09f64a831de",
+          "1": "6a0413a2bb2b4478b0b8df08",
+          "2": "6a04139748f5e49284985eee"
+        },
+        "openingTeams": [
+          0,
+          2
+        ],
+        "winningTeam": 0,
+        "teamWins": {
+          "0": 5,
+          "1": 4,
+          "2": 3
+        },
+        "victoryPhoto": "https://base44.app/api/apps/6964c289c9fc075fbc2abedd/files/mp/public/6964c289c9fc075fbc2abedd/59494fa93_b1a604ba-716d-49f4-b68f-6f92eecd4daa.jpg",
+        "created_date": "2026-05-13T06:01:12.948000",
+        "updated_date": "2026-05-13T06:01:12.948000"
+      },
+      {
+        "id": "6a0413a8e3679688809fa20f",
+        "date": "2026-04-29T16:07:39.417Z",
+        "teams": [
+          [
+            "6a04139d006d97fd784efeff",
+            "6a041389b45869053b4a125f",
+            "6a04139442e9fe3a43afdf55",
+            "6a04139496a0739b4f98b17c",
+            "6a0413958f5f6fc58fafdcaa",
+            "6a04139c3ab2ae0f026ede70"
+          ],
+          [
+            "6a0413a2beb54f63ea8a6f9d",
+            "6a041399f3cd27cec113d36f",
+            "6a041398e44d990ba9e50ea5",
+            "6a0413972ef5a3eb60403210",
+            "6a041392ed648e492fc1f04d",
+            "6a0413a6ab08e981de3c1758"
+          ],
+          [
+            "6a04139b4bcaad21da028af0",
+            "6a04139e45177fba9f354fe3",
+            "6a0413a48e1c2eb27aed8b85",
+            "6a04139145391f9ac42c026f",
+            "6a041392ed5bedf55689f6e9",
+            "6a0413a5c1b6dd9d31120175"
+          ]
+        ],
+        "goalkeepers": {
+          "0": "6a04139d006d97fd784efeff",
+          "1": "6a041392ed648e492fc1f04d",
+          "2": "6a0413a48e1c2eb27aed8b85"
+        },
+        "openingTeams": [
+          2,
+          0
+        ],
+        "winningTeam": null,
+        "teamWins": {},
+        "victoryPhoto": null,
+        "created_date": "2026-05-13T06:01:12.662000",
+        "updated_date": "2026-05-13T06:01:12.662000"
+      },
+      {
+        "id": "6a0413a852509efac2f446a4",
+        "date": "2026-04-30T15:53:26.873Z",
+        "teams": [
+          [
+            "6a04139737b997795d8f3074",
+            "6a0413a0ed9a7cddfe5b536e",
+            "6a0413a2d1cbb4bc979876e8",
+            "6a0413a1b04434f16acfea37",
+            "6a041392ed648e492fc1f04d",
+            "6a0413a546c8f057b815751c"
+          ],
+          [
+            "6a041389cb54d53538554bdd",
+            "6a04139fd749aae172ec1f88",
+            "6a04139fbb952083164c7ba6",
+            "6a0413a7ad21a705450541c3",
+            "6a0413a154474d7b08ef638c",
+            "6a04138df898382e8fae2c11"
+          ],
+          [
+            "6a041399221d6f482e97318d",
+            "6a04139cb9b55838bbfb2cfe",
+            "6a04138b3fda94f5aa44ac77",
+            "6a04138a5094d3a3b82c4841",
+            "6a041399fec25b02cfdb9f05",
+            "6a0413a3e531682e611e50f1"
+          ]
+        ],
+        "goalkeepers": {
+          "0": "6a041392ed648e492fc1f04d",
+          "1": "6a04139fbb952083164c7ba6",
+          "2": "6a04139cb9b55838bbfb2cfe"
+        },
+        "openingTeams": [
+          1,
+          0
+        ],
+        "winningTeam": 1,
+        "teamWins": {
+          "0": 3,
+          "1": 7,
+          "2": 1
+        },
+        "victoryPhoto": "https://base44.app/api/apps/6964c289c9fc075fbc2abedd/files/mp/public/6964c289c9fc075fbc2abedd/29210802e_bf812ba3-f69c-4755-a179-fe6ef1e9de27.jpg",
+        "created_date": "2026-05-13T06:01:12.404000",
+        "updated_date": "2026-05-13T06:01:12.404000"
+      },
+      {
+        "id": "6a0413a808d2b8311b223280",
+        "date": "2026-05-03T16:20:20.060Z",
+        "teams": [
+          [
+            "6a0413a0ed9a7cddfe5b536e",
+            "6a0413a31e36e8de185f4488",
+            "6a04139a4e8301e0dfab9542",
+            "6a04139c3ab2ae0f026ede70",
+            "6a0413a1b04434f16acfea37",
+            "6a04139e45177fba9f354fe3"
+          ],
+          [
+            "6a0413a154474d7b08ef638c",
+            "6a0413a2d1cbb4bc979876e8",
+            "6a041391929dbb51d1fb0bcc",
+            "6a041389571211cbd0f8b7cf",
+            "6a0413a3e531682e611e50f1",
+            "6a04139cb9b55838bbfb2cfe"
+          ],
+          [
+            "6a04138a5094d3a3b82c4841",
+            "6a0413a7ad21a705450541c3",
+            "6a04139fbb952083164c7ba6",
+            "6a04139ddda029401693a54c",
+            "6a0413a2bb2b4478b0b8df08",
+            "6a041399fec25b02cfdb9f05"
+          ]
+        ],
+        "goalkeepers": {
+          "0": "6a0413a31e36e8de185f4488",
+          "1": "6a041391929dbb51d1fb0bcc",
+          "2": "6a0413a2bb2b4478b0b8df08"
+        },
+        "openingTeams": [
+          2,
+          1
+        ],
+        "winningTeam": 0,
+        "teamWins": {
+          "0": 8,
+          "1": 2,
+          "2": 3
+        },
+        "victoryPhoto": "https://base44.app/api/apps/6964c289c9fc075fbc2abedd/files/mp/public/6964c289c9fc075fbc2abedd/9892e7486_db4e1ab9-0f19-4d40-a225-78e769ddca3d.jpg",
+        "created_date": "2026-05-13T06:01:12.136000",
+        "updated_date": "2026-05-13T06:01:12.136000"
+      },
+      {
+        "id": "6a0413a7f15f6f89cbf36f90",
+        "date": "2026-05-07T16:15:56.726Z",
+        "teams": [
+          [
+            "6a0413a0ed9a7cddfe5b536e",
+            "6a04138b9d81c913a3e9b502",
+            "6a0413a2d1cbb4bc979876e8",
+            "6a0413a7ad21a705450541c3",
+            "6a0413a2beb54f63ea8a6f9d",
+            "6a041399fec25b02cfdb9f05"
+          ],
+          [
+            "6a041398cb38fc65de1d3e91",
+            "6a0413986e2fc7d5421024e3",
+            "6a0413a546c8f057b815751c",
+            "6a04139fbb952083164c7ba6",
+            "6a04138df067635954831f56",
+            "6a041399221d6f482e97318d"
+          ],
+          [
+            "6a04139ddda029401693a54c",
+            "6a04138a5094d3a3b82c4841",
+            "6a04138b3fda94f5aa44ac77",
+            "6a0413a154474d7b08ef638c",
+            "6a04139cb9b55838bbfb2cfe",
+            "6a04138df898382e8fae2c11"
+          ]
+        ],
+        "goalkeepers": {
+          "0": "6a04138b9d81c913a3e9b502",
+          "1": "6a04138df067635954831f56",
+          "2": "6a04138a5094d3a3b82c4841"
+        },
+        "openingTeams": [
+          2,
+          0
+        ],
+        "winningTeam": 2,
+        "teamWins": {
+          "0": 3,
+          "1": 3,
+          "2": 6
+        },
+        "victoryPhoto": "https://base44.app/api/apps/6964c289c9fc075fbc2abedd/files/mp/public/6964c289c9fc075fbc2abedd/b4865ff27_226c650d-7fb9-470d-9137-7e3443c13b67.jpg",
+        "created_date": "2026-05-13T06:01:11.871000",
+        "updated_date": "2026-05-13T06:01:11.871000"
+      },
+      {
+        "id": "6a0413a799a4583ae3cc3b7e",
+        "date": "2026-05-10T16:28:27.076Z",
+        "teams": [
+          [
+            "6a0413a0ed9a7cddfe5b536e",
+            "6a04139a4e8301e0dfab9542",
+            "6a041388b589b3456048cc1f",
+            "6a041395f364b09f64a831de",
+            "6a04139bd6c4e22464840460",
+            "6a04139e45177fba9f354fe3"
+          ],
+          [
+            "6a0413a5630cb93e0f61be16",
+            "6a04138b3fda94f5aa44ac77",
+            "6a0413a642ddc7c200a8b555",
+            "6a0413a2bb2b4478b0b8df08",
+            "6a041399fec25b02cfdb9f05",
+            "6a04139cb9b55838bbfb2cfe"
+          ],
+          [
+            "6a0413986e2fc7d5421024e3",
+            "6a0413a31e36e8de185f4488",
+            "6a04139b4bcaad21da028af0",
+            "6a04139ddda029401693a54c",
+            "6a0413a1b04434f16acfea37",
+            "6a04139c3ab2ae0f026ede70"
+          ]
+        ],
+        "goalkeepers": {
+          "0": "6a0413a0ed9a7cddfe5b536e",
+          "1": "6a0413a2bb2b4478b0b8df08",
+          "2": "6a0413986e2fc7d5421024e3"
+        },
+        "openingTeams": [
+          2,
+          1
+        ],
+        "winningTeam": 2,
+        "teamWins": {
+          "0": 3,
+          "1": 3,
+          "2": 5
+        },
+        "victoryPhoto": "https://base44.app/api/apps/6964c289c9fc075fbc2abedd/files/mp/public/6964c289c9fc075fbc2abedd/02638d63b_b4fe199e-09cc-4d7b-b79c-13ecc4de64fc.jpg",
+        "created_date": "2026-05-13T06:01:11.611000",
+        "updated_date": "2026-05-13T06:01:11.611000"
+      }
+    ],
+    "payments": [
+      {
+        "id": "6a0ae8fda524c9cca43e49a9",
+        "roundId": "6a05f26cb4509bb922607db1",
+        "roundDate": "2026-05-14T16:03:59.810Z",
+        "payments": {
+          "6a0413a2beb54f63ea8a6f9d": true,
+          "6a041399fec25b02cfdb9f05": true,
+          "6a05edf1ebbe0f80818aed03": true,
+          "6a0413a0ed9a7cddfe5b536e": true,
+          "6a0413a546c8f057b815751c": true,
+          "6a05ee28568ace69ac586c24": true,
+          "6a041399221d6f482e97318d": true,
+          "6a04139b4bcaad21da028af0": true,
+          "6a04139cb9b55838bbfb2cfe": true,
+          "6a0413a7ad21a705450541c3": true,
+          "6a05ee0c2ae4a91f8dd30d09": false,
+          "6a0413a154474d7b08ef638c": true,
+          "6a04138df898382e8fae2c11": true,
+          "6a04139ddda029401693a54c": true,
+          "6a0413a1b04434f16acfea37": true,
+          "6a05ee484ab74e0244d47763": true,
+          "6a041388b589b3456048cc1f": true,
+          "6a0413a2d1cbb4bc979876e8": true
+        },
+        "pricePerPlayer": 40,
+        "created_date": "2026-05-18T10:25:01.192000",
+        "updated_date": "2026-05-18T10:25:01.192000"
+      },
+      {
+        "id": "6a095f5fe47d736a196291db",
+        "roundId": "6a04b0d56957852199f82962",
+        "roundDate": "2026-05-13T17:11:49.254Z",
+        "payments": {
+          "6a04139e45177fba9f354fe3": true,
+          "6a04139fd749aae172ec1f88": true,
+          "6a04138b851c24bb35b9bfb9": true,
+          "6a04139c3ab2ae0f026ede70": true,
+          "6a0413958f5f6fc58fafdcaa": true,
+          "6a041397a37c1085cb853b8c": true,
+          "6a04139b4bcaad21da028af0": true,
+          "6a041399221d6f482e97318d": true,
+          "6a04139496a0739b4f98b17c": true,
+          "6a04139fbb952083164c7ba6": true,
+          "6a04138eb95f701eab3f4e14": true,
+          "6a0413a6ab08e981de3c1758": true,
+          "6a041398e44d990ba9e50ea5": false,
+          "6a041399f3cd27cec113d36f": true,
+          "6a0413926d960ff84b56a91b": true,
+          "6a04ae8b75c921e2eeaf8012": true,
+          "6a04139737b997795d8f3074": true,
+          "6a0413a5c1b6dd9d31120175": true
+        },
+        "pricePerPlayer": 35,
+        "created_date": "2026-05-17T06:25:35.244000",
+        "updated_date": "2026-05-17T06:25:35.244000"
+      },
+      {
+        "id": "6a0413af5bdf6bcee90d8527",
+        "roundId": "6a0413a808d2b8311b223280",
+        "roundDate": "2026-05-03T16:20:20.060Z",
+        "payments": {
+          "6a0413a0ed9a7cddfe5b536e": true,
+          "6a0413a31e36e8de185f4488": true,
+          "6a04139a4e8301e0dfab9542": true,
+          "6a04139c3ab2ae0f026ede70": true,
+          "6a0413a1b04434f16acfea37": true,
+          "6a04139e45177fba9f354fe3": true,
+          "6a0413a154474d7b08ef638c": true,
+          "6a0413a2d1cbb4bc979876e8": true,
+          "6a041391929dbb51d1fb0bcc": true,
+          "6a041389571211cbd0f8b7cf": true,
+          "6a0413a3e531682e611e50f1": true,
+          "6a04139cb9b55838bbfb2cfe": true,
+          "6a04138a5094d3a3b82c4841": true,
+          "6a0413a7ad21a705450541c3": true,
+          "6a04139fbb952083164c7ba6": true,
+          "6a04139ddda029401693a54c": true,
+          "6a0413a2bb2b4478b0b8df08": true,
+          "6a041399fec25b02cfdb9f05": true
+        },
+        "pricePerPlayer": 40,
+        "created_date": "2026-05-13T06:01:19.587000",
+        "updated_date": "2026-05-13T06:01:19.587000"
+      },
+      {
+        "id": "6a0413afd4e4e44bdfbcf333",
+        "roundId": "6a0413a7f15f6f89cbf36f90",
+        "roundDate": "2026-05-07T16:15:56.726Z",
+        "payments": {
+          "6a0413a0ed9a7cddfe5b536e": true,
+          "6a04138b9d81c913a3e9b502": true,
+          "6a0413a2d1cbb4bc979876e8": true,
+          "6a0413a7ad21a705450541c3": true,
+          "6a0413a2beb54f63ea8a6f9d": true,
+          "6a041399fec25b02cfdb9f05": true,
+          "6a041398cb38fc65de1d3e91": true,
+          "6a0413986e2fc7d5421024e3": true,
+          "6a0413a546c8f057b815751c": true,
+          "6a04139fbb952083164c7ba6": true,
+          "6a04138df067635954831f56": true,
+          "6a041399221d6f482e97318d": true,
+          "6a04139ddda029401693a54c": true,
+          "6a04138a5094d3a3b82c4841": true,
+          "6a04138b3fda94f5aa44ac77": true,
+          "6a0413a154474d7b08ef638c": true,
+          "6a04139cb9b55838bbfb2cfe": true,
+          "6a04138df898382e8fae2c11": true
+        },
+        "pricePerPlayer": 40,
+        "created_date": "2026-05-13T06:01:19.315000",
+        "updated_date": "2026-05-13T06:01:19.315000"
+      },
+      {
+        "id": "6a0413aff49c73d565fcf5ae",
+        "roundId": "6a0413a799a4583ae3cc3b7e",
+        "roundDate": "2026-05-10T16:28:27.076Z",
+        "payments": {
+          "6a0413a0ed9a7cddfe5b536e": true,
+          "6a04139a4e8301e0dfab9542": true,
+          "6a041388b589b3456048cc1f": true,
+          "6a041395f364b09f64a831de": true,
+          "6a04139bd6c4e22464840460": true,
+          "6a04139e45177fba9f354fe3": true,
+          "6a0413a5630cb93e0f61be16": true,
+          "6a04138b3fda94f5aa44ac77": true,
+          "6a0413a642ddc7c200a8b555": true,
+          "6a0413a2bb2b4478b0b8df08": true,
+          "6a041399fec25b02cfdb9f05": true,
+          "6a04139cb9b55838bbfb2cfe": true,
+          "6a0413986e2fc7d5421024e3": true,
+          "6a0413a31e36e8de185f4488": true,
+          "6a04139b4bcaad21da028af0": true,
+          "6a04139ddda029401693a54c": true,
+          "6a0413a1b04434f16acfea37": true,
+          "6a04139c3ab2ae0f026ede70": true
+        },
+        "pricePerPlayer": 40,
+        "created_date": "2026-05-13T06:01:19.044000",
+        "updated_date": "2026-05-17T06:12:40.211000"
+      }
+    ]
+  }
+}
