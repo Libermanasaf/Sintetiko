@@ -2,13 +2,20 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { User, Shield, UserPlus, Mail, ArrowRight, CheckCircle2, KeyRound } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 export default function LandingPage() {
   const { login } = useAuth();
+  const navigate = useNavigate();
   const [view, setView] = useState('selection'); // 'selection', 'register', 'email-sent'
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  const handleLogin = (role) => {
+    login(role);
+    navigate('/');
+  };
 
   const handleRegister = (e) => {
     e.preventDefault();
@@ -22,7 +29,7 @@ export default function LandingPage() {
 
   const handleSimulateActivation = () => {
     // Simulate clicking the email link and activating the account
-    login('player');
+    handleLogin('player');
   };
 
   return (
@@ -70,7 +77,7 @@ export default function LandingPage() {
               <div className="w-full space-y-4">
                 {/* Player Login */}
                 <button
-                  onClick={() => login('player')}
+                  onClick={() => handleLogin('player')}
                   className="w-full flex items-center gap-4 bg-slate-800/80 backdrop-blur-sm border border-emerald-500/30 p-5 rounded-2xl hover:bg-slate-800 hover:border-emerald-500 hover:shadow-[0_0_20px_rgba(16,185,129,0.15)] transition-all group text-right"
                 >
                   <div className="w-14 h-14 bg-emerald-500/10 rounded-xl flex items-center justify-center group-hover:bg-emerald-500/20 group-hover:scale-110 transition-all">
@@ -84,7 +91,7 @@ export default function LandingPage() {
 
                 {/* Admin Login */}
                 <button
-                  onClick={() => login('admin')}
+                  onClick={() => handleLogin('admin')}
                   className="w-full flex items-center gap-4 bg-slate-800/80 backdrop-blur-sm border border-amber-500/30 p-5 rounded-2xl hover:bg-slate-800 hover:border-amber-500 hover:shadow-[0_0_20px_rgba(245,158,11,0.15)] transition-all group text-right"
                 >
                   <div className="w-14 h-14 bg-amber-500/10 rounded-xl flex items-center justify-center group-hover:bg-amber-500/20 group-hover:scale-110 transition-all">

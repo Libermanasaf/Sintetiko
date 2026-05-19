@@ -7,7 +7,7 @@ export const AuthProvider = ({ children }) => {
   const [isInitializing, setIsInitializing] = useState(true);
 
   useEffect(() => {
-    const savedRole = localStorage.getItem('sintetiko_role');
+    const savedRole = sessionStorage.getItem('sintetiko_role');
     if (savedRole) {
       setRole(savedRole);
     }
@@ -15,12 +15,12 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = (selectedRole) => {
-    localStorage.setItem('sintetiko_role', selectedRole);
+    sessionStorage.setItem('sintetiko_role', selectedRole);
     setRole(selectedRole);
   };
 
   const logout = () => {
-    localStorage.removeItem('sintetiko_role');
+    sessionStorage.removeItem('sintetiko_role');
     setRole(null);
   };
 
