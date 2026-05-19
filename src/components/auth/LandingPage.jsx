@@ -60,7 +60,6 @@ export default function LandingPage() {
         const { data, error } = await supabase
           .from('players')
           .select('id, name')
-          .is('user_id', null)
           .order('name');
         
         if (data && !error) {
