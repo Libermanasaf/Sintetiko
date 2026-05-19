@@ -19,29 +19,50 @@ export const AuthProvider = ({ children }) => {
       return;
     }
 
-    // Get current session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const handleSession = async (session) => {
       if (session?.user) {
-        setUser(session.user);
-        const email = session.user.email?.toLowerCase();
-        const detectedRole = email === 'libermanasaf@gmail.com' ? 'admin' : 'player';
-        setRole(detectedRole);
-      }
-      setIsInitializing(false);
-    });
+        const userEmail = session.user.email?.toLowerCase();
+        
+        // If it's the admin, bypass player approval check
+        if (userEmail === 'libermanasaf@gmail.com') {
+          setUser(session.user);
+          setRole('admin');
+          setIsInitializing(false);
+          return;
+        }
 
-    // Listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        setUser(session.user);
-        const email = session.user.email?.toLowerCase();
-        const detectedRole = email === 'libermanasaf@gmail.com' ? 'admin' : 'player';
-        setRole(detectedRole);
+        // Fetch player approval status
+        const { data: player, error: playerError } = await supabase
+          .from('players')
+          .select('is_approved')
+          .or(`user_id.eq.${session.user.id},email.eq.${userEmail}`)
+          .maybeSingle();
+
+        if (playerError || !player || !player.is_approved) {
+          // Player is not approved or not found. Log them out.
+          setUser(null);
+          setRole(null);
+          await supabase.auth.signOut();
+        } else {
+          // Approved player
+          setUser(session.user);
+          setRole('player');
+        }
       } else {
         setUser(null);
         setRole(null);
       }
       setIsInitializing(false);
+    };
+
+    // Get current session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      handleSession(session);
+    });
+
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      handleSession(session);
     });
 
     return () => {
