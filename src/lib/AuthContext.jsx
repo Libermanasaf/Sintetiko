@@ -65,13 +65,6 @@ export const AuthProvider = ({ children }) => {
     if (error) return { error };
 
     const user = data.user;
-
-    // Check if user confirmed their email address
-    if (user && !user.email_confirmed_at) {
-      await supabase.auth.signOut();
-      return { error: { message: 'אנא אשר את חשבונך באמצעות קישור האימות שנשלח למייל שלך.' } };
-    }
-
     const userEmail = email.toLowerCase();
 
     // If not admin, check if they are approved by admin in players table
@@ -79,12 +72,12 @@ export const AuthProvider = ({ children }) => {
       const { data: player, error: playerError } = await supabase
         .from('players')
         .select('is_approved')
-        .eq('email', userEmail)
+        .or(`user_id.eq.${user.id},email.eq.${userEmail}`)
         .maybeSingle();
 
       if (playerError || !player || !player.is_approved) {
         await supabase.auth.signOut();
-        return { error: { message: 'החשבון שלך אושר במייל, אך ממתין לאישור מנהל המערכת (יו"ר ההתאחדות).' } };
+        return { error: { message: 'החשבון שלך ממתין לאישור מנהל המערכת (יו"ר ההתאחדות).' } };
       }
     }
 
@@ -93,7 +86,7 @@ export const AuthProvider = ({ children }) => {
     return { error: null };
   };
 
-  const register = async (email, password) => {
+  const register = async (email, password, playerId) => {
     if (!supabase) {
       // Mock register successful
       return { error: null };
@@ -105,21 +98,19 @@ export const AuthProvider = ({ children }) => {
 
     if (error) return { error };
 
-    // Create an unapproved player record in players table
-    if (data?.user) {
-      const { error: insertError } = await supabase.from('players').insert([
-        {
-          id: data.user.id,
-          name: email.split('@')[0], // Use email prefix as a placeholder name
+    // Link this auth user with the selected existing player profile in the database
+    if (data?.user && playerId) {
+      const { error: updateError } = await supabase
+        .from('players')
+        .update({
+          user_id: data.user.id,
           email: email.toLowerCase(),
-          is_approved: false,
-          rating: 7.0, // Default rating
-          wins: 0,
-          appearances: 0
-        }
-      ]);
-      if (insertError) {
-        console.error('Error creating player profile during sign up:', insertError.message);
+          is_approved: false
+        })
+        .eq('id', playerId);
+
+      if (updateError) {
+        console.error('Error linking player profile during sign up:', updateError.message);
       }
     }
 

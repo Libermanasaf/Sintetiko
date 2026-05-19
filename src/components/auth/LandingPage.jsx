@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { User, Shield, UserPlus, Mail, ArrowRight, CheckCircle2, KeyRound, LogIn } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/lib/supabase';
 
 export default function LandingPage() {
   const { login, register } = useAuth();
@@ -13,6 +14,8 @@ export default function LandingPage() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [squadPlayers, setSquadPlayers] = useState([]);
+  const [selectedPlayerId, setSelectedPlayerId] = useState('');
 
   const handleRoleSelection = (role) => {
     setSelectedRole(role);
@@ -50,12 +53,37 @@ export default function LandingPage() {
     }
   };
 
+  useEffect(() => {
+    if (view === 'register') {
+      const fetchUnlinkedPlayers = async () => {
+        if (!supabase) return;
+        const { data, error } = await supabase
+          .from('players')
+          .select('id, name')
+          .is('user_id', null)
+          .order('name');
+        
+        if (data && !error) {
+          setSquadPlayers(data);
+          if (data.length > 0) {
+            setSelectedPlayerId(data[0].id);
+          }
+        }
+      };
+      fetchUnlinkedPlayers();
+    }
+  }, [view]);
+
   const handleRegister = async (e) => {
     e.preventDefault();
+    if (!selectedPlayerId) {
+      setError('אנא בחר שחקן מהסגל');
+      return;
+    }
     setError('');
     setIsLoading(true);
     try {
-      const { error: regError } = await register(email, password);
+      const { error: regError } = await register(email, password, selectedPlayerId);
       setIsLoading(false);
       if (regError) {
         setError(regError.message || 'שגיאה ברישום המשתמש');
@@ -66,12 +94,6 @@ export default function LandingPage() {
       setIsLoading(false);
       setError('אירעה שגיאה במהלך ההרשמה');
     }
-  };
-
-  const handleSimulateActivation = () => {
-    // Simulate clicking the email link and activating the account (fallback helper)
-    login('player');
-    navigate('/PlayerHome');
   };
 
   return (
@@ -315,9 +337,29 @@ export default function LandingPage() {
                   </div>
                 </div>
 
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-slate-300 ml-1">בחר את שמך מסגל הקבוצה</label>
+                  <select
+                    required
+                    value={selectedPlayerId}
+                    onChange={(e) => setSelectedPlayerId(e.target.value)}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl py-3.5 px-4 text-white focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all cursor-pointer"
+                  >
+                    <option value="" disabled>-- בחר שחקן --</option>
+                    {squadPlayers.map((player) => (
+                      <option key={player.id} value={player.id} className="bg-slate-900 text-white">
+                        {player.name}
+                      </option>
+                    ))}
+                    {squadPlayers.length === 0 && (
+                      <option value="" disabled>אין שחקנים פנויים בסגל</option>
+                    )}
+                  </select>
+                </div>
+
                 <button 
                   type="submit"
-                  disabled={isLoading || !email || !password}
+                  disabled={isLoading || !email || !password || !selectedPlayerId}
                   className="w-full mt-6 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-bold py-4 rounded-xl hover:from-emerald-400 hover:to-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-slate-900 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_20px_rgba(16,185,129,0.2)]"
                 >
                   {isLoading ? (
@@ -344,26 +386,22 @@ export default function LandingPage() {
                 <CheckCircle2 className="w-10 h-10 text-emerald-400" />
               </div>
               
-              <h2 className="text-2xl font-black text-white mb-3">בדוק את המייל שלך</h2>
+              <h2 className="text-2xl font-black text-white mb-3">הרשמתך בוצעה בהצלחה!</h2>
               <p className="text-slate-400 mb-8 leading-relaxed">
-                שלחנו קישור הפעלה לכתובת <strong>{email}</strong>.
+                חשבונך נוצר ונקשר לפרופיל שבחרת.
                 <br />
-                לחץ על הקישור במייל כדי להפעיל את החשבון ולהיכנס למערכת.
+                כעת הבקשה ממתינה לאישור של מנהל המערכת (יו"ר ההתאחדות). ברגע שהמנהל יאשר אותך, תוכל להתחבר ישירות.
               </p>
 
-              {/* Simulation Helper */}
-              <div className="w-full pt-6 border-t border-slate-700 border-dashed">
-                <p className="text-xs text-slate-500 mb-3">(סימולציה: לחץ כאן כדי לדמות לחיצה על הקישור שקיבלת במייל)</p>
-                <button
-                  onClick={handleSimulateActivation}
-                  className="w-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 py-3 rounded-xl font-bold hover:bg-emerald-500/20 transition-all flex items-center justify-center gap-2"
-                >
-                  <Mail className="w-4 h-4" />
-                  הפעל חשבון והיכנס
-                </button>
-              </div>
+              <button
+                onClick={() => setView('selection')}
+                className="w-full bg-emerald-500 text-white py-3.5 rounded-xl font-bold hover:bg-emerald-400 transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(16,185,129,0.2)]"
+              >
+                חזרה למסך הראשי
+              </button>
             </motion.div>
           )}
+
         </AnimatePresence>
       </div>
     </div>

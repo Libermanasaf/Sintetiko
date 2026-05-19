@@ -28,7 +28,8 @@ export default function UserApprovals() {
         .from('players')
         .select('*')
         .eq('is_approved', false)
-        .order('created_date', { ascending: false });
+        .not('user_id', 'is', null)
+        .order('name', { ascending: true });
 
       if (error) throw error;
       setPendingPlayers(data || []);
@@ -78,7 +79,7 @@ export default function UserApprovals() {
   };
 
   const handleReject = async (playerId, name) => {
-    if (!window.confirm(`האם אתה בטוח שברצונך לדחות ולמחוק את בקשת ההרשמה של ${name}?`)) {
+    if (!window.confirm(`האם אתה בטוח שברצונך לדחות ולבטל את בקשת ההרשמה של ${name}?`)) {
       return;
     }
     setActionInProgress(playerId);
@@ -86,15 +87,19 @@ export default function UserApprovals() {
       if (supabase) {
         const { error } = await supabase
           .from('players')
-          .delete()
+          .update({ 
+            user_id: null, 
+            email: null, 
+            is_approved: false 
+          })
           .eq('id', playerId);
 
         if (error) throw error;
       }
 
       toast({
-        title: "בקשת ההרשמה נדחתה ומקבל הבקשה נמחק",
-        description: `בקשתו של ${name} הוסרה מהמערכת.`,
+        title: "בקשת ההרשמה נדחתה",
+        description: `בקשתו של ${name} הוסרה והפרופיל שלו חזר להיות פנוי בסגל.`,
       });
 
       setPendingPlayers(prev => prev.filter(p => p.id !== playerId));
