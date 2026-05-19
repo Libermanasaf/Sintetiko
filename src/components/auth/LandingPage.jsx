@@ -5,7 +5,7 @@ import { useAuth } from '@/lib/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
 export default function LandingPage() {
-  const { login } = useAuth();
+  const { login, register } = useAuth();
   const navigate = useNavigate();
   const [view, setView] = useState('selection'); // 'selection', 'login-form', 'register', 'email-sent'
   const [selectedRole, setSelectedRole] = useState(null);
@@ -22,7 +22,7 @@ export default function LandingPage() {
     setView('login-form');
   };
 
-  const handleLoginSubmit = (e) => {
+  const handleLoginSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
@@ -32,30 +32,44 @@ export default function LandingPage() {
     }
 
     setIsLoading(true);
-    // Simulate auth check
-    setTimeout(() => {
+    try {
+      const { error: loginError } = await login(selectedRole, email, password);
       setIsLoading(false);
-      login(selectedRole);
+      if (loginError) {
+        setError(loginError.message || 'אימייל או סיסמה שגויים');
+        return;
+      }
       if (selectedRole === 'admin') {
         navigate('/'); // Home
       } else {
         navigate('/PlayerHome'); // Blank page for player
       }
-    }, 800);
+    } catch (err) {
+      setIsLoading(false);
+      setError('אירעה שגיאה בחיבור למערכת');
+    }
   };
 
-  const handleRegister = (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
+    setError('');
     setIsLoading(true);
-    // Simulate network request
-    setTimeout(() => {
+    try {
+      const { error: regError } = await register(email, password);
       setIsLoading(false);
+      if (regError) {
+        setError(regError.message || 'שגיאה ברישום המשתמש');
+        return;
+      }
       setView('email-sent');
-    }, 1500);
+    } catch (err) {
+      setIsLoading(false);
+      setError('אירעה שגיאה במהלך ההרשמה');
+    }
   };
 
   const handleSimulateActivation = () => {
-    // Simulate clicking the email link and activating the account
+    // Simulate clicking the email link and activating the account (fallback helper)
     login('player');
     navigate('/PlayerHome');
   };
@@ -260,6 +274,15 @@ export default function LandingPage() {
               </div>
 
               <form onSubmit={handleRegister} className="space-y-4">
+                {error && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: -10 }} 
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-rose-500/10 border border-rose-500/30 text-rose-400 p-3 rounded-xl text-sm font-medium flex items-center gap-2"
+                  >
+                    <span className="font-bold">שגיאה:</span> {error}
+                  </motion.div>
+                )}
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium text-slate-300 ml-1">כתובת אימייל</label>
                   <div className="relative">
