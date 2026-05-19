@@ -8,7 +8,7 @@ import { useAuth } from '@/lib/AuthContext';
 const menuItems = [
   { name: 'עמוד הבית', page: 'Home', icon: Home },
   { name: 'הפודיום', page: 'Podium', icon: Trophy },
-  { name: 'סגל שחקנים', page: 'Players', icon: Users },
+  { name: 'סגל שחקנים', page: 'Players', icon: Users, adminOnly: true },
   { name: 'סטטיסטיקות', page: 'Statistics', icon: BarChart3 },
   { name: 'יצירת מחזור', page: 'CreateRound', icon: Shuffle, adminOnly: true },
   { name: 'היסטוריית משחקים', page: 'GameHistory', icon: History },

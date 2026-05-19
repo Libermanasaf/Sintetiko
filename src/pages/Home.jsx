@@ -4,9 +4,12 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { Trophy, Users, Shuffle, History, Sun, Moon } from 'lucide-react';
 import { useTheme } from '@/lib/ThemeContext';
+import { useAuth } from '@/lib/AuthContext';
 
 export default function Home() {
   const { isDark, setIsDark } = useTheme();
+  const { role } = useAuth();
+  const isAdmin = role === 'admin';
 
   return (
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-5 pb-28">
@@ -106,23 +109,27 @@ export default function Home() {
             <p className="text-white/80 text-xs mt-0.5">המובילים</p>
           </Link>
 
-          <Link
-            to={createPageUrl('Players')}
-            className="bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-2xl p-5 shadow-lg active:scale-95 transition-all touch-manipulation"
-          >
-            <Users className="w-7 h-7 text-white mb-2" />
-            <h3 className="text-white font-bold text-base leading-tight">סגל שחקנים</h3>
-            <p className="text-white/80 text-xs mt-0.5">ניהול שחקנים</p>
-          </Link>
+          {isAdmin && (
+            <Link
+              to={createPageUrl('Players')}
+              className="bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-2xl p-5 shadow-lg active:scale-95 transition-all touch-manipulation"
+            >
+              <Users className="w-7 h-7 text-white mb-2" />
+              <h3 className="text-white font-bold text-base leading-tight">סגל שחקנים</h3>
+              <p className="text-white/80 text-xs mt-0.5">ניהול שחקנים</p>
+            </Link>
+          )}
 
-          <Link
-            to={createPageUrl('CreateRound')}
-            className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl p-5 shadow-lg active:scale-95 transition-all touch-manipulation"
-          >
-            <Shuffle className="w-7 h-7 text-white mb-2" />
-            <h3 className="text-white font-bold text-base leading-tight">יצירת מחזור</h3>
-            <p className="text-white/80 text-xs mt-0.5">הגרלת קבוצות</p>
-          </Link>
+          {isAdmin && (
+            <Link
+              to={createPageUrl('CreateRound')}
+              className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl p-5 shadow-lg active:scale-95 transition-all touch-manipulation"
+            >
+              <Shuffle className="w-7 h-7 text-white mb-2" />
+              <h3 className="text-white font-bold text-base leading-tight">יצירת מחזור</h3>
+              <p className="text-white/80 text-xs mt-0.5">הגרלת קבוצות</p>
+            </Link>
+          )}
 
           <Link
             to={createPageUrl('GameHistory')}
