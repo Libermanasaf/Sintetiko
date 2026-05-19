@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, Shield, UserPlus, Mail, ArrowRight, CheckCircle2, KeyRound, LogIn } from 'lucide-react';
+import { User, Shield, UserPlus, Mail, ArrowRight, CheckCircle2, KeyRound, LogIn, Clock } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
@@ -382,20 +382,20 @@ export default function LandingPage() {
               animate={{ opacity: 1, scale: 1 }}
               className="w-full flex flex-col items-center text-center bg-slate-800/50 backdrop-blur-md border border-slate-700 rounded-3xl p-8"
             >
-              <div className="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center mb-6 border border-emerald-500/30">
-                <CheckCircle2 className="w-10 h-10 text-emerald-400" />
+              <div className="w-20 h-20 bg-amber-500/20 rounded-full flex items-center justify-center mb-6 border border-amber-500/30 animate-pulse">
+                <Clock className="w-10 h-10 text-amber-400" />
               </div>
               
-              <h2 className="text-2xl font-black text-white mb-3">הרשמתך בוצעה בהצלחה!</h2>
-              <p className="text-slate-400 mb-8 leading-relaxed">
-                חשבונך נוצר ונקשר לפרופיל שבחרת.
+              <h2 className="text-2xl font-black text-white mb-3">משתמש בבדיקה</h2>
+              <p className="text-slate-350 mb-8 leading-relaxed text-base">
+                אנא המתן שמנהל המערכת יאשרך.
                 <br />
-                כעת הבקשה ממתינה לאישור של מנהל המערכת (יו"ר ההתאחדות). ברגע שהמנהל יאשר אותך, תוכל להתחבר ישירות.
+                <span className="text-slate-500 text-sm">פרופיל השחקן שלך נקשר ונרשם בהצלחה.</span>
               </p>
 
               <button
                 onClick={() => setView('selection')}
-                className="w-full bg-emerald-500 text-white py-3.5 rounded-xl font-bold hover:bg-emerald-400 transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(16,185,129,0.2)]"
+                className="w-full bg-slate-700 text-white py-3.5 rounded-xl font-bold hover:bg-slate-650 transition-all flex items-center justify-center gap-2 shadow-lg"
               >
                 חזרה למסך הראשי
               </button>
