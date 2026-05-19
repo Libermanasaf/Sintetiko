@@ -55,8 +55,8 @@ import Podium from './pages/Podium';
 import Statistics from './pages/Statistics';
 import Payments from './pages/Payments';
 import Backup from './pages/Backup';
+import PlayerHome from './pages/PlayerHome';
 import __Layout from './Layout.jsx';
-
 
 export const PAGES = {
     "CreateRound": CreateRound,
@@ -67,6 +67,7 @@ export const PAGES = {
     "Statistics": Statistics,
     "Payments": Payments,
     "Backup": Backup,
+    "PlayerHome": PlayerHome,
 }
 
 export const pagesConfig = {

@@ -1,20 +1,38 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, Shield, UserPlus, Mail, ArrowRight, CheckCircle2, KeyRound } from 'lucide-react';
+import { User, Shield, UserPlus, Mail, ArrowRight, CheckCircle2, KeyRound, LogIn } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
 export default function LandingPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [view, setView] = useState('selection'); // 'selection', 'register', 'email-sent'
+  const [view, setView] = useState('selection'); // 'selection', 'login-form', 'register', 'email-sent'
+  const [selectedRole, setSelectedRole] = useState(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = (role) => {
-    login(role);
-    navigate('/');
+  const handleRoleSelection = (role) => {
+    setSelectedRole(role);
+    setEmail('');
+    setPassword('');
+    setView('login-form');
+  };
+
+  const handleLoginSubmit = (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    // Simulate auth check
+    setTimeout(() => {
+      setIsLoading(false);
+      login(selectedRole);
+      if (selectedRole === 'admin') {
+        navigate('/'); // Home
+      } else {
+        navigate('/PlayerHome'); // Blank page for player
+      }
+    }, 800);
   };
 
   const handleRegister = (e) => {
@@ -29,7 +47,8 @@ export default function LandingPage() {
 
   const handleSimulateActivation = () => {
     // Simulate clicking the email link and activating the account
-    handleLogin('player');
+    login('player');
+    navigate('/PlayerHome');
   };
 
   return (
@@ -77,7 +96,7 @@ export default function LandingPage() {
               <div className="w-full space-y-4">
                 {/* Player Login */}
                 <button
-                  onClick={() => handleLogin('player')}
+                  onClick={() => handleRoleSelection('player')}
                   className="w-full flex items-center gap-4 bg-slate-800/80 backdrop-blur-sm border border-emerald-500/30 p-5 rounded-2xl hover:bg-slate-800 hover:border-emerald-500 hover:shadow-[0_0_20px_rgba(16,185,129,0.15)] transition-all group text-right"
                 >
                   <div className="w-14 h-14 bg-emerald-500/10 rounded-xl flex items-center justify-center group-hover:bg-emerald-500/20 group-hover:scale-110 transition-all">
@@ -91,7 +110,7 @@ export default function LandingPage() {
 
                 {/* Admin Login */}
                 <button
-                  onClick={() => handleLogin('admin')}
+                  onClick={() => handleRoleSelection('admin')}
                   className="w-full flex items-center gap-4 bg-slate-800/80 backdrop-blur-sm border border-amber-500/30 p-5 rounded-2xl hover:bg-slate-800 hover:border-amber-500 hover:shadow-[0_0_20px_rgba(245,158,11,0.15)] transition-all group text-right"
                 >
                   <div className="w-14 h-14 bg-amber-500/10 rounded-xl flex items-center justify-center group-hover:bg-amber-500/20 group-hover:scale-110 transition-all">
@@ -105,7 +124,7 @@ export default function LandingPage() {
 
                 <div className="pt-6 mt-6 border-t border-slate-800 w-full">
                   <button
-                    onClick={() => setView('register')}
+                    onClick={() => { setEmail(''); setPassword(''); setView('register'); }}
                     className="w-full flex items-center justify-center gap-2 bg-transparent border border-slate-700 p-4 rounded-xl hover:bg-slate-800 hover:border-slate-600 transition-all text-slate-300"
                   >
                     <UserPlus className="w-5 h-5 text-slate-400" />
@@ -113,6 +132,90 @@ export default function LandingPage() {
                   </button>
                 </div>
               </div>
+            </motion.div>
+          )}
+
+          {view === 'login-form' && (
+            <motion.div
+              key="login-form"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="w-full flex flex-col"
+            >
+              <button 
+                onClick={() => setView('selection')}
+                className="self-start mb-6 flex items-center gap-2 text-slate-400 hover:text-white transition-colors"
+              >
+                <ArrowRight className="w-5 h-5" />
+                <span>חזרה לבחירת משתמש</span>
+              </button>
+
+              <div className="mb-8 flex items-center gap-3">
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${selectedRole === 'admin' ? 'bg-amber-500/20 text-amber-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
+                  {selectedRole === 'admin' ? <Shield className="w-6 h-6" /> : <User className="w-6 h-6" />}
+                </div>
+                <div>
+                  <h2 className="text-2xl font-black text-white leading-none">התחברות למערכת</h2>
+                  <p className="text-slate-400 mt-1 text-sm">{selectedRole === 'admin' ? 'יו"ר ההתאחדות' : 'כדורגלן פעיל'}</p>
+                </div>
+              </div>
+
+              <form onSubmit={handleLoginSubmit} className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-slate-300 ml-1">כתובת אימייל</label>
+                  <div className="relative">
+                    <Mail className="w-5 h-5 text-slate-500 absolute right-3 top-1/2 -translate-y-1/2" />
+                    <input 
+                      type="email" 
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl py-3.5 pr-10 pl-4 text-white placeholder:text-slate-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all"
+                      placeholder="user@example.com"
+                      dir="ltr"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-slate-300 ml-1">סיסמה</label>
+                  <div className="relative">
+                    <KeyRound className="w-5 h-5 text-slate-500 absolute right-3 top-1/2 -translate-y-1/2" />
+                    <input 
+                      type="password" 
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl py-3.5 pr-10 pl-4 text-white placeholder:text-slate-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all"
+                      placeholder="••••••••"
+                      dir="ltr"
+                    />
+                  </div>
+                </div>
+
+                <button 
+                  type="submit"
+                  disabled={isLoading || !email || !password}
+                  className={`w-full mt-6 text-white font-bold py-4 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${
+                    selectedRole === 'admin' 
+                      ? 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.2)]'
+                      : 'bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.2)]'
+                  }`}
+                >
+                  {isLoading ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <span>מתחבר...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>אישור</span>
+                      <LogIn className="w-5 h-5" />
+                    </>
+                  )}
+                </button>
+              </form>
             </motion.div>
           )}
 
