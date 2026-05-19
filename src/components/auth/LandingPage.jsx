@@ -12,16 +12,25 @@ export default function LandingPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleRoleSelection = (role) => {
     setSelectedRole(role);
     setEmail('');
     setPassword('');
+    setError('');
     setView('login-form');
   };
 
   const handleLoginSubmit = (e) => {
     e.preventDefault();
+    setError('');
+
+    if (selectedRole === 'admin' && email.toLowerCase() !== 'libermanasaf@gmail.com') {
+      setError('אין לך הרשאות ניהול. אנא התחבר כשחקן.');
+      return;
+    }
+
     setIsLoading(true);
     // Simulate auth check
     setTimeout(() => {
@@ -162,6 +171,16 @@ export default function LandingPage() {
               </div>
 
               <form onSubmit={handleLoginSubmit} className="space-y-4">
+                {error && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: -10 }} 
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-rose-500/10 border border-rose-500/30 text-rose-400 p-3 rounded-xl text-sm font-medium flex items-center gap-2"
+                  >
+                    <span className="font-bold">שגיאה:</span> {error}
+                  </motion.div>
+                )}
+                
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium text-slate-300 ml-1">כתובת אימייל</label>
                   <div className="relative">
