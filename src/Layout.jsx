@@ -4,7 +4,6 @@ import Sidebar from '@/components/navigation/Sidebar';
 import BottomNav from '@/components/navigation/BottomNav';
 import { useAuth } from '@/lib/AuthContext';
 import LandingPage from '@/components/auth/LandingPage';
-import { motion } from 'framer-motion';
 
 export default function Layout({ children, currentPageName }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -31,61 +30,61 @@ export default function Layout({ children, currentPageName }) {
           --color-primary: #1B4D3E;
           --color-gold: #D4AF37;
         }
+
+        @keyframes glow-pulse-1 {
+          0%, 100% { opacity: 0.3; transform: translate(0, 0) scale(1); }
+          50% { opacity: 0.6; transform: translate(15px, -10px) scale(1.15); }
+        }
+        @keyframes glow-pulse-2 {
+          0%, 100% { opacity: 0.25; transform: translate(0, 0) scale(1); }
+          50% { opacity: 0.5; transform: translate(-20px, 15px) scale(1.1); }
+        }
+        @keyframes glow-pulse-3 {
+          0%, 100% { opacity: 0.2; transform: translate(0, 0) scale(1); }
+          50% { opacity: 0.45; transform: translate(10px, 10px) scale(1.2); }
+        }
+        .glow-orb-1 { animation: glow-pulse-1 6s ease-in-out infinite; }
+        .glow-orb-2 { animation: glow-pulse-2 8s ease-in-out infinite; }
+        .glow-orb-3 { animation: glow-pulse-3 7s ease-in-out infinite; }
       `}</style>
+
+      {/* Ambient glow orbs */}
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        {/* Top-right emerald glow */}
+        <div className="glow-orb-1 absolute -top-32 -right-32 w-[400px] h-[400px] bg-emerald-500/20 dark:bg-emerald-500/10 rounded-full blur-[100px]" />
+        {/* Bottom-left amber glow */}
+        <div className="glow-orb-2 absolute -bottom-40 -left-40 w-[450px] h-[450px] bg-amber-500/15 dark:bg-amber-500/8 rounded-full blur-[120px]" />
+        {/* Center-top subtle teal glow */}
+        <div className="glow-orb-3 absolute top-1/3 left-1/2 -translate-x-1/2 w-[350px] h-[350px] bg-teal-400/10 dark:bg-teal-400/5 rounded-full blur-[100px]" />
+        {/* Bottom-right small emerald accent */}
+        <div className="glow-orb-1 absolute bottom-20 -right-20 w-[250px] h-[250px] bg-emerald-600/10 dark:bg-emerald-600/5 rounded-full blur-[80px]" />
+      </div>
       
-      {/* Background Glowing Orbs */}
-      <div className="fixed top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
-        <motion.div 
-          animate={{ 
-            scale: [1, 1.2, 1],
-            opacity: [0.1, 0.2, 0.1] 
-          }}
-          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute -top-[20%] -right-[10%] w-[500px] h-[500px] bg-emerald-500/20 dark:bg-emerald-600/20 blur-[100px] rounded-full" 
-        />
-        <motion.div 
-          animate={{ 
-            scale: [1, 1.3, 1],
-            opacity: [0.1, 0.15, 0.1] 
-          }}
-          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-          className="absolute -bottom-[20%] -left-[10%] w-[500px] h-[500px] bg-amber-500/15 dark:bg-amber-600/15 blur-[100px] rounded-full" 
-        />
-      </div>
-
-      {/* Main App Container */}
-      <div className="relative z-10 mx-auto max-w-lg min-h-screen shadow-[0_0_50px_rgba(16,185,129,0.1)] dark:shadow-[0_0_50px_rgba(16,185,129,0.05)] bg-white/40 dark:bg-slate-950/40 backdrop-blur-3xl flex flex-col">
-        
-        {/* Header */}
-        <header className="sticky top-0 z-30 bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border-b border-emerald-500/10 dark:border-emerald-500/20 transition-colors duration-300 shadow-[0_4px_30px_rgba(16,185,129,0.05)]">
-          <div className="flex items-center justify-between px-4 py-3">
-            <div className="w-10" />
-            <h1 className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-l from-emerald-600 to-emerald-400 dark:from-emerald-400 dark:to-emerald-300 drop-shadow-sm">
-              סינתטיקו חולון
-            </h1>
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="p-2.5 rounded-xl bg-gradient-to-br from-emerald-800 to-emerald-950 text-white hover:from-emerald-700 hover:to-emerald-900 transition-all shadow-[0_0_15px_rgba(16,185,129,0.3)] hover:shadow-[0_0_20px_rgba(16,185,129,0.5)] border border-emerald-500/30"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
-          </div>
-        </header>
-        
-        <Sidebar
-          isOpen={sidebarOpen}
-          onClose={() => setSidebarOpen(false)}
-          currentPage={currentPageName}
-        />
-        
-        <main className="flex-1 pb-[env(safe-area-inset-bottom)] relative z-10">
-          {children}
-        </main>
-
-        <div className="sticky bottom-0 z-30 w-full">
-          <BottomNav />
+      {/* Header */}
+      <header className="fixed top-0 left-0 right-0 z-30 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 transition-colors duration-300">
+        <div className="flex items-center justify-between px-4 py-3">
+          <div className="w-10" />
+          <h1 className="text-lg font-bold text-emerald-900 dark:text-emerald-400">סינתטיקו חולון</h1>
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="p-2 rounded-xl bg-emerald-900 dark:bg-emerald-700 text-white hover:bg-emerald-800 dark:hover:bg-emerald-600 transition-colors shadow-lg"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
         </div>
-      </div>
+      </header>
+      
+      <Sidebar
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        currentPage={currentPageName}
+      />
+      
+      <main className="relative z-10 pt-16 min-h-screen pb-[env(safe-area-inset-bottom)]">
+        {children}
+      </main>
+
+      <BottomNav />
     </div>
   );
 }
