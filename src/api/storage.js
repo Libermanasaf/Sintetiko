@@ -1,3 +1,5 @@
+import { supabase } from '../lib/supabase';
+
 const generateId = () => crypto.randomUUID();
 
 const sortItems = (items, sortField) => {
@@ -16,7 +18,14 @@ const sortItems = (items, sortField) => {
   });
 };
 
+const tableMapping = {
+  'Player': 'players',
+  'Round': 'rounds',
+  'Payment': 'payments'
+};
+
 export function createStorage(entityName) {
+  const tableName = tableMapping[entityName] || entityName.toLowerCase();
   const key = `sintetiko_${entityName}`;
 
   const getAll = () => JSON.parse(localStorage.getItem(key) || '[]');
@@ -24,11 +33,44 @@ export function createStorage(entityName) {
 
   return {
     async list(sortField, limit) {
+      if (supabase) {
+        let query = supabase.from(tableName).select('*');
+        if (sortField) {
+          const desc = sortField.startsWith('-');
+          const field = desc ? sortField.slice(1) : sortField;
+          query = query.order(field, { ascending: !desc });
+        }
+        if (limit) {
+          query = query.limit(limit);
+        }
+        const { data, error } = await query;
+        if (error) throw error;
+        return data;
+      }
+
+      // Fallback
       const items = sortItems(getAll(), sortField);
       return limit ? items.slice(0, limit) : items;
     },
 
     async create(data) {
+      if (supabase) {
+        const item = {
+          ...data,
+          id: data.id || generateId(),
+          created_date: data.created_date || new Date().toISOString(),
+          updated_date: data.updated_date || new Date().toISOString(),
+        };
+        const { data: created, error } = await supabase
+          .from(tableName)
+          .insert([item])
+          .select()
+          .single();
+        if (error) throw error;
+        return created;
+      }
+
+      // Fallback
       const items = getAll();
       const item = {
         ...data,
@@ -42,6 +84,22 @@ export function createStorage(entityName) {
     },
 
     async update(id, data) {
+      if (supabase) {
+        const updateData = {
+          ...data,
+          updated_date: new Date().toISOString(),
+        };
+        const { data: updated, error } = await supabase
+          .from(tableName)
+          .update(updateData)
+          .eq('id', id)
+          .select()
+          .single();
+        if (error) throw error;
+        return updated;
+      }
+
+      // Fallback
       const items = getAll();
       const index = items.findIndex((i) => i.id === id);
       if (index === -1) throw new Error(`${entityName} not found: ${id}`);
@@ -51,7 +109,18 @@ export function createStorage(entityName) {
     },
 
     async delete(id) {
+      if (supabase) {
+        const { error } = await supabase
+          .from(tableName)
+          .delete()
+          .eq('id', id);
+        if (error) throw error;
+        return;
+      }
+
+      // Fallback
       setAll(getAll().filter((i) => i.id !== id));
     },
   };
 }
+
