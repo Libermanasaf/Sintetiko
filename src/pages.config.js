@@ -56,6 +56,7 @@ import Statistics from './pages/Statistics';
 import Payments from './pages/Payments';
 import Backup from './pages/Backup';
 import PlayerHome from './pages/PlayerHome';
+import UserApprovals from './pages/UserApprovals';
 import __Layout from './Layout.jsx';
 
 export const PAGES = {
@@ -68,6 +69,7 @@ export const PAGES = {
     "Payments": Payments,
     "Backup": Backup,
     "PlayerHome": PlayerHome,
+    "UserApprovals": UserApprovals,
 }
 
 export const pagesConfig = {

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { Home, Users, BarChart3, Shuffle, X, History, Trophy, CreditCard, Shield, LogOut } from 'lucide-react';
+import { Home, Users, BarChart3, Shuffle, X, History, Trophy, CreditCard, Shield, LogOut, UserCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/lib/AuthContext';
 
@@ -10,14 +10,17 @@ const menuItems = [
   { name: 'הפודיום', page: 'Podium', icon: Trophy },
   { name: 'סגל שחקנים', page: 'Players', icon: Users },
   { name: 'סטטיסטיקות', page: 'Statistics', icon: BarChart3 },
-  { name: 'יצירת מחזור', page: 'CreateRound', icon: Shuffle },
+  { name: 'יצירת מחזור', page: 'CreateRound', icon: Shuffle, adminOnly: true },
   { name: 'היסטוריית משחקים', page: 'GameHistory', icon: History },
-  { name: 'תשלומים', page: 'Payments', icon: CreditCard },
-  { name: 'גיבוי ושחזור', page: 'Backup', icon: Shield },
+  { name: 'תשלומים', page: 'Payments', icon: CreditCard, adminOnly: true },
+  { name: 'אישור משתמשים', page: 'UserApprovals', icon: UserCheck, adminOnly: true },
+  { name: 'גיבוי ושחזור', page: 'Backup', icon: Shield, adminOnly: true },
 ];
 
 export default function Sidebar({ isOpen, onClose, currentPage }) {
-  const { logout } = useAuth();
+  const { role, logout } = useAuth();
+  const isAdmin = role === 'admin';
+  const visibleItems = menuItems.filter(item => !item.adminOnly || isAdmin);
 
   return (
     <AnimatePresence>
@@ -54,7 +57,7 @@ export default function Sidebar({ isOpen, onClose, currentPage }) {
               </div>
               
               <nav className="space-y-2">
-                {menuItems.map((item) => {
+                {visibleItems.map((item) => {
                   const Icon = item.icon;
                   const isActive = currentPage === item.page;
                   

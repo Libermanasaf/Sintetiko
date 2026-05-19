@@ -64,7 +64,31 @@ export const AuthProvider = ({ children }) => {
 
     if (error) return { error };
 
-    const detectedRole = email.toLowerCase() === 'libermanasaf@gmail.com' ? 'admin' : 'player';
+    const user = data.user;
+
+    // Check if user confirmed their email address
+    if (user && !user.email_confirmed_at) {
+      await supabase.auth.signOut();
+      return { error: { message: 'אנא אשר את חשבונך באמצעות קישור האימות שנשלח למייל שלך.' } };
+    }
+
+    const userEmail = email.toLowerCase();
+
+    // If not admin, check if they are approved by admin in players table
+    if (userEmail !== 'libermanasaf@gmail.com') {
+      const { data: player, error: playerError } = await supabase
+        .from('players')
+        .select('is_approved')
+        .eq('email', userEmail)
+        .maybeSingle();
+
+      if (playerError || !player || !player.is_approved) {
+        await supabase.auth.signOut();
+        return { error: { message: 'החשבון שלך אושר במייל, אך ממתין לאישור מנהל המערכת (יו"ר ההתאחדות).' } };
+      }
+    }
+
+    const detectedRole = userEmail === 'libermanasaf@gmail.com' ? 'admin' : 'player';
     setRole(detectedRole);
     return { error: null };
   };
@@ -78,7 +102,28 @@ export const AuthProvider = ({ children }) => {
       email,
       password,
     });
-    return { data, error };
+
+    if (error) return { error };
+
+    // Create an unapproved player record in players table
+    if (data?.user) {
+      const { error: insertError } = await supabase.from('players').insert([
+        {
+          id: data.user.id,
+          name: email.split('@')[0], // Use email prefix as a placeholder name
+          email: email.toLowerCase(),
+          is_approved: false,
+          rating: 7.0, // Default rating
+          wins: 0,
+          appearances: 0
+        }
+      ]);
+      if (insertError) {
+        console.error('Error creating player profile during sign up:', insertError.message);
+      }
+    }
+
+    return { data, error: null };
   };
 
   const logout = async () => {
