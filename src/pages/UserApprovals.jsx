@@ -14,12 +14,15 @@ export default function UserApprovals() {
     setIsLoading(true);
     try {
       if (!supabase) {
-        // Fallback for simulation
-        const mockPending = [
-          { id: '1', name: 'ישראל ישראלי', email: 'israel@example.com', created_date: new Date().toISOString() },
-          { id: '2', name: 'אבי כהן', email: 'avi.cohen@example.com', created_date: new Date().toISOString() }
-        ];
-        setPendingPlayers(mockPending);
+        // Fallback for simulation - load from local storage
+        try {
+          const playersKey = 'sintetiko_Player';
+          const players = JSON.parse(localStorage.getItem(playersKey) || '[]');
+          const pending = players.filter(p => p.email && p.is_approved === false);
+          setPendingPlayers(pending);
+        } catch (err) {
+          console.error('Error fetching pending players from local storage:', err);
+        }
         setIsLoading(false);
         return;
       }
@@ -59,6 +62,14 @@ export default function UserApprovals() {
           .eq('id', playerId);
 
         if (error) throw error;
+      } else {
+        const playersKey = 'sintetiko_Player';
+        const players = JSON.parse(localStorage.getItem(playersKey) || '[]');
+        const index = players.findIndex(p => p.id === playerId);
+        if (index !== -1) {
+          players[index].is_approved = true;
+          localStorage.setItem(playersKey, JSON.stringify(players));
+        }
       }
 
       toast({
@@ -95,6 +106,16 @@ export default function UserApprovals() {
           .eq('id', playerId);
 
         if (error) throw error;
+      } else {
+        const playersKey = 'sintetiko_Player';
+        const players = JSON.parse(localStorage.getItem(playersKey) || '[]');
+        const index = players.findIndex(p => p.id === playerId);
+        if (index !== -1) {
+          players[index].email = null;
+          players[index].user_id = null;
+          players[index].is_approved = false;
+          localStorage.setItem(playersKey, JSON.stringify(players));
+        }
       }
 
       toast({

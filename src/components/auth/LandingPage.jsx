@@ -56,17 +56,41 @@ export default function LandingPage() {
   useEffect(() => {
     if (view === 'register') {
       const fetchUnlinkedPlayers = async () => {
-        if (!supabase) return;
-        const { data, error } = await supabase
-          .from('players')
-          .select('id, name')
-          .order('name');
-        
-        if (data && !error) {
-          setSquadPlayers(data);
-          if (data.length > 0) {
-            setSelectedPlayerId(data[0].id);
+        setSelectedPlayerId('');
+        if (!supabase) {
+          // Fallback to local storage
+          try {
+            const playersKey = 'sintetiko_Player';
+            const players = JSON.parse(localStorage.getItem(playersKey) || '[]');
+            // Filter players that do not have an email or user_id
+            const unlinked = players.filter(p => !p.email && !p.user_id);
+            // Sort by name
+            unlinked.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'he'));
+            setSquadPlayers(unlinked);
+          } catch (err) {
+            console.error('Error reading players from local storage:', err);
           }
+          return;
+        }
+
+        try {
+          const { data, error } = await supabase
+            .from('players')
+            .select('id, name, email, user_id')
+            .order('name');
+          
+          if (error) {
+            console.error('Error fetching players:', error.message, error.details);
+            return;
+          }
+
+          if (data) {
+            // Filter players that do not have an email or user_id
+            const unlinked = data.filter(p => !p.email && !p.user_id);
+            setSquadPlayers(unlinked);
+          }
+        } catch (err) {
+          console.error('Error in fetchUnlinkedPlayers:', err);
         }
       };
       fetchUnlinkedPlayers();

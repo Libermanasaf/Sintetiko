@@ -110,6 +110,19 @@ export const AuthProvider = ({ children }) => {
   const register = async (email, password, playerId) => {
     if (!supabase) {
       // Mock register successful
+      try {
+        const playersKey = 'sintetiko_Player';
+        const players = JSON.parse(localStorage.getItem(playersKey) || '[]');
+        const index = players.findIndex(p => p.id === playerId);
+        if (index !== -1) {
+          players[index].email = email.toLowerCase();
+          players[index].user_id = `mock-user-${Date.now()}`;
+          players[index].is_approved = false;
+          localStorage.setItem(playersKey, JSON.stringify(players));
+        }
+      } catch (err) {
+        console.error('Error updating mock player registration:', err);
+      }
       return { error: null };
     }
     const { data, error } = await supabase.auth.signUp({
