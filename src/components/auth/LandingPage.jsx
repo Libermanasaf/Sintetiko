@@ -409,11 +409,11 @@ export default function LandingPage() {
                 <Clock className="w-10 h-10 text-amber-400" />
               </div>
               
-              <h2 className="text-2xl font-black text-white mb-3">משתמש בבדיקה</h2>
-              <p className="text-slate-350 mb-8 leading-relaxed text-base">
-                אנא המתן שמנהל המערכת יאשרך.
-                <br />
-                <span className="text-slate-500 text-sm">פרופיל השחקן שלך נקשר ונרשם בהצלחה.</span>
+              <h2 className="text-2xl font-black text-white mb-3 leading-tight">
+                הרישום בוצע בהצלחה ועבר לבדיקה של מנהל המערכת
+              </h2>
+              <p className="text-slate-300 mb-8 leading-relaxed text-base">
+                יו"ר ההתאחדות (libermanasaf@gmail.com) יאשר את חשבונך ידנית, ולאחר מכן תוכל להיכנס לאזור האישי שלך.
               </p>
 
               <button

@@ -73,9 +73,39 @@ export const AuthProvider = ({ children }) => {
   const login = async (selectedRole, email, password) => {
     // If Supabase is not configured, fall back to simulated login
     if (!supabase) {
-      sessionStorage.setItem('sintetiko_role', selectedRole);
-      setRole(selectedRole);
-      return { error: null };
+      const userEmail = email.toLowerCase();
+      
+      // If it's the admin, bypass player approval check
+      if (userEmail === 'libermanasaf@gmail.com') {
+        sessionStorage.setItem('sintetiko_role', 'admin');
+        setRole('admin');
+        setUser({ email: userEmail, id: 'mock-admin' });
+        return { error: null };
+      }
+
+      // Check if player profile exists and is approved in localStorage
+      try {
+        const playersKey = 'sintetiko_Player';
+        const players = JSON.parse(localStorage.getItem(playersKey) || '[]');
+        const player = players.find(p => p.email && p.email.toLowerCase() === userEmail);
+
+        if (!player) {
+          return { error: { message: 'אימייל זה אינו רשום במערכת. אנא הירשם תחילה.' } };
+        }
+
+        if (!player.is_approved) {
+          return { error: { message: 'החשבון שלך ממתין לאישור מנהל המערכת (יו"ר ההתאחדות).' } };
+        }
+
+        // Approved player
+        sessionStorage.setItem('sintetiko_role', 'player');
+        setRole('player');
+        setUser({ email: userEmail, id: player.user_id || `mock-user-${player.id}` });
+        return { error: null };
+      } catch (err) {
+        console.error('Error during mock login check:', err);
+        return { error: { message: 'שגיאה באימות המשתמש' } };
+      }
     }
 
     const { data, error } = await supabase.auth.signInWithPassword({
