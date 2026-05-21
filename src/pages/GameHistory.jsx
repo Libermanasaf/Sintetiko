@@ -52,6 +52,9 @@ export default function GameHistory() {
       Promise.all(updates.map(({ playerId, wins }) =>
         Player.update(playerId, { wins })
       )),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['players'] });
+    },
   });
 
   const updateTeamsMutation = useMutation({
@@ -102,15 +105,40 @@ export default function GameHistory() {
 
   const saveResults = async () => {
     if (!selectedRound) return;
-    const winningTeam = Object.entries(tempWins).reduce((max, [team, wins]) =>
-      wins > (tempWins[max] || 0) ? parseInt(team) : max, 0);
-    const winningPlayers = selectedRound.teams[winningTeam] || [];
-    const playerUpdates = winningPlayers.map(playerId => {
-      const player = players.find(p => p.id === playerId);
-      return { playerId, wins: (player?.wins || 0) + 1 };
-    });
+
+    // קבע את הקבוצה המנצחת — null אם שוויון או שלא הוזנו תוצאות
+    const winsValues = Object.values(tempWins);
+    const maxWins = winsValues.length ? Math.max(...winsValues) : 0;
+    const teamsWithMax = (selectedRound.teams || [])
+      .map((_, i) => i)
+      .filter(i => (tempWins[i] || 0) === maxWins);
+    const winningTeam = (maxWins > 0 && teamsWithMax.length === 1) ? teamsWithMax[0] : null;
+
+    // חשב שינויי גביעים — בטל קודם את הקבוצה שזכתה בעבר כדי שעריכה חוזרת לא תספור פעמיים
+    const playerDelta = {};
+    const prevWinningTeam = selectedRound.winningTeam;
+    if (prevWinningTeam !== undefined && prevWinningTeam !== null) {
+      (selectedRound.teams[prevWinningTeam] || []).forEach(pid => {
+        playerDelta[pid] = (playerDelta[pid] || 0) - 1;
+      });
+    }
+    if (winningTeam !== null) {
+      (selectedRound.teams[winningTeam] || []).forEach(pid => {
+        playerDelta[pid] = (playerDelta[pid] || 0) + 1;
+      });
+    }
+
+    const playerUpdates = Object.entries(playerDelta)
+      .filter(([, delta]) => delta !== 0)
+      .map(([playerId, delta]) => {
+        const player = players.find(p => p.id === playerId);
+        return { playerId, wins: Math.max(0, (player?.wins || 0) + delta) };
+      });
+
     await updateRoundMutation.mutateAsync({ roundId: selectedRound.id, teamWins: tempWins, winningTeam });
-    await updatePlayersMutation.mutateAsync(playerUpdates);
+    if (playerUpdates.length) {
+      await updatePlayersMutation.mutateAsync(playerUpdates);
+    }
   };
 
   const renderStars = (rating) => {

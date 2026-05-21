@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, Shield, UserPlus, Mail, ArrowRight, CheckCircle2, KeyRound, LogIn, Clock } from 'lucide-react';
+import { User, Shield, UserPlus, Mail, ArrowRight, KeyRound, LogIn, Clock } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, X, Users, Mail, Clock, AlertTriangle } from 'lucide-react';
+import { Check, X, Users, Mail, Clock } from 'lucide-react';
 import { useToast } from "@/components/ui/use-toast";
 
 export default function UserApprovals() {
