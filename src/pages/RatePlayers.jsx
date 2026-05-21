@@ -10,43 +10,61 @@ function StarPicker({ value, onChange }) {
   const [hover, setHover] = useState(null);
   const display = hover ?? value ?? 0;
 
+  const handleTouch = (e, rating) => {
+    e.preventDefault();
+    const touch = e.changedTouches[0];
+    const rect = e.currentTarget.parentElement.getBoundingClientRect();
+    const x = touch.clientX - rect.left;
+    const isLeftHalf = x < rect.width / 2;
+    const star = parseInt(e.currentTarget.parentElement.dataset.star);
+    const halfVal = Math.max(1.0, star - 0.5);
+    onChange(isLeftHalf ? halfVal : star);
+  };
+
   return (
-    <div className="flex gap-1" onMouseLeave={() => setHover(null)}>
+    <div className="flex gap-1.5" onMouseLeave={() => setHover(null)}>
       {[1, 2, 3, 4, 5].map(star => {
         const halfVal = Math.max(1.0, star - 0.5);
         const isFull = display >= star;
         const isHalf = !isFull && display >= star - 0.5 && display > 0;
 
         return (
-          <div key={star} className="relative w-8 h-8 select-none">
+          <div
+            key={star}
+            data-star={star}
+            className="relative select-none touch-manipulation"
+            style={{ width: 36, height: 36 }}
+          >
             {/* Empty star */}
-            <Star className="w-8 h-8 text-amber-400/25" />
+            <Star className="w-9 h-9 text-amber-400/25" />
             {/* Filled overlay */}
             {(isFull || isHalf) && (
               <div
                 className="absolute inset-0 overflow-hidden pointer-events-none"
                 style={{ width: isFull ? '100%' : '50%' }}
               >
-                <Star className="w-8 h-8 fill-amber-400 text-amber-400" />
+                <Star className="w-9 h-9 fill-amber-400 text-amber-400" />
               </div>
             )}
-            {/* Left half zone → halfVal */}
+            {/* Left half — desktop hover + click, mobile touch */}
             <div
               className="absolute inset-y-0 left-0 w-1/2 cursor-pointer"
               onMouseEnter={() => setHover(halfVal)}
               onClick={() => onChange(halfVal)}
+              onTouchEnd={(e) => handleTouch(e, halfVal)}
             />
-            {/* Right half zone → star */}
+            {/* Right half — desktop hover + click, mobile touch */}
             <div
               className="absolute inset-y-0 right-0 w-1/2 cursor-pointer"
               onMouseEnter={() => setHover(star)}
               onClick={() => onChange(star)}
+              onTouchEnd={(e) => handleTouch(e, star)}
             />
           </div>
         );
       })}
       {value > 0 && (
-        <span className="text-amber-400 font-bold text-sm self-center mr-1 w-6">
+        <span className="text-amber-400 font-bold text-sm self-center mr-1 min-w-[2rem]">
           {value % 1 === 0 ? value.toFixed(1) : value}
         </span>
       )}

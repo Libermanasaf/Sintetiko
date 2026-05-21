@@ -68,19 +68,20 @@ export default function PlayerHome() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[80vh] p-6" dir="rtl">
+    <div className="flex flex-col items-center justify-center min-h-[80vh] px-6 py-8 pb-28" dir="rtl">
       <motion.div
         initial={{ opacity: 0, y: 40, scale: 0.8 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.7, type: 'spring', bounce: 0.35 }}
+        className="w-full flex justify-center"
         style={{ filter: 'drop-shadow(0 24px 64px rgba(180,130,20,0.5))' }}
       >
-        {/* Card */}
+        {/* Card — responsive: at most 280px, never wider than viewport minus padding */}
         <div
           className="relative"
           style={{
-            width: 280,
-            height: 420,
+            width: 'min(280px, calc(100vw - 48px))',
+            aspectRatio: '2 / 3',
             backgroundImage: 'url(/gold-card.png)',
             backgroundSize: '100% 100%',
             backgroundRepeat: 'no-repeat',
@@ -95,16 +96,20 @@ export default function PlayerHome() {
               <img
                 src={player.image}
                 alt={player.name}
-                className="w-28 h-28 rounded-full object-cover"
+                className="rounded-full object-cover"
                 style={{
+                  width: 'min(112px, 38vw)',
+                  height: 'min(112px, 38vw)',
                   border: '3px solid rgba(200,155,30,0.85)',
                   boxShadow: '0 0 24px rgba(200,155,30,0.55), 0 4px 12px rgba(0,0,0,0.3)',
                 }}
               />
             ) : (
               <div
-                className="w-28 h-28 rounded-full flex items-center justify-center"
+                className="rounded-full flex items-center justify-center"
                 style={{
+                  width: 'min(112px, 38vw)',
+                  height: 'min(112px, 38vw)',
                   background: 'linear-gradient(135deg, rgba(212,175,55,0.35), rgba(180,130,20,0.2))',
                   border: '3px solid rgba(200,155,30,0.85)',
                   boxShadow: '0 0 24px rgba(200,155,30,0.55)',
@@ -122,11 +127,11 @@ export default function PlayerHome() {
 
           {/* Player name */}
           <div
-            className="absolute left-0 right-0 text-center px-5"
+            className="absolute left-0 right-0 text-center px-4"
             style={{ top: '64%' }}
           >
             <h2
-              className="font-black text-lg leading-tight truncate"
+              className="font-black text-base leading-tight truncate"
               style={{
                 color: '#3d2000',
                 textShadow: '0 1px 3px rgba(255,230,120,0.5)',
