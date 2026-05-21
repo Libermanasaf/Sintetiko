@@ -60,7 +60,18 @@ export default function StepOpeningTeam({ numTeams, openingTeams, setOpeningTeam
       });
       
       await Promise.all(updatePromises.filter(Boolean));
-      
+
+      // שליחת התראת Push לכל המשתמשים — fire-and-forget, לא חוסם ניווט
+      fetch('/api/send-notification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: 'פורסמו הרכבים!',
+          body: 'הרכבי המחזור החדש מוכנים — לחץ לצפייה',
+          url: '/GameHistory',
+        }),
+      }).catch(() => {});
+
       toast.success('המחזור נשמר בהצלחה!');
       navigate(createPageUrl('Home'));
     } catch (error) {

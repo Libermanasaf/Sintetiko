@@ -1,13 +1,27 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Menu } from 'lucide-react';
 import Sidebar from '@/components/navigation/Sidebar';
 import BottomNav from '@/components/navigation/BottomNav';
+import NotificationPrompt from '@/components/NotificationPrompt';
 import { useAuth } from '@/lib/AuthContext';
 import LandingPage from '@/components/auth/LandingPage';
+import { registerServiceWorker, ensureSubscribed } from '@/lib/push';
 
 export default function Layout({ children, currentPageName }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { role, isInitializing } = useAuth();
+  const { role, user, isInitializing } = useAuth();
+
+  // Register the service worker once on mount
+  useEffect(() => {
+    registerServiceWorker();
+  }, []);
+
+  // Keep the push subscription fresh once the user is known and has granted permission
+  useEffect(() => {
+    if (role && user) {
+      ensureSubscribed(user.email);
+    }
+  }, [role, user]);
 
   if (isInitializing) {
     return null; // or a loading spinner
@@ -81,6 +95,7 @@ export default function Layout({ children, currentPageName }) {
       />
       
       <main className="relative z-10 pt-16 min-h-screen pb-[env(safe-area-inset-bottom)]">
+        <NotificationPrompt />
         {children}
       </main>
 
