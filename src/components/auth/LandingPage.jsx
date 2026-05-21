@@ -413,7 +413,7 @@ export default function LandingPage() {
                 הרישום בוצע בהצלחה ועבר לבדיקה של מנהל המערכת
               </h2>
               <p className="text-slate-300 mb-8 leading-relaxed text-base">
-                יו"ר ההתאחדות (libermanasaf@gmail.com) יאשר את חשבונך ידנית, ולאחר מכן תוכל להיכנס לאזור האישי שלך.
+                יו"ר ההתאחדות יאשר את חשבונך ידנית, ולאחר מכן תוכל להיכנס לאזור האישי שלך.
               </p>
 
               <button
