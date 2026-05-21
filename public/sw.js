@@ -1,11 +1,41 @@
-// Service worker for Sintetiko Holon web push notifications
+// Service worker for Sintetiko Holon — web push + offline app shell
+
+const CACHE = 'sintetiko-v1';
 
 self.addEventListener('install', () => {
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(self.clients.claim());
+  event.waitUntil(
+    Promise.all([
+      self.clients.claim(),
+      caches.keys().then((keys) =>
+        Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))
+      ),
+    ])
+  );
+});
+
+// Network-first for same-origin GET requests, falling back to cache when offline.
+self.addEventListener('fetch', (event) => {
+  const { request } = event;
+  if (request.method !== 'GET') return;
+  if (!request.url.startsWith(self.location.origin)) return;
+
+  event.respondWith(
+    fetch(request)
+      .then((response) => {
+        if (response && response.status === 200) {
+          const clone = response.clone();
+          caches.open(CACHE).then((cache) => cache.put(request, clone));
+        }
+        return response;
+      })
+      .catch(() =>
+        caches.match(request).then((cached) => cached || caches.match('/index.html'))
+      )
+  );
 });
 
 self.addEventListener('push', (event) => {

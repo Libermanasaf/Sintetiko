@@ -3,6 +3,7 @@ import { Menu } from 'lucide-react';
 import Sidebar from '@/components/navigation/Sidebar';
 import BottomNav from '@/components/navigation/BottomNav';
 import NotificationPrompt from '@/components/NotificationPrompt';
+import InstallPrompt from '@/components/InstallPrompt';
 import { useAuth } from '@/lib/AuthContext';
 import LandingPage from '@/components/auth/LandingPage';
 import { registerServiceWorker, ensureSubscribed } from '@/lib/push';
@@ -95,6 +96,7 @@ export default function Layout({ children, currentPageName }) {
       />
       
       <main className="relative z-10 pt-16 min-h-screen pb-[env(safe-area-inset-bottom)]">
+        <InstallPrompt />
         <NotificationPrompt />
         {children}
       </main>
