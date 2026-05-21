@@ -21,8 +21,9 @@ export default function Sidebar({ isOpen, onClose, currentPage }) {
   const { role, logout } = useAuth();
   const location = useLocation();
   const isAdmin = role === 'admin';
-  const onPlayerHomePage = location.pathname === '/PlayerHome';
-  const showPlayerView = role === 'player' || onPlayerHomePage;
+  const playerPages = ['/PlayerHome', '/Podium', '/Statistics', '/GameHistory'];
+  const onPlayerPage = playerPages.includes(location.pathname);
+  const showPlayerView = role === 'player' || onPlayerPage;
   const visibleItems = showPlayerView
     ? menuItems.filter(item => item.playerVisible)
     : menuItems.filter(item => !item.adminOnly || isAdmin);
