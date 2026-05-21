@@ -2,13 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, X, Users, Mail, Clock } from 'lucide-react';
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from 'sonner';
 
 export default function UserApprovals() {
   const [pendingPlayers, setPendingPlayers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [actionInProgress, setActionInProgress] = useState(null); // id of player currently being updated
-  const { toast } = useToast();
+  const [actionInProgress, setActionInProgress] = useState(null);
 
   const fetchPendingPlayers = async () => {
     setIsLoading(true);
@@ -38,11 +37,7 @@ export default function UserApprovals() {
       setPendingPlayers(data || []);
     } catch (err) {
       console.error('Error fetching pending players:', err.message);
-      toast({
-        variant: "destructive",
-        title: "שגיאה בטעינת המשתמשים",
-        description: err.message,
-      });
+      toast.error("שגיאה בטעינת המשתמשים", { description: err.message });
     } finally {
       setIsLoading(false);
     }
@@ -72,18 +67,11 @@ export default function UserApprovals() {
         }
       }
 
-      toast({
-        title: "השחקן אושר בהצלחה",
-        description: `חשבונו של ${name} הופעל והוא יכול כעת להתחבר.`,
-      });
+      toast.success("השחקן אושר בהצלחה", { description: `חשבונו של ${name} הופעל והוא יכול כעת להתחבר.` });
 
       setPendingPlayers(prev => prev.filter(p => p.id !== playerId));
     } catch (err) {
-      toast({
-        variant: "destructive",
-        title: "שגיאה באישור השחקן",
-        description: err.message,
-      });
+      toast.error("שגיאה באישור השחקן", { description: err.message });
     } finally {
       setActionInProgress(null);
     }
@@ -118,18 +106,11 @@ export default function UserApprovals() {
         }
       }
 
-      toast({
-        title: "בקשת ההרשמה נדחתה",
-        description: `בקשתו של ${name} הוסרה והפרופיל שלו חזר להיות פנוי בסגל.`,
-      });
+      toast.success("בקשת ההרשמה נדחתה", { description: `בקשתו של ${name} הוסרה והפרופיל שלו חזר להיות פנוי בסגל.` });
 
       setPendingPlayers(prev => prev.filter(p => p.id !== playerId));
     } catch (err) {
-      toast({
-        variant: "destructive",
-        title: "שגיאה בדחיית הבקשה",
-        description: err.message,
-      });
+      toast.error("שגיאה בדחיית הבקשה", { description: err.message });
     } finally {
       setActionInProgress(null);
     }
