@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { Home, Users, BarChart3, Shuffle, X, History, Trophy, CreditCard, Shield, LogOut, UserCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -19,9 +19,11 @@ const menuItems = [
 
 export default function Sidebar({ isOpen, onClose, currentPage }) {
   const { role, logout } = useAuth();
+  const location = useLocation();
   const isAdmin = role === 'admin';
-  const isPlayer = role === 'player';
-  const visibleItems = isPlayer
+  const onPlayerHomePage = location.pathname === '/PlayerHome';
+  const showPlayerView = role === 'player' || onPlayerHomePage;
+  const visibleItems = showPlayerView
     ? menuItems.filter(item => item.playerVisible)
     : menuItems.filter(item => !item.adminOnly || isAdmin);
 
