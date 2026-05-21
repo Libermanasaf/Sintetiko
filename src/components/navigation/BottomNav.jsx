@@ -22,7 +22,8 @@ export default function BottomNav() {
   const { role } = useAuth();
   const isAdmin = role === 'admin';
 
-  const visibleItems = isAdmin ? adminNavItems : playerNavItems;
+  const onPlayerHomePage = location.pathname === '/PlayerHome';
+  const visibleItems = (isAdmin && !onPlayerHomePage) ? adminNavItems : playerNavItems;
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 safe-area-pb">
