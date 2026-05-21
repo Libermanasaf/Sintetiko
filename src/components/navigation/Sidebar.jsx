@@ -7,6 +7,7 @@ import { useAuth } from '@/lib/AuthContext';
 
 const menuItems = [
   { name: 'עמוד הבית', page: 'Home', icon: Home },
+  { name: 'עמוד הבית', page: 'PlayerHome', icon: Home, playerVisible: true },
   { name: 'הפודיום', page: 'Podium', icon: Trophy, playerVisible: true },
   { name: 'סגל שחקנים', page: 'Players', icon: Users, adminOnly: true },
   { name: 'סטטיסטיקות', page: 'Statistics', icon: BarChart3, playerVisible: true },
