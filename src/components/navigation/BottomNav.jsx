@@ -1,14 +1,20 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Trophy, Users, Shuffle, History } from 'lucide-react';
+import { Home, Trophy, Users, Shuffle, History, BarChart3 } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 
-const navItems = [
+const adminNavItems = [
   { label: 'בית', path: '/', icon: Home },
   { label: 'פודיום', path: '/Podium', icon: Trophy },
-  { label: 'מחזור', path: '/CreateRound', icon: Shuffle, adminOnly: true },
+  { label: 'מחזור', path: '/CreateRound', icon: Shuffle },
   { label: 'היסטוריה', path: '/GameHistory', icon: History },
-  { label: 'עוד', path: '/Players', icon: Users, adminOnly: true },
+  { label: 'עוד', path: '/Players', icon: Users },
+];
+
+const playerNavItems = [
+  { label: 'פודיום', path: '/Podium', icon: Trophy },
+  { label: 'היסטוריה', path: '/GameHistory', icon: History },
+  { label: 'סטטיסטיקות', path: '/Statistics', icon: BarChart3 },
 ];
 
 export default function BottomNav() {
@@ -16,7 +22,7 @@ export default function BottomNav() {
   const { role } = useAuth();
   const isAdmin = role === 'admin';
 
-  const visibleItems = navItems.filter(item => !item.adminOnly || isAdmin);
+  const visibleItems = isAdmin ? adminNavItems : playerNavItems;
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 safe-area-pb">

@@ -7,11 +7,11 @@ import { useAuth } from '@/lib/AuthContext';
 
 const menuItems = [
   { name: 'עמוד הבית', page: 'Home', icon: Home },
-  { name: 'הפודיום', page: 'Podium', icon: Trophy },
+  { name: 'הפודיום', page: 'Podium', icon: Trophy, playerVisible: true },
   { name: 'סגל שחקנים', page: 'Players', icon: Users, adminOnly: true },
-  { name: 'סטטיסטיקות', page: 'Statistics', icon: BarChart3 },
+  { name: 'סטטיסטיקות', page: 'Statistics', icon: BarChart3, playerVisible: true },
   { name: 'יצירת מחזור', page: 'CreateRound', icon: Shuffle, adminOnly: true },
-  { name: 'היסטוריית משחקים', page: 'GameHistory', icon: History },
+  { name: 'היסטוריית משחקים', page: 'GameHistory', icon: History, playerVisible: true },
   { name: 'תשלומים', page: 'Payments', icon: CreditCard, adminOnly: true },
   { name: 'אישור משתמשים', page: 'UserApprovals', icon: UserCheck, adminOnly: true },
   { name: 'גיבוי ושחזור', page: 'Backup', icon: Shield, adminOnly: true },
@@ -20,7 +20,10 @@ const menuItems = [
 export default function Sidebar({ isOpen, onClose, currentPage }) {
   const { role, logout } = useAuth();
   const isAdmin = role === 'admin';
-  const visibleItems = menuItems.filter(item => !item.adminOnly || isAdmin);
+  const isPlayer = role === 'player';
+  const visibleItems = isPlayer
+    ? menuItems.filter(item => item.playerVisible)
+    : menuItems.filter(item => !item.adminOnly || isAdmin);
 
   return (
     <AnimatePresence>
