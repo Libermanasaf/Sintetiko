@@ -21,7 +21,8 @@ const sortItems = (items, sortField) => {
 const tableMapping = {
   'Player': 'players',
   'Round': 'rounds',
-  'Payment': 'payments'
+  'Payment': 'payments',
+  'PlayerRating': 'player_ratings',
 };
 
 export function createStorage(entityName) {
@@ -106,6 +107,40 @@ export function createStorage(entityName) {
       items[index] = { ...items[index], ...data, updated_date: new Date().toISOString() };
       setAll(items);
       return items[index];
+    },
+
+    async upsert(data, conflictColumns) {
+      if (supabase) {
+        const item = { ...data, updated_at: new Date().toISOString() };
+        const { data: upserted, error } = await supabase
+          .from(tableName)
+          .upsert(item, { onConflict: conflictColumns })
+          .select()
+          .single();
+        if (error) throw error;
+        return upserted;
+      }
+      // Fallback
+      const cols = conflictColumns.split(',').map(c => c.trim());
+      const items = getAll();
+      const idx = items.findIndex(i => cols.every(c => i[c] === data[c]));
+      if (idx >= 0) {
+        items[idx] = { ...items[idx], ...data, updated_at: new Date().toISOString() };
+        setAll(items);
+        return items[idx];
+      }
+      return this.create(data);
+    },
+
+    async filter(filters) {
+      if (supabase) {
+        let query = supabase.from(tableName).select('*');
+        Object.entries(filters).forEach(([k, v]) => { query = query.eq(k, v); });
+        const { data, error } = await query;
+        if (error) throw error;
+        return data || [];
+      }
+      return getAll().filter(item => Object.entries(filters).every(([k, v]) => item[k] === v));
     },
 
     async delete(id) {

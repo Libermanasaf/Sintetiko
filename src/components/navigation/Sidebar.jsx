@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { Home, Users, BarChart3, Shuffle, X, History, Trophy, CreditCard, Shield, LogOut, UserCheck } from 'lucide-react';
+import { Home, Users, BarChart3, Shuffle, X, History, Trophy, CreditCard, Shield, LogOut, UserCheck, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/lib/AuthContext';
 
@@ -12,6 +12,7 @@ const menuItems = [
   { name: 'סטטיסטיקות', page: 'Statistics', icon: BarChart3, playerVisible: true },
   { name: 'יצירת מחזור', page: 'CreateRound', icon: Shuffle, adminOnly: true },
   { name: 'היסטוריית משחקים', page: 'GameHistory', icon: History, playerVisible: true },
+  { name: 'דרג שחקנים', page: 'RatePlayers', icon: Star, playerVisible: true },
   { name: 'תשלומים', page: 'Payments', icon: CreditCard, adminOnly: true },
   { name: 'אישור משתמשים', page: 'UserApprovals', icon: UserCheck, adminOnly: true },
   { name: 'גיבוי ושחזור', page: 'Backup', icon: Shield, adminOnly: true },
@@ -21,7 +22,7 @@ export default function Sidebar({ isOpen, onClose, currentPage }) {
   const { role, logout } = useAuth();
   const location = useLocation();
   const isAdmin = role === 'admin';
-  const playerPages = ['/PlayerHome', '/Podium', '/Statistics', '/GameHistory'];
+  const playerPages = ['/PlayerHome', '/Podium', '/Statistics', '/GameHistory', '/RatePlayers'];
   const onPlayerPage = playerPages.includes(location.pathname);
   const showPlayerView = role === 'player' || onPlayerPage;
   const visibleItems = showPlayerView

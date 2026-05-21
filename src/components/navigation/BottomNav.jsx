@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Trophy, Users, Shuffle, History, BarChart3 } from 'lucide-react';
+import { Home, Trophy, Users, Shuffle, History, BarChart3, Star } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 
 const adminNavItems = [
@@ -15,6 +15,7 @@ const playerNavItems = [
   { label: 'פודיום', path: '/Podium', icon: Trophy },
   { label: 'היסטוריה', path: '/GameHistory', icon: History },
   { label: 'סטטיסטיקות', path: '/Statistics', icon: BarChart3 },
+  { label: 'דירוג', path: '/RatePlayers', icon: Star },
 ];
 
 export default function BottomNav() {
@@ -22,7 +23,7 @@ export default function BottomNav() {
   const { role } = useAuth();
   const isAdmin = role === 'admin';
 
-  const playerPages = ['/PlayerHome', '/Podium', '/Statistics', '/GameHistory'];
+  const playerPages = ['/PlayerHome', '/Podium', '/Statistics', '/GameHistory', '/RatePlayers'];
   const onPlayerPage = playerPages.includes(location.pathname);
   const visibleItems = (isAdmin && !onPlayerPage) ? adminNavItems : playerNavItems;
 
