@@ -41,8 +41,8 @@ export default function StepTeamsPreview({ teams, players, onSave, onReshuffle, 
       className="space-y-6"
     >
       {/* Info Card */}
-      <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
-        <p className="text-slate-600 text-center leading-relaxed">
+      <div className="bg-slate-800/80 rounded-2xl p-5 border border-slate-700/50 shadow-sm">
+        <p className="text-slate-300 text-center leading-relaxed">
           הקבוצות נוצרו בהצלחה!
           <br />
           גרור שחקנים בין קבוצות או ערבב מחדש
@@ -76,7 +76,7 @@ export default function StepTeamsPreview({ teams, players, onSave, onReshuffle, 
                       ref={provided.innerRef}
                       {...provided.droppableProps}
                       className={`space-y-3 min-h-[60px] rounded-2xl transition-colors ${
-                        snapshot.isDraggingOver ? 'bg-white/60 ring-2 ring-emerald-400' : ''
+                        snapshot.isDraggingOver ? 'bg-slate-700/60 ring-2 ring-emerald-400' : ''
                       }`}
                     >
                       {teamPlayerIds.map((playerId, playerIndex) => {
@@ -130,7 +130,7 @@ export default function StepTeamsPreview({ teams, players, onSave, onReshuffle, 
         <Button
           onClick={onReshuffle}
           variant="outline"
-          className="w-full h-14 text-lg border-2 border-blue-300 bg-blue-50 hover:bg-blue-100"
+          className="w-full h-14 text-lg border-2 border-blue-700 bg-blue-900/30 hover:bg-blue-900/50 text-blue-300"
         >
           <Shuffle className="w-5 h-5 ml-2" />
           ערבב כוחות מחדש

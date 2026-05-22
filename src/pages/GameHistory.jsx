@@ -9,6 +9,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import TeamPlayerMover from '@/components/history/TeamPlayerMover';
+import { PageHeader } from '@/components/ui/lux';
 
 const TEAM_COLORS = [
   { header: 'bg-yellow-500', card: 'bg-yellow-400/90', text: 'text-white' },
@@ -162,15 +163,7 @@ export default function GameHistory() {
 
   return (
     <div className="pb-28">
-      {/* Sticky Header */}
-      <div className="sticky top-16 z-20 bg-slate-950/95 backdrop-blur-md border-b border-slate-800 px-4 py-3">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-emerald-500/20 rounded-xl border border-emerald-500/30">
-            <History className="w-5 h-5 text-emerald-400" />
-          </div>
-          <h1 className="text-xl font-black text-white">היסטוריית משחקים</h1>
-        </div>
-      </div>
+      <PageHeader icon={History} title="היסטוריית משחקים" accent="emerald" />
 
       <div className="p-4 space-y-4">
         {rounds.length === 0 ? (

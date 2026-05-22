@@ -71,10 +71,10 @@ export default function InstallPrompt() {
     <AnimatePresence>
       {show && (
         <motion.div
-          initial={{ opacity: 0, y: -10 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          className="mx-4 mt-4 bg-slate-800/95 border border-amber-500/40 rounded-2xl p-3.5 shadow-lg"
+          exit={{ opacity: 0, y: 20 }}
+          className="fixed bottom-[calc(64px+env(safe-area-inset-bottom))] left-0 right-0 mx-4 z-40 bg-slate-800/95 border border-amber-500/40 rounded-2xl p-3.5 shadow-lg"
           dir="rtl"
         >
           {iosHelp ? (

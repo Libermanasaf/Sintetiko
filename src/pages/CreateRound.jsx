@@ -147,10 +147,10 @@ export default function CreateRound() {
       <div className="mb-6">
         <div className="flex items-center justify-between gap-3 mb-2">
           <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-emerald-100 rounded-xl">
-            <Shuffle className="w-6 h-6 text-emerald-600" />
+          <div className="p-2.5 bg-emerald-900/50 rounded-xl">
+            <Shuffle className="w-6 h-6 text-emerald-400" />
           </div>
-          <h1 className="text-2xl font-bold text-slate-800">יצירת מחזור</h1>
+          <h1 className="text-2xl font-bold text-white">יצירת מחזור</h1>
         </div>
         <button
           onClick={() => setShowQuickModal(true)}
@@ -169,7 +169,7 @@ export default function CreateRound() {
                 className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${
                   step >= s
                     ? 'bg-emerald-500 text-white'
-                    : 'bg-slate-100 text-slate-400'
+                    : 'bg-slate-700 text-slate-500'
                 }`}
               >
                 {s}
@@ -177,14 +177,14 @@ export default function CreateRound() {
               {s < 4 && (
                 <div
                   className={`w-5 h-1 mx-0.5 rounded ${
-                    step > s ? 'bg-emerald-500' : 'bg-slate-100'
+                    step > s ? 'bg-emerald-500' : 'bg-slate-700'
                   }`}
                 />
               )}
             </div>
           ))}
         </div>
-        <div className="flex gap-2 mt-2 text-xs text-slate-400">
+        <div className="flex gap-2 mt-2 text-xs text-slate-500">
           <span>הגדרות</span>
           <span>בחירה</span>
           <span>תצוגה</span>
@@ -199,10 +199,10 @@ export default function CreateRound() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center py-16"
         >
-          <div className="w-20 h-20 mx-auto mb-4 bg-slate-100 rounded-full flex items-center justify-center">
-            <Users className="w-10 h-10 text-slate-300" />
+          <div className="w-20 h-20 mx-auto mb-4 bg-slate-800 rounded-full flex items-center justify-center">
+            <Users className="w-10 h-10 text-slate-600" />
           </div>
-          <h3 className="text-lg font-medium text-slate-600 mb-2">
+          <h3 className="text-lg font-medium text-slate-300 mb-2">
             אין שחקנים בסגל
           </h3>
           <p className="text-slate-400">

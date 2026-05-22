@@ -2,11 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Menu } from 'lucide-react';
 import Sidebar from '@/components/navigation/Sidebar';
 import BottomNav from '@/components/navigation/BottomNav';
-import NotificationPrompt from '@/components/NotificationPrompt';
 import InstallPrompt from '@/components/InstallPrompt';
 import { useAuth } from '@/lib/AuthContext';
 import LandingPage from '@/components/auth/LandingPage';
-import { registerServiceWorker, ensureSubscribed } from '@/lib/push';
+import { registerServiceWorker, subscribeToPush } from '@/lib/push';
 
 export default function Layout({ children, currentPageName }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -17,10 +16,10 @@ export default function Layout({ children, currentPageName }) {
     registerServiceWorker();
   }, []);
 
-  // Keep the push subscription fresh once the user is known and has granted permission
+  // Auto-subscribe to push when user logs in (shows native browser dialog if not yet decided)
   useEffect(() => {
     if (role && user) {
-      ensureSubscribed(user.email);
+      subscribeToPush(user.email);
     }
   }, [role, user]);
 
@@ -76,13 +75,20 @@ export default function Layout({ children, currentPageName }) {
       </div>
       
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-30 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 transition-colors duration-300">
+      <header className="fixed top-0 left-0 right-0 z-30 bg-white/80 dark:bg-slate-950/85 backdrop-blur-xl transition-colors duration-300">
+        {/* gold accent line */}
+        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-400/60 to-transparent" />
         <div className="flex items-center justify-between px-4 py-3">
           <div className="w-10" />
-          <h1 className="text-lg font-bold text-emerald-900 dark:text-emerald-400">סינתטיקו חולון</h1>
+          <div className="flex items-center gap-2">
+            <span className="text-base">⚽</span>
+            <h1 className="text-lg font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-l from-amber-400 via-amber-200 to-amber-400">
+              סינתטיקו חולון
+            </h1>
+          </div>
           <button
             onClick={() => setSidebarOpen(true)}
-            className="p-2 rounded-xl bg-emerald-900 dark:bg-emerald-700 text-white hover:bg-emerald-800 dark:hover:bg-emerald-600 transition-colors shadow-lg"
+            className="p-2 rounded-xl bg-gradient-to-br from-emerald-600 to-emerald-800 text-white shadow-lg shadow-emerald-900/40 ring-1 ring-amber-400/20 active:scale-95 transition-transform"
           >
             <Menu className="w-5 h-5" />
           </button>
@@ -95,13 +101,13 @@ export default function Layout({ children, currentPageName }) {
         currentPage={currentPageName}
       />
       
-      <main className="relative z-10 pt-16 min-h-screen pb-[env(safe-area-inset-bottom)]">
-        <InstallPrompt />
-        <NotificationPrompt />
+      <main className="relative z-10 pt-16 min-h-screen pb-[calc(60px_+_env(safe-area-inset-bottom))]">
         {children}
       </main>
 
-      <BottomNav />
+      <InstallPrompt />
+
+      <BottomNav hidden={sidebarOpen} />
     </div>
   );
 }

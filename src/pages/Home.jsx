@@ -1,15 +1,182 @@
-import React from 'react';
-import { motion } from 'framer-motion';
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { Trophy, Users, Shuffle, History, Sun, Moon } from 'lucide-react';
+import { Trophy, Users, Shuffle, History, Sun, Moon, Send, ChevronLeft } from 'lucide-react';
 import { useTheme } from '@/lib/ThemeContext';
 import { useAuth } from '@/lib/AuthContext';
+import { useQuery } from '@tanstack/react-query';
+import { Round } from '@/api/entities';
+import { format } from 'date-fns';
+import { he } from 'date-fns/locale';
+import { toast } from 'sonner';
+import { LuxCard } from '@/components/ui/lux';
+
+const TEAM_NAMES = ['הצהובים', 'הכחולים', 'הכתומים'];
+
+const QUICK_ACCENT = {
+  amber:   { icon: 'bg-amber-500/15 text-amber-400 ring-amber-500/30', glow: 'bg-amber-500/15', sub: 'text-amber-300/70' },
+  emerald: { icon: 'bg-emerald-500/15 text-emerald-400 ring-emerald-500/30', glow: 'bg-emerald-500/15', sub: 'text-emerald-300/70' },
+  blue:    { icon: 'bg-blue-500/15 text-blue-400 ring-blue-500/30', glow: 'bg-blue-500/15', sub: 'text-blue-300/70' },
+  slate:   { icon: 'bg-slate-500/20 text-slate-300 ring-slate-500/30', glow: 'bg-slate-500/10', sub: 'text-slate-400' },
+};
+
+function QuickCard({ to, icon: Icon, title, subtitle, accent = 'amber', delay }) {
+  const a = QUICK_ACCENT[accent];
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 24, scale: 0.92 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ delay, type: 'spring', damping: 16, stiffness: 200 }}
+    >
+      <LuxCard accent={accent === 'slate' ? 'slate' : accent} className="active:scale-95 transition-transform">
+        <Link to={to} className="block relative p-4 touch-manipulation overflow-hidden rounded-[15px]">
+          <div className={`absolute -top-6 -left-6 w-20 h-20 rounded-full blur-2xl pointer-events-none ${a.glow}`} />
+          <div className={`relative w-11 h-11 rounded-xl flex items-center justify-center ring-1 mb-3 ${a.icon}`}>
+            <Icon className="w-6 h-6" />
+          </div>
+          <h3 className="relative text-white font-black text-base leading-tight">{title}</h3>
+          <p className={`relative text-xs mt-0.5 font-semibold ${a.sub}`}>{subtitle}</p>
+        </Link>
+      </LuxCard>
+    </motion.div>
+  );
+}
+
+const OUTER_PENT = 'M0,-19 L18.07,-5.87 L11.17,15.37 L-11.17,15.37 L-18.07,-5.87 Z';
+
+function CrestEmblem() {
+  return (
+    <svg
+      viewBox="0 0 200 200"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      role="img"
+      aria-label="סינתטיקו חולון"
+      className="w-[34vw] min-w-[118px] max-w-[148px] h-auto"
+    >
+      <defs>
+        <linearGradient id="crestGold" x1="22" y1="8" x2="178" y2="194" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#fef3c7" />
+          <stop offset="26%" stopColor="#fbbf24" />
+          <stop offset="50%" stopColor="#c2780b" />
+          <stop offset="73%" stopColor="#fcd34d" />
+          <stop offset="100%" stopColor="#8a5208" />
+        </linearGradient>
+        <linearGradient id="crestGoldSoft" x1="0" y1="6" x2="0" y2="194" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#fff7e0" />
+          <stop offset="46%" stopColor="#fcd34d" />
+          <stop offset="100%" stopColor="#b06f0a" />
+        </linearGradient>
+        <radialGradient id="crestField" cx="50%" cy="34%" r="80%">
+          <stop offset="0%" stopColor="#114b3c" />
+          <stop offset="50%" stopColor="#0b1a26" />
+          <stop offset="100%" stopColor="#020510" />
+        </radialGradient>
+        <radialGradient id="ballSheen" cx="36%" cy="30%" r="74%">
+          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.28" />
+          <stop offset="58%" stopColor="#ffffff" stopOpacity="0" />
+        </radialGradient>
+        <clipPath id="ballClip">
+          <circle cx="100" cy="100" r="47" />
+        </clipPath>
+      </defs>
+
+      {/* outer gold ring */}
+      <circle cx="100" cy="100" r="97" fill="url(#crestGold)" />
+      <circle cx="100" cy="100" r="97" fill="none" stroke="#fffbeb" strokeWidth="1" strokeOpacity="0.55" />
+      <circle cx="100" cy="100" r="90" fill="none" stroke="#3a2606" strokeWidth="1.5" strokeOpacity="0.6" />
+
+      {/* dark field */}
+      <circle cx="100" cy="100" r="89" fill="url(#crestField)" />
+
+      {/* dotted medallion ring */}
+      <circle
+        cx="100"
+        cy="100"
+        r="78"
+        fill="none"
+        stroke="url(#crestGoldSoft)"
+        strokeWidth="2.6"
+        strokeLinecap="round"
+        strokeDasharray="0.1 9"
+        strokeOpacity="0.9"
+      />
+
+      {/* inner frame ring */}
+      <circle cx="100" cy="100" r="60" fill="none" stroke="url(#crestGoldSoft)" strokeWidth="1.3" strokeOpacity="0.4" />
+
+      {/* soccer ball */}
+      <circle cx="100" cy="100" r="47" fill="#060b16" />
+      <g clipPath="url(#ballClip)">
+        <g transform="translate(100 100)">
+          <g fill="url(#crestGoldSoft)">
+            <g transform="translate(0 -50) rotate(180)"><path d={OUTER_PENT} /></g>
+            <g transform="translate(47.55 -15.45) rotate(252)"><path d={OUTER_PENT} /></g>
+            <g transform="translate(29.39 40.45) rotate(324)"><path d={OUTER_PENT} /></g>
+            <g transform="translate(-29.39 40.45) rotate(36)"><path d={OUTER_PENT} /></g>
+            <g transform="translate(-47.55 -15.45) rotate(108)"><path d={OUTER_PENT} /></g>
+          </g>
+          <g stroke="url(#crestGoldSoft)" strokeWidth="3.6" strokeLinecap="round">
+            <line x1="0" y1="-21" x2="0" y2="-47" />
+            <line x1="19.97" y1="-6.49" x2="44.70" y2="-14.52" />
+            <line x1="12.34" y1="16.99" x2="27.62" y2="38.02" />
+            <line x1="-12.34" y1="16.99" x2="-27.62" y2="38.02" />
+            <line x1="-19.97" y1="-6.49" x2="-44.70" y2="-14.52" />
+          </g>
+          <path
+            d="M0,-21 L19.97,-6.49 L12.34,16.99 L-12.34,16.99 L-19.97,-6.49 Z"
+            fill="url(#crestGoldSoft)"
+          />
+        </g>
+        <circle cx="100" cy="100" r="47" fill="url(#ballSheen)" />
+      </g>
+      <circle cx="100" cy="100" r="47" fill="none" stroke="url(#crestGold)" strokeWidth="3.2" />
+    </svg>
+  );
+}
 
 export default function Home() {
   const { isDark, setIsDark } = useTheme();
   const { role } = useAuth();
   const isAdmin = role === 'admin';
+  const [publishing, setPublishing] = useState(false);
+  const [published, setPublished] = useState(false);
+
+  const { data: activeRound } = useQuery({
+    queryKey: ['latest-round'],
+    queryFn: async () => {
+      const rounds = await Round.list('-created_date');
+      return rounds.find(r =>
+        Array.isArray(r.openingTeams) && r.openingTeams.length >= 2 &&
+        r.winningTeam == null &&
+        !r.victoryPhoto
+      ) || null;
+    },
+    enabled: isAdmin,
+    refetchInterval: 30000,
+  });
+
+  const handlePublish = async () => {
+    if (publishing || published) return;
+    setPublishing(true);
+    try {
+      await fetch('/api/send-notification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: 'פורסמו הרכבים!',
+          body: 'הרכבי המחזור החדש מוכנים — לחץ לצפייה',
+          url: '/MatchDay',
+        }),
+      });
+      setPublished(true);
+      toast.success('ההודעה נשלחה לכל השחקנים!');
+    } catch {
+      toast.error('שגיאה בשליחת ההודעה');
+    }
+    setPublishing(false);
+  };
 
   return (
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-5 pb-28">
@@ -17,7 +184,7 @@ export default function Home() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="text-center"
+        className="text-center w-full max-w-sm"
       >
         {/* Theme Toggle */}
         <motion.div
@@ -28,7 +195,7 @@ export default function Home() {
         >
           <button
             onClick={() => setIsDark(!isDark)}
-            className="flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all shadow-sm text-sm font-medium"
+            className="flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-amber-500/20 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 transition-all shadow-sm text-sm font-medium"
           >
             {isDark ? (
               <>
@@ -44,102 +211,175 @@ export default function Home() {
           </button>
         </motion.div>
 
-        {/* Football icon decoration */}
+        {/* Football crest */}
         <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ delay: 0.3, type: 'spring', stiffness: 200 }}
-          className="mb-8"
+          initial={{ scale: 0, rotate: -25, opacity: 0 }}
+          animate={{ scale: 1, rotate: 0, opacity: 1 }}
+          transition={{ delay: 0.25, type: 'spring', stiffness: 160, damping: 14 }}
+          className="relative flex justify-center mb-6"
         >
-          <div className="w-24 h-24 mx-auto bg-gradient-to-br from-emerald-800 to-emerald-950 rounded-full flex items-center justify-center shadow-2xl">
-            <span className="text-4xl">⚽</span>
-          </div>
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-44 h-44 bg-amber-500/25 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-28 h-28 bg-emerald-500/20 rounded-full blur-2xl pointer-events-none" />
+          <motion.div
+            animate={{ y: [0, -7, 0] }}
+            transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut' }}
+            className="relative flex justify-center"
+            style={{ filter: 'drop-shadow(0 10px 22px rgba(0,0,0,0.55))' }}
+          >
+            <CrestEmblem />
+          </motion.div>
         </motion.div>
 
-        {/* Main title */}
+        {/* Eyebrow */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.42 }}
+          className="flex items-center justify-center gap-2.5 mb-2"
+        >
+          <span className="h-px w-7 bg-gradient-to-r from-amber-400/70 to-transparent" />
+          <span className="text-[10px] font-bold tracking-[0.34em] text-amber-400/90">מועדון הכדורגל</span>
+          <span className="h-px w-7 bg-gradient-to-r from-transparent to-amber-400/70" />
+        </motion.div>
+
+        {/* Title */}
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4, duration: 0.5 }}
-          className="text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-b from-emerald-700 to-emerald-950 dark:from-emerald-400 dark:to-emerald-600 mb-4 leading-tight"
+          transition={{ delay: 0.5, duration: 0.5 }}
+          className="text-[clamp(3rem,14vw,4.5rem)] font-black text-transparent bg-clip-text bg-gradient-to-b from-amber-100 via-amber-400 to-amber-700 leading-[0.95] tracking-tight"
+          style={{ filter: 'drop-shadow(0 2px 10px rgba(200,150,25,0.4))' }}
         >
           סינתטיקו
         </motion.h1>
 
-        <motion.h2
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5, duration: 0.5 }}
-          className="text-4xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-b from-amber-500 to-amber-600 mb-8"
-        >
-          חולון
-        </motion.h2>
-
-        {/* Decorative line */}
+        {/* Holon between gold rules */}
         <motion.div
-          initial={{ scaleX: 0 }}
-          animate={{ scaleX: 1 }}
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6, duration: 0.5 }}
-          className="w-32 h-1.5 bg-gradient-to-r from-emerald-600 via-amber-500 to-emerald-600 mx-auto rounded-full"
-        />
+          className="flex items-center justify-center gap-3 mt-1.5 mb-5"
+        >
+          <span className="h-[2px] w-12 rounded-full bg-gradient-to-r from-amber-400/80 to-transparent" />
+          <span className="text-2xl md:text-3xl font-black tracking-[0.22em] text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-400">
+            חולון
+          </span>
+          <span className="h-[2px] w-12 rounded-full bg-gradient-to-r from-transparent to-amber-400/80" />
+        </motion.div>
 
         {/* Subtitle */}
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.7, duration: 0.5 }}
-          className="mt-8 text-slate-500 dark:text-slate-400 text-lg"
+          transition={{ delay: 0.72, duration: 0.5 }}
+          className="text-slate-500 dark:text-slate-400 text-sm font-medium tracking-wide"
         >
           ניהול קבוצה חכם ופשוט
         </motion.p>
 
+        {/* Active round card — admin only */}
+        <AnimatePresence>
+          {isAdmin && activeRound && (
+            <motion.div
+              initial={{ opacity: 0, y: 16, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ delay: 0.3, type: 'spring', damping: 20, stiffness: 200 }}
+              className="mt-8"
+              dir="rtl"
+            >
+              <LuxCard accent="emerald">
+                <div className="relative p-4 overflow-hidden rounded-[15px]">
+                  <div className="absolute -top-8 -right-8 w-24 h-24 bg-emerald-500/20 rounded-full blur-2xl pointer-events-none" />
+
+                  {/* Header */}
+                  <div className="relative flex items-center gap-2 mb-3">
+                    <span className="relative flex h-2.5 w-2.5 shrink-0">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
+                    </span>
+                    <span className="text-emerald-300 font-black text-sm">מחזור פעיל</span>
+                    <span className="text-slate-400 text-xs mr-auto">
+                      {format(new Date(activeRound.date), "d/M/yyyy", { locale: he })}
+                    </span>
+                  </div>
+
+                  {/* Opening match */}
+                  {activeRound.openingTeams?.length >= 2 && (
+                    <div className="relative flex items-center justify-center gap-2 mb-3 text-sm font-black">
+                      <span className="text-yellow-400">{TEAM_NAMES[activeRound.openingTeams[0]] ?? `קבוצה ${activeRound.openingTeams[0]+1}`}</span>
+                      <span className="text-slate-500 text-xs">VS</span>
+                      <span className="text-blue-400">{TEAM_NAMES[activeRound.openingTeams[1]] ?? `קבוצה ${activeRound.openingTeams[1]+1}`}</span>
+                    </div>
+                  )}
+
+                  {/* Buttons */}
+                  <div className="relative flex gap-2">
+                    <Link
+                      to="/MatchDay"
+                      className="flex-1 flex items-center justify-center gap-1 py-2.5 rounded-xl font-bold text-sm touch-manipulation bg-slate-700/80 hover:bg-slate-600 active:bg-slate-700 text-white transition-colors"
+                    >
+                      כנס לסביבת המשחק
+                      <ChevronLeft className="w-4 h-4" />
+                    </Link>
+                    <button
+                      onClick={handlePublish}
+                      disabled={publishing || published}
+                      className={`flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl font-bold text-sm touch-manipulation transition-all shrink-0 ${
+                        published
+                          ? 'bg-emerald-800/50 text-emerald-400 cursor-default'
+                          : 'bg-gradient-to-br from-emerald-500 to-emerald-700 hover:from-emerald-400 hover:to-emerald-600 active:scale-95 text-white disabled:opacity-50 shadow-lg shadow-emerald-900/40'
+                      }`}
+                    >
+                      <Send className="w-4 h-4" />
+                      {publishing ? '...' : published ? '✓' : 'פרסם'}
+                    </button>
+                  </div>
+                </div>
+              </LuxCard>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Quick Access Menu */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.9, duration: 0.5 }}
-          className="mt-10 grid grid-cols-2 gap-3 w-full max-w-sm mx-auto"
-        >
-          <Link
+        <div className="mt-8 grid grid-cols-2 gap-3" dir="rtl">
+          <QuickCard
             to={createPageUrl('Podium')}
-            className="bg-gradient-to-br from-amber-500 to-amber-600 rounded-2xl p-5 shadow-lg active:scale-95 transition-all touch-manipulation"
-          >
-            <Trophy className="w-7 h-7 text-white mb-2" />
-            <h3 className="text-white font-bold text-base leading-tight">הפודיום</h3>
-            <p className="text-white/80 text-xs mt-0.5">המובילים</p>
-          </Link>
-
+            icon={Trophy}
+            title="הפודיום"
+            subtitle="המובילים"
+            accent="amber"
+            delay={0.85}
+          />
           {isAdmin && (
-            <Link
+            <QuickCard
               to={createPageUrl('Players')}
-              className="bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-2xl p-5 shadow-lg active:scale-95 transition-all touch-manipulation"
-            >
-              <Users className="w-7 h-7 text-white mb-2" />
-              <h3 className="text-white font-bold text-base leading-tight">סגל שחקנים</h3>
-              <p className="text-white/80 text-xs mt-0.5">ניהול שחקנים</p>
-            </Link>
+              icon={Users}
+              title="סגל שחקנים"
+              subtitle="ניהול שחקנים"
+              accent="emerald"
+              delay={0.92}
+            />
           )}
-
           {isAdmin && (
-            <Link
+            <QuickCard
               to={createPageUrl('CreateRound')}
-              className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl p-5 shadow-lg active:scale-95 transition-all touch-manipulation"
-            >
-              <Shuffle className="w-7 h-7 text-white mb-2" />
-              <h3 className="text-white font-bold text-base leading-tight">יצירת מחזור</h3>
-              <p className="text-white/80 text-xs mt-0.5">הגרלת קבוצות</p>
-            </Link>
+              icon={Shuffle}
+              title="יצירת מחזור"
+              subtitle="הגרלת קבוצות"
+              accent="blue"
+              delay={0.99}
+            />
           )}
-
-          <Link
+          <QuickCard
             to={createPageUrl('GameHistory')}
-            className="bg-gradient-to-br from-slate-600 to-slate-700 rounded-2xl p-5 shadow-lg active:scale-95 transition-all touch-manipulation"
-          >
-            <History className="w-7 h-7 text-white mb-2" />
-            <h3 className="text-white font-bold text-base leading-tight">יומן משחקים</h3>
-            <p className="text-white/80 text-xs mt-0.5">היסטוריה</p>
-          </Link>
-        </motion.div>
+            icon={History}
+            title="יומן משחקים"
+            subtitle="היסטוריה"
+            accent="slate"
+            delay={1.06}
+          />
+        </div>
       </motion.div>
     </div>
   );

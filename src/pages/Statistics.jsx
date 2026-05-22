@@ -4,6 +4,7 @@ import { BarChart3, Users, User, Crown, Zap } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { Player } from '@/api/entities';
 import PlayerStatsModal from '@/components/statistics/PlayerStatsModal';
+import { PageHeader } from '@/components/ui/lux';
 
 export default function Statistics() {
   const [selectedPlayer, setSelectedPlayer] = useState(null);
@@ -87,16 +88,8 @@ export default function Statistics() {
 
   return (
     <div className="pb-28">
-      {/* Sticky Header */}
-      <div className="sticky top-16 z-20 bg-slate-950/95 backdrop-blur-md border-b border-slate-800 px-4 py-3 mb-6">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-emerald-500/20 rounded-xl border border-emerald-500/30">
-            <BarChart3 className="w-5 h-5 text-emerald-400" />
-          </div>
-          <h1 className="text-xl font-black text-white tracking-tight">סטטיסטיקות</h1>
-        </div>
-      </div>
-      <div className="px-4">
+      <PageHeader icon={BarChart3} title="סטטיסטיקות" accent="emerald" />
+      <div className="px-4 mt-6">
 
       {players.length === 0 ? (
         <div className="text-center py-16">
@@ -142,11 +135,11 @@ export default function Statistics() {
             <Users className="w-4 h-4 text-blue-400" />
             <span className="text-sm font-bold text-blue-400 uppercase tracking-widest">טבלת הופעות מלאה</span>
           </div>
-          <div className="rounded-2xl overflow-hidden border border-slate-700/60 bg-slate-900/60">
-            <div className="grid grid-cols-[44px_1fr_80px] items-center px-4 py-2.5 bg-slate-800/80 border-b border-slate-700">
-              <span className="text-xs font-bold text-slate-500 uppercase">#</span>
-              <span className="text-xs font-bold text-slate-500 uppercase">שחקן</span>
-              <span className="text-xs font-bold text-slate-500 uppercase text-center">הופעות</span>
+          <div className="rounded-2xl overflow-hidden border border-amber-500/15 bg-slate-900/60 shadow-xl shadow-black/30">
+            <div className="grid grid-cols-[44px_1fr_80px] items-center px-4 py-2.5 bg-gradient-to-l from-slate-800 to-slate-800/60 border-b border-amber-500/15">
+              <span className="text-xs font-black text-amber-400/80 uppercase">#</span>
+              <span className="text-xs font-black text-amber-400/80 uppercase">שחקן</span>
+              <span className="text-xs font-black text-amber-400/80 uppercase text-center">הופעות</span>
             </div>
             {byAppearances.map((player, index) => (
               <motion.div

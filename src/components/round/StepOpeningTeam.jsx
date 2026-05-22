@@ -61,17 +61,6 @@ export default function StepOpeningTeam({ numTeams, openingTeams, setOpeningTeam
       
       await Promise.all(updatePromises.filter(Boolean));
 
-      // שליחת התראת Push לכל המשתמשים — fire-and-forget, לא חוסם ניווט
-      fetch('/api/send-notification', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: 'פורסמו הרכבים!',
-          body: 'הרכבי המחזור החדש מוכנים — לחץ לצפייה',
-          url: '/GameHistory',
-        }),
-      }).catch(() => {});
-
       toast.success('המחזור נשמר בהצלחה!');
       navigate(createPageUrl('Home'));
     } catch (error) {
@@ -125,8 +114,8 @@ export default function StepOpeningTeam({ numTeams, openingTeams, setOpeningTeam
             className="space-y-4"
           >
             {/* Football Field View */}
-            <div className="bg-white rounded-3xl p-6 shadow-xl border-2 border-slate-200">
-              <h2 className="text-center text-3xl font-bold mb-6 text-slate-800">
+            <div className="bg-slate-800/80 rounded-3xl p-6 shadow-xl border border-slate-700/50">
+              <h2 className="text-center text-3xl font-bold mb-6 text-white">
                 הגרלת משחק פותח
               </h2>
               
@@ -198,7 +187,7 @@ export default function StepOpeningTeam({ numTeams, openingTeams, setOpeningTeam
               {/* Shuffle Button */}
               <button
                 onClick={randomOpeningTeam}
-                className="mt-4 text-slate-500 text-sm hover:text-slate-700 underline w-full"
+                className="mt-4 text-slate-500 text-sm hover:text-slate-300 underline w-full"
               >
                 🎲 הגרל מחדש
               </button>

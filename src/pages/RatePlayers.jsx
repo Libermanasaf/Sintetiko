@@ -5,69 +5,30 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Star, Check } from 'lucide-react';
+import { PageHeader } from '@/components/ui/lux';
 
-function StarPicker({ value, onChange }) {
-  const [hover, setHover] = useState(null);
-  const display = hover ?? value ?? 0;
+const RATING_VALUES = [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5];
+const toLabel = (r) => r % 1 === 0 ? `${r}` : `${r}`;
 
-  const handleTouch = (e, rating) => {
-    e.preventDefault();
-    const touch = e.changedTouches[0];
-    const rect = e.currentTarget.parentElement.getBoundingClientRect();
-    const x = touch.clientX - rect.left;
-    const isLeftHalf = x < rect.width / 2;
-    const star = parseInt(e.currentTarget.parentElement.dataset.star);
-    const halfVal = Math.max(1.0, star - 0.5);
-    onChange(isLeftHalf ? halfVal : star);
-  };
-
+function RatingChips({ value, onChange }) {
   return (
-    <div className="flex gap-1.5" onMouseLeave={() => setHover(null)}>
-      {[1, 2, 3, 4, 5].map(star => {
-        const halfVal = Math.max(1.0, star - 0.5);
-        const isFull = display >= star;
-        const isHalf = !isFull && display >= star - 0.5 && display > 0;
-
+    <div className="flex gap-1.5 overflow-x-auto pb-0.5" style={{ scrollbarWidth: 'none' }}>
+      {RATING_VALUES.map(r => {
+        const selected = value === r;
         return (
-          <div
-            key={star}
-            data-star={star}
-            className="relative select-none touch-manipulation"
-            style={{ width: 36, height: 36 }}
+          <button
+            key={r}
+            onClick={() => onChange(r)}
+            className={`shrink-0 min-w-[36px] h-9 px-1.5 rounded-xl font-bold text-sm touch-manipulation transition-colors ${
+              selected
+                ? 'bg-amber-500 text-slate-900 shadow shadow-amber-500/40'
+                : 'bg-slate-700/80 text-slate-300 active:bg-slate-600'
+            }`}
           >
-            {/* Empty star */}
-            <Star className="w-9 h-9 text-amber-400/25" />
-            {/* Filled overlay */}
-            {(isFull || isHalf) && (
-              <div
-                className="absolute inset-0 overflow-hidden pointer-events-none"
-                style={{ width: isFull ? '100%' : '50%' }}
-              >
-                <Star className="w-9 h-9 fill-amber-400 text-amber-400" />
-              </div>
-            )}
-            {/* Left half — desktop hover + click, mobile touch */}
-            <div
-              className="absolute inset-y-0 left-0 w-1/2 cursor-pointer"
-              onMouseEnter={() => setHover(halfVal)}
-              onClick={() => onChange(halfVal)}
-              onTouchEnd={(e) => handleTouch(e, halfVal)}
-            />
-            {/* Right half — desktop hover + click, mobile touch */}
-            <div
-              className="absolute inset-y-0 right-0 w-1/2 cursor-pointer"
-              onMouseEnter={() => setHover(star)}
-              onClick={() => onChange(star)}
-              onTouchEnd={(e) => handleTouch(e, star)}
-            />
-          </div>
+            {toLabel(r)}
+          </button>
         );
       })}
-      {value > 0 && (
-        <span className="text-amber-400 font-bold text-sm self-center mr-1 min-w-[2rem]">
-          {value % 1 === 0 ? value.toFixed(1) : value}
-        </span>
-      )}
     </div>
   );
 }
@@ -80,15 +41,15 @@ function PlayerRatingRow({ player, myRating, myPlayerId, onRate, savedId }) {
       layout
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-4 flex items-center gap-4"
+      className="bg-gradient-to-b from-slate-800/80 to-slate-900/80 border border-slate-700/50 rounded-2xl p-4 flex items-center gap-4 shadow-lg shadow-black/20"
     >
       {/* Avatar */}
       <div className="shrink-0">
         {player.image ? (
-          <img src={player.image} alt={player.name} className="w-11 h-11 rounded-xl object-cover border border-slate-600" />
+          <img src={player.image} alt={player.name} className="w-11 h-11 rounded-xl object-cover ring-2 ring-amber-500/30" />
         ) : (
-          <div className="w-11 h-11 rounded-xl bg-slate-700 flex items-center justify-center border border-slate-600">
-            <span className="text-base font-black text-slate-400">{player.name.charAt(0)}</span>
+          <div className="w-11 h-11 rounded-xl bg-slate-700 flex items-center justify-center ring-2 ring-amber-500/30">
+            <span className="text-base font-black text-amber-400/70">{player.name.charAt(0)}</span>
           </div>
         )}
       </div>
@@ -96,7 +57,7 @@ function PlayerRatingRow({ player, myRating, myPlayerId, onRate, savedId }) {
       {/* Name + Stars */}
       <div className="flex-1 min-w-0">
         <p className="font-bold text-white text-base truncate mb-1.5">{player.name}</p>
-        <StarPicker
+        <RatingChips
           value={myRating}
           onChange={(rating) => onRate(player.id, rating)}
         />
@@ -177,20 +138,9 @@ export default function RatePlayers() {
 
   return (
     <div className="pb-28">
-      {/* Header */}
-      <div className="sticky top-16 z-20 bg-slate-950/95 backdrop-blur-md border-b border-slate-800 px-4 py-3">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-amber-500/20 rounded-xl border border-amber-500/30">
-            <Star className="w-5 h-5 text-amber-400" />
-          </div>
-          <div>
-            <h1 className="text-xl font-black text-white tracking-tight">דרג שחקנים</h1>
-            <p className="text-slate-500 text-xs">דרג את חברי הסגל שלך</p>
-          </div>
-        </div>
-      </div>
+      <PageHeader icon={Star} title="דרג שחקנים" subtitle="דרג את חברי הסגל שלך" accent="amber" />
 
-      <div className="p-4">
+      <div className="p-4 mt-2">
         {loadingPlayers || !myPlayer ? (
           <div className="space-y-3">
             {[1, 2, 3, 4, 5].map(i => (

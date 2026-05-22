@@ -58,6 +58,7 @@ import Backup from './pages/Backup';
 import PlayerHome from './pages/PlayerHome';
 import UserApprovals from './pages/UserApprovals';
 import RatePlayers from './pages/RatePlayers';
+import MatchDay from './pages/MatchDay';
 import __Layout from './Layout.jsx';
 
 export const PAGES = {
@@ -72,6 +73,7 @@ export const PAGES = {
     "PlayerHome": PlayerHome,
     "UserApprovals": UserApprovals,
     "RatePlayers": RatePlayers,
+    "MatchDay": MatchDay,
 }
 
 export const pagesConfig = {
