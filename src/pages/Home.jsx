@@ -43,6 +43,8 @@ function QuickCard({ to, icon: Icon, title, subtitle, accent = 'amber', delay })
   );
 }
 
+const OUTER_PENT = 'M0,-19 L18.07,-5.87 L11.17,15.37 L-11.17,15.37 L-18.07,-5.87 Z';
+
 function CrestEmblem() {
   return (
     <svg
@@ -71,16 +73,13 @@ function CrestEmblem() {
           <stop offset="50%" stopColor="#0b1a26" />
           <stop offset="100%" stopColor="#020510" />
         </radialGradient>
-        <linearGradient id="bootPink" x1="0" y1="0" x2="0.65" y2="1">
-          <stop offset="0%" stopColor="#ffa6d4" />
-          <stop offset="50%" stopColor="#f81f8e" />
-          <stop offset="100%" stopColor="#b3155f" />
-        </linearGradient>
-        <radialGradient id="ballLight" cx="38%" cy="34%" r="78%">
-          <stop offset="0%" stopColor="#ffffff" />
-          <stop offset="68%" stopColor="#e2e8f0" />
-          <stop offset="100%" stopColor="#94a3b8" />
+        <radialGradient id="ballSheen" cx="36%" cy="30%" r="74%">
+          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.28" />
+          <stop offset="58%" stopColor="#ffffff" stopOpacity="0" />
         </radialGradient>
+        <clipPath id="ballClip">
+          <circle cx="100" cy="100" r="47" />
+        </clipPath>
       </defs>
 
       {/* outer gold ring */}
@@ -104,28 +103,35 @@ function CrestEmblem() {
         strokeOpacity="0.9"
       />
 
-      {/* player — kicking follow-through */}
-      <g fill="none" stroke="url(#crestGoldSoft)" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M84 72 L64 78 L52 62" strokeWidth="11" />
-        <path d="M91 108 L80 130 L74 152" strokeWidth="15" />
-        <path d="M91 108 L114 90 L133 76" strokeWidth="15" />
-        <path d="M84 72 L91 108" strokeWidth="23" />
-        <path d="M84 72 L102 80 L116 66" strokeWidth="11" />
-      </g>
-      <circle cx="78" cy="53" r="12.5" fill="url(#crestGoldSoft)" />
+      {/* inner frame ring */}
+      <circle cx="100" cy="100" r="60" fill="none" stroke="url(#crestGoldSoft)" strokeWidth="1.3" strokeOpacity="0.4" />
 
-      {/* pink Mercurial boots */}
-      <g fill="none" stroke="url(#bootPink)" strokeLinecap="round">
-        <path d="M66 153 L90 151" strokeWidth="13" />
-        <path d="M132 77 L147 66" strokeWidth="13" />
+      {/* soccer ball */}
+      <circle cx="100" cy="100" r="47" fill="#060b16" />
+      <g clipPath="url(#ballClip)">
+        <g transform="translate(100 100)">
+          <g fill="url(#crestGoldSoft)">
+            <g transform="translate(0 -50) rotate(180)"><path d={OUTER_PENT} /></g>
+            <g transform="translate(47.55 -15.45) rotate(252)"><path d={OUTER_PENT} /></g>
+            <g transform="translate(29.39 40.45) rotate(324)"><path d={OUTER_PENT} /></g>
+            <g transform="translate(-29.39 40.45) rotate(36)"><path d={OUTER_PENT} /></g>
+            <g transform="translate(-47.55 -15.45) rotate(108)"><path d={OUTER_PENT} /></g>
+          </g>
+          <g stroke="url(#crestGoldSoft)" strokeWidth="3.6" strokeLinecap="round">
+            <line x1="0" y1="-21" x2="0" y2="-47" />
+            <line x1="19.97" y1="-6.49" x2="44.70" y2="-14.52" />
+            <line x1="12.34" y1="16.99" x2="27.62" y2="38.02" />
+            <line x1="-12.34" y1="16.99" x2="-27.62" y2="38.02" />
+            <line x1="-19.97" y1="-6.49" x2="-44.70" y2="-14.52" />
+          </g>
+          <path
+            d="M0,-21 L19.97,-6.49 L12.34,16.99 L-12.34,16.99 L-19.97,-6.49 Z"
+            fill="url(#crestGoldSoft)"
+          />
+        </g>
+        <circle cx="100" cy="100" r="47" fill="url(#ballSheen)" />
       </g>
-
-      {/* ball — just struck */}
-      <circle cx="150" cy="57" r="10.5" fill="url(#ballLight)" stroke="url(#crestGold)" strokeWidth="1.6" />
-      <path
-        d="M150 52.6 L154.18 55.64 L152.59 60.56 L147.41 60.56 L145.82 55.64 Z"
-        fill="#0b1220"
-      />
+      <circle cx="100" cy="100" r="47" fill="none" stroke="url(#crestGold)" strokeWidth="3.2" />
     </svg>
   );
 }
