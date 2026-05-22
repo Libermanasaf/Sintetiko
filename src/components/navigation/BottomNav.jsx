@@ -18,12 +18,15 @@ const playerNavItems = [
   { label: 'דירוג', path: '/RatePlayers', icon: Star },
 ];
 
+const playerPages = ['/PlayerHome', '/Podium', '/Statistics', '/GameHistory', '/RatePlayers', '/MatchDay'];
+
 export default function BottomNav({ hidden = false }) {
   const location = useLocation();
   const { role } = useAuth();
   const isAdmin = role === 'admin';
+  const onPlayerPage = playerPages.some(p => location.pathname === p || location.pathname.startsWith(p + '/'));
 
-  const visibleItems = isAdmin ? adminNavItems : playerNavItems;
+  const visibleItems = (isAdmin && !onPlayerPage) ? adminNavItems : playerNavItems;
 
   if (hidden) return null;
 

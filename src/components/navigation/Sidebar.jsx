@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { Home, Users, BarChart3, Shuffle, X, History, Trophy, CreditCard, Shield, LogOut, UserCheck, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -19,12 +19,17 @@ const menuItems = [
   { name: 'גיבוי ושחזור', page: 'Backup', icon: Shield, adminOnly: true },
 ];
 
+const playerPages = ['/PlayerHome', '/Podium', '/Statistics', '/GameHistory', '/RatePlayers', '/MatchDay'];
+
 export default function Sidebar({ isOpen, onClose, currentPage }) {
   const { role, logout } = useAuth();
+  const location = useLocation();
   const isAdmin = role === 'admin';
-  const visibleItems = isAdmin
-    ? menuItems.filter(item => !item.adminOnly || isAdmin)
-    : menuItems.filter(item => item.playerVisible);
+  const onPlayerPage = playerPages.some(p => location.pathname === p || location.pathname.startsWith(p + '/'));
+  const showPlayerView = role === 'player' || onPlayerPage;
+  const visibleItems = showPlayerView
+    ? menuItems.filter(item => item.playerVisible)
+    : menuItems.filter(item => !item.adminOnly || isAdmin);
 
   return (
     <AnimatePresence>
