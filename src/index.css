@@ -2,8 +2,64 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ═══════════════════════════════════════════════════════════════════
+   STADIUM LUXURY — Design System
+   אצטדיון לילה · שחור-פחם · זהב מתכתי · ירוק דשא
+   ═══════════════════════════════════════════════════════════════════ */
+
 @layer base {
   :root {
+    /* ── Stadium Luxury palette ─────────────────────────────────── */
+    --st-bg:          218 32% 5%;     /* deep stadium-night charcoal */
+    --st-bg-2:        216 28% 7%;     /* raised night surface       */
+    --st-surface:     216 24% 10%;    /* card surface               */
+    --st-surface-2:   215 20% 14%;    /* raised card / input        */
+    --st-border:      214 16% 20%;    /* hairline border            */
+    --st-border-soft: 214 14% 16%;
+
+    --st-text:        42 38% 95%;     /* warm platinum white        */
+    --st-text-2:      214 12% 64%;    /* muted body                 */
+    --st-text-3:      214 12% 44%;    /* faint / captions           */
+
+    /* metallic gold — the signature */
+    --st-gold:        43 78% 58%;
+    --st-gold-hi:     46 92% 78%;     /* champagne highlight        */
+    --st-gold-lo:     34 62% 38%;     /* bronze shadow              */
+
+    /* grass-pitch green — the single accent */
+    --st-pitch:       151 52% 42%;
+    --st-pitch-hi:    148 58% 56%;
+    --st-pitch-lo:    156 46% 24%;
+
+    /* semantic */
+    --st-error:       0 72% 56%;
+    --st-success:     151 52% 44%;
+    --st-info:        210 80% 60%;
+
+    /* ── focus ring ─────────────────────────────────────────────── */
+    --st-focus:       46 92% 70%;
+
+    /* ── fluid type scale (clamp) ───────────────────────────────── */
+    --fs-3xs: clamp(0.625rem, 1.4vw, 0.6875rem);
+    --fs-2xs: clamp(0.6875rem, 1.6vw, 0.75rem);
+    --fs-xs:  clamp(0.75rem, 1.9vw, 0.8125rem);
+    --fs-sm:  clamp(0.8125rem, 2.2vw, 0.9375rem);
+    --fs-md:  clamp(0.9375rem, 2.6vw, 1.0625rem);
+    --fs-lg:  clamp(1.125rem, 3.4vw, 1.375rem);
+    --fs-xl:  clamp(1.5rem, 5vw, 2rem);
+    --fs-2xl: clamp(2rem, 8vw, 3rem);
+    --fs-3xl: clamp(3rem, 14vw, 4.75rem);
+
+    /* ── spacing scale ──────────────────────────────────────────── */
+    --space-2xs: 0.25rem;
+    --space-xs:  0.5rem;
+    --space-sm:  0.75rem;
+    --space-md:  1rem;
+    --space-lg:  1.5rem;
+    --space-xl:  2.25rem;
+    --space-2xl: 3.5rem;
+
+    /* ── shadcn / radix vars (kept — components depend on them) ──── */
     --background: 0 0% 100%;
     --foreground: 0 0% 3.9%;
     --card: 0 0% 100%;
@@ -75,8 +131,6 @@
   }
 }
 
-
-
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -87,14 +141,8 @@
   }
 }
 
-/* Dark mode default */
 html {
   color-scheme: dark;
-}
-
-/* Safe area utilities */
-.safe-area-pb {
-  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 /* Prevent horizontal scroll globally */
@@ -103,7 +151,244 @@ html, body, #root {
   max-width: 100vw;
 }
 
-/* Better tap targets */
+/* No tap-flash on mobile */
 * {
   -webkit-tap-highlight-color: transparent;
 }
+
+/* Safe area utility */
+.safe-area-pb {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   TYPOGRAPHY — Heebo, single family, weight-driven hierarchy
+   ═══════════════════════════════════════════════════════════════════ */
+* {
+  font-family: 'Heebo', system-ui, sans-serif;
+}
+
+/* numerals always tabular for stat alignment */
+.tnum,
+.st-stat,
+[data-tnum] {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   STADIUM SURFACES & TEXTURE
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* App backdrop — stadium night with a focused light from above */
+.st-stage {
+  background-color: hsl(var(--st-bg));
+  background-image:
+    radial-gradient(120% 60% at 50% -8%, hsl(var(--st-pitch) / 0.16), transparent 62%),
+    radial-gradient(80% 50% at 88% 4%, hsl(var(--st-gold) / 0.10), transparent 60%),
+    radial-gradient(90% 60% at 8% 100%, hsl(var(--st-pitch) / 0.10), transparent 64%);
+}
+
+/* faint mowed-pitch stripes — adds depth without noise (3–6% opacity) */
+.st-pitch-lines::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+    115deg,
+    hsl(var(--st-pitch) / 0.05) 0 38px,
+    transparent 38px 76px
+  );
+  -webkit-mask-image: radial-gradient(120% 80% at 50% 0%, #000 30%, transparent 78%);
+          mask-image: radial-gradient(120% 80% at 50% 0%, #000 30%, transparent 78%);
+}
+
+/* fine grain — kills flat-digital feel */
+.st-grain::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.4;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   METALLIC GOLD
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* foil-gold text — multi-stop, reads as brushed metal */
+.st-gold-text {
+  background-image: linear-gradient(
+    178deg,
+    hsl(var(--st-gold-hi)) 0%,
+    hsl(var(--st-gold)) 38%,
+    hsl(var(--st-gold-lo)) 62%,
+    hsl(var(--st-gold-hi)) 100%
+  );
+  -webkit-background-clip: text;
+          background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
+/* hairline gold rule */
+.st-rule {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    hsl(var(--st-gold) / 0.55) 22%,
+    hsl(var(--st-gold-hi) / 0.9) 50%,
+    hsl(var(--st-gold) / 0.55) 78%,
+    transparent
+  );
+}
+
+/* gold-foil chip / pill background */
+.st-foil {
+  background-image: linear-gradient(
+    160deg,
+    hsl(var(--st-gold-hi)),
+    hsl(var(--st-gold)) 46%,
+    hsl(var(--st-gold-lo))
+  );
+  color: hsl(220 40% 8%);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   GRADIENT-BORDER CARD ENGINE
+   ═══════════════════════════════════════════════════════════════════ */
+.st-card {
+  position: relative;
+  border-radius: 1.25rem;
+  background:
+    linear-gradient(hsl(var(--st-surface)), hsl(var(--st-bg-2))) padding-box,
+    linear-gradient(150deg,
+      hsl(var(--st-gold) / 0.42),
+      hsl(var(--st-border) / 0.5) 38%,
+      hsl(var(--st-border) / 0.2)) border-box;
+  border: 1px solid transparent;
+}
+.st-card--pitch {
+  background:
+    linear-gradient(hsl(var(--st-surface)), hsl(var(--st-bg-2))) padding-box,
+    linear-gradient(150deg,
+      hsl(var(--st-pitch) / 0.5),
+      hsl(var(--st-border) / 0.5) 40%,
+      hsl(var(--st-border) / 0.2)) border-box;
+  border: 1px solid transparent;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   FOCUS — never removed, only restyled (WCAG 2.2 AA)
+   ═══════════════════════════════════════════════════════════════════ */
+:focus-visible {
+  outline: 3px solid hsl(var(--st-focus));
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* skip-link */
+.st-skip-link {
+  position: fixed;
+  inset-block-start: -120%;
+  inset-inline-start: 1rem;
+  z-index: 9999;
+  padding: 0.6rem 1.1rem;
+  border-radius: 0 0 0.6rem 0.6rem;
+  font-weight: 800;
+  background: hsl(var(--st-gold));
+  color: hsl(220 40% 8%);
+  transition: inset-block-start 0.18s ease;
+}
+.st-skip-link:focus { inset-block-start: 0; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   MOTION — choreographed, all reduced-motion safe
+   ═══════════════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: no-preference) {
+  .st-rise   { animation: st-rise 0.62s cubic-bezier(0.22,1,0.36,1) both; }
+  .st-fade   { animation: st-fade 0.7s ease both; }
+  .st-float  { animation: st-float 5s ease-in-out infinite; }
+  .st-shimmer { animation: st-shimmer 1.6s ease-in-out infinite; }
+  .st-sweep::before { animation: st-sweep 3.4s ease-in-out infinite; }
+}
+
+@keyframes st-rise {
+  from { opacity: 0; transform: translateY(22px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes st-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes st-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-8px); }
+}
+@keyframes st-shimmer {
+  from { background-position: 200% 0; }
+  to   { background-position: -200% 0; }
+}
+
+/* light-sweep across gold surfaces */
+.st-sweep {
+  position: relative;
+  overflow: hidden;
+}
+.st-sweep::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    100deg,
+    transparent 38%,
+    hsl(var(--st-gold-hi) / 0.22) 50%,
+    transparent 62%
+  );
+  transform: translateX(-120%);
+}
+@keyframes st-sweep {
+  0%, 64%  { transform: translateX(-120%); }
+  88%,100% { transform: translateX(120%); }
+}
+
+/* skeleton shimmer */
+.st-skeleton {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--st-surface)) 25%,
+    hsl(var(--st-surface-2)) 50%,
+    hsl(var(--st-surface)) 75%
+  );
+  background-size: 200% 100%;
+  border-radius: 0.5rem;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .st-skeleton { animation: st-shimmer 1.5s ease-in-out infinite; }
+}
+
+/* staggered children helper */
+.st-stagger > * { animation: st-rise 0.55s cubic-bezier(0.22,1,0.36,1) both; }
+.st-stagger > *:nth-child(1) { animation-delay: 0ms; }
+.st-stagger > *:nth-child(2) { animation-delay: 60ms; }
+.st-stagger > *:nth-child(3) { animation-delay: 120ms; }
+.st-stagger > *:nth-child(4) { animation-delay: 180ms; }
+.st-stagger > *:nth-child(5) { animation-delay: 240ms; }
+.st-stagger > *:nth-child(6) { animation-delay: 300ms; }
+.st-stagger > *:nth-child(7) { animation-delay: 360ms; }
+.st-stagger > *:nth-child(8) { animation-delay: 420ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .st-rise, .st-fade, .st-float, .st-shimmer, .st-sweep::before,
+  .st-skeleton, .st-stagger > * {
+    animation: none !important;
+  }
+}
+
+/* hide scrollbar where horizontal rails are used */
+.st-no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+.st-no-scrollbar::-webkit-scrollbar { display: none; }

@@ -3,16 +3,18 @@ import { useAuth } from '../lib/AuthContext';
 import { supabase } from '../lib/supabase';
 import { useQuery } from '@tanstack/react-query';
 import { motion, animate } from 'framer-motion';
-import { Star, Trophy, Zap, Activity, ChevronLeft, TrendingUp } from 'lucide-react';
-import { format } from 'date-fns';
-import { he } from 'date-fns/locale';
-import { useNavigate } from 'react-router-dom';
-import { Round, Player } from '@/api/entities';
+import { Star, Trophy, Zap, Activity, TrendingUp, ShieldQuestion, Users, Lock } from 'lucide-react';
+import { Player, PlayerRating } from '@/api/entities';
+import { SectionTitle, EmptyState, Skeleton } from '@/components/ui/lux';
 
 // ─── Count-up number animation ─────────────────────────────────────────────
 function CountUp({ to, duration = 1.1, suffix = '' }) {
   const [val, setVal] = useState(0);
   useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setVal(to);
+      return;
+    }
     const controls = animate(0, to, {
       duration,
       ease: 'easeOut',
@@ -27,14 +29,14 @@ function CountUp({ to, duration = 1.1, suffix = '' }) {
 function StarRating({ rating }) {
   const r = rating || 3;
   return (
-    <div className="flex gap-0.5 justify-center">
+    <div className="flex gap-0.5 justify-center" aria-label={`דירוג ${r} מתוך 5`}>
       {[1, 2, 3, 4, 5].map(i => {
         const filled = r >= i;
         const half = !filled && r >= i - 0.5;
         return (
           <Star
             key={i}
-            className={`w-5 h-5 drop-shadow-sm ${
+            className={`w-[18px] h-[18px] ${
               filled ? 'fill-amber-500 text-amber-500'
               : half  ? 'fill-amber-500/50 text-amber-500'
                       : 'fill-transparent text-amber-700/40'
@@ -47,61 +49,23 @@ function StarRating({ rating }) {
 }
 
 // ─── FIFA-style stat tile ──────────────────────────────────────────────────
-function StatTile({ icon: Icon, value, suffix, label, delay, iconClass }) {
+function StatTile({ icon: Icon, value, suffix, label, delay, iconClass, valueClass }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 24, scale: 0.9 }}
+      initial={{ opacity: 0, y: 20, scale: 0.92 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ delay, type: 'spring', damping: 16, stiffness: 200 }}
-      className="relative rounded-2xl p-px bg-gradient-to-br from-amber-300/60 via-amber-600/20 to-transparent"
+      transition={{ delay, type: 'spring', damping: 18, stiffness: 220 }}
+      className="relative rounded-2xl p-px bg-gradient-to-br from-amber-300/45 via-slate-700/25 to-slate-800/10"
     >
-      <div className="rounded-2xl bg-gradient-to-b from-slate-800/95 to-slate-950 px-2 py-3.5 flex flex-col items-center gap-1">
-        <div className={`w-9 h-9 rounded-full flex items-center justify-center mb-0.5 ${iconClass}`}>
-          <Icon className="w-4 h-4" />
+      <div className="rounded-[15px] bg-gradient-to-b from-slate-800/95 to-slate-950 px-2 py-3.5 flex flex-col items-center gap-1">
+        <div className={`grid place-items-center w-9 h-9 rounded-full mb-0.5 ${iconClass}`}>
+          <Icon className="w-[18px] h-[18px]" strokeWidth={2.3} />
         </div>
-        <span className="text-2xl font-black text-white tabular-nums leading-none">
+        <span className={`tnum text-2xl font-black leading-none ${valueClass}`}>
           <CountUp to={value} suffix={suffix || ''} />
         </span>
-        <span className="text-[11px] text-slate-400 font-bold">{label}</span>
+        <span className="text-[0.66rem] text-ink-3 font-bold tracking-wide">{label}</span>
       </div>
-    </motion.div>
-  );
-}
-
-// ─── Active round card ─────────────────────────────────────────────────────
-function ActiveRoundCard({ round }) {
-  const navigate = useNavigate();
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 24 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.55, duration: 0.5, type: 'spring', bounce: 0.2 }}
-      className="w-full max-w-xs"
-    >
-      <button
-        onClick={() => navigate('/MatchDay')}
-        className="group relative w-full rounded-2xl p-px bg-gradient-to-br from-emerald-400/60 via-emerald-700/20 to-transparent overflow-hidden touch-manipulation"
-      >
-        <div className="relative rounded-2xl bg-gradient-to-b from-slate-800/95 to-slate-950 px-4 py-3.5 flex items-center gap-3">
-          {/* Glow */}
-          <div className="absolute -top-8 -right-8 w-24 h-24 bg-emerald-500/20 rounded-full blur-2xl pointer-events-none" />
-
-          {/* Live dot */}
-          <span className="relative flex h-3 w-3 shrink-0">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
-          </span>
-
-          <div className="flex-1 min-w-0 text-right">
-            <p className="text-white font-black text-sm leading-tight">פורסמו הרכבים!</p>
-            <p className="text-slate-400 text-xs">
-              {format(new Date(round.date), "d בMMMM yyyy", { locale: he })}
-            </p>
-          </div>
-
-          <ChevronLeft className="w-5 h-5 text-emerald-400 shrink-0 group-active:-translate-x-1 transition-transform" />
-        </div>
-      </button>
     </motion.div>
   );
 }
@@ -130,34 +94,37 @@ export default function PlayerHome() {
     queryFn: () => Player.list('-appearances'),
   });
 
-  const { data: activeRound } = useQuery({
-    queryKey: ['latest-round'],
-    queryFn: async () => {
-      const rounds = await Round.list('-created_date');
-      return rounds.find(r =>
-        Array.isArray(r.openingTeams) && r.openingTeams.length >= 2 &&
-        r.winningTeam == null &&
-        !r.victoryPhoto
-      ) || null;
-    },
+  // Ratings I received — only count + average are shown to the player.
+  // Rater identity is NEVER exposed in the UI.
+  const { data: ratingsReceived = [] } = useQuery({
+    queryKey: ['ratings-received', player?.id],
+    queryFn: () => PlayerRating.filter({ rated_player_id: player.id }),
+    enabled: !!player?.id,
+    staleTime: 30_000,
+    refetchOnWindowFocus: true,
   });
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[70vh]">
-        <div className="w-10 h-10 border-4 border-amber-400/30 border-t-amber-400 rounded-full animate-spin" />
+      <div className="flex flex-col items-center px-6 pt-8 gap-7" dir="rtl">
+        <Skeleton className="w-[min(280px,calc(100vw-48px))] aspect-[2/3] rounded-2xl" />
+        <div className="w-full max-w-xs grid grid-cols-3 gap-2.5">
+          <Skeleton className="h-24 rounded-2xl" />
+          <Skeleton className="h-24 rounded-2xl" />
+          <Skeleton className="h-24 rounded-2xl" />
+        </div>
       </div>
     );
   }
 
   if (!player) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[70vh] p-4 text-center">
-        <div className="w-24 h-24 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
-          <span className="text-4xl">⚽</span>
-        </div>
-        <h2 className="text-2xl font-black text-slate-800 dark:text-white mb-2">אזור אישי</h2>
-        <p className="text-slate-500">לא נמצא פרופיל שחקן מקושר לחשבון זה.</p>
+      <div className="flex items-center justify-center min-h-[70vh] px-4" dir="rtl">
+        <EmptyState
+          icon={ShieldQuestion}
+          title="האזור האישי שלך"
+          hint="לא נמצא פרופיל שחקן המקושר לחשבון זה. פנה ליו״ר המועדון לקישור הכרטיס."
+        />
       </div>
     );
   }
@@ -168,19 +135,26 @@ export default function PlayerHome() {
   const rankIdx = allPlayers.findIndex(p => p.id === player.id);
   const rank = rankIdx >= 0 ? rankIdx + 1 : null;
 
+  const ratingsCount = ratingsReceived.length;
+  const ratingsAvg = ratingsCount > 0
+    ? ratingsReceived.reduce((sum, r) => sum + (Number(r.rating) || 0), 0) / ratingsCount
+    : 0;
+
   return (
-    <div className="flex flex-col items-center px-6 py-8 pb-32 gap-7" dir="rtl">
-      {/* ── Hero: gold card with float + glow ── */}
+    <div className="flex flex-col items-center px-6 pt-6 pb-10 gap-6" dir="rtl">
+      {/* ── Hero: FIFA gold card, floating ── */}
       <motion.div
-        initial={{ opacity: 0, y: 40, scale: 0.8 }}
+        initial={{ opacity: 0, y: 36, scale: 0.84 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.7, type: 'spring', bounce: 0.35 }}
-        className="w-full flex justify-center"
+        transition={{ duration: 0.7, type: 'spring', bounce: 0.3 }}
+        className="relative w-full flex justify-center"
       >
+        {/* stadium light behind the card */}
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-60 h-60 bg-amber-500/20 rounded-full blur-[80px] pointer-events-none" />
         <motion.div
           animate={{ y: [0, -9, 0] }}
-          transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut' }}
-          style={{ filter: 'drop-shadow(0 24px 64px rgba(200,150,25,0.55))' }}
+          transition={{ duration: 4.6, repeat: Infinity, ease: 'easeInOut' }}
+          style={{ filter: 'drop-shadow(0 24px 56px rgba(200,150,25,0.5))' }}
         >
           <div
             className="relative"
@@ -192,12 +166,14 @@ export default function PlayerHome() {
               backgroundRepeat: 'no-repeat',
             }}
           >
-            {/* Player photo */}
             <div className="absolute left-1/2 -translate-x-1/2" style={{ top: '18%' }}>
               {player.image ? (
                 <img
                   src={player.image}
                   alt={player.name}
+                  width={112}
+                  height={112}
+                  decoding="async"
                   className="rounded-full object-cover"
                   style={{
                     width: 'min(112px, 38vw)',
@@ -217,27 +193,22 @@ export default function PlayerHome() {
                     boxShadow: '0 0 24px rgba(200,155,30,0.55)',
                   }}
                 >
-                  <span
-                    className="text-4xl font-black"
-                    style={{ color: '#5a3500', textShadow: '0 1px 3px rgba(255,220,100,0.4)' }}
-                  >
+                  <span className="text-4xl font-black" style={{ color: '#5a3500' }}>
                     {player.name?.charAt(0)}
                   </span>
                 </div>
               )}
             </div>
 
-            {/* Player name */}
             <div className="absolute left-0 right-0 text-center px-4" style={{ top: '64%' }}>
               <h2
                 className="font-black text-base leading-tight truncate"
-                style={{ color: '#3d2000', textShadow: '0 1px 3px rgba(255,230,120,0.5)', letterSpacing: '0.01em' }}
+                style={{ color: '#3d2000', letterSpacing: '0.01em' }}
               >
                 {player.name}
               </h2>
             </div>
 
-            {/* Star rating */}
             <div className="absolute left-0 right-0 flex justify-center" style={{ top: '74%' }}>
               <StarRating rating={player.rating} />
             </div>
@@ -247,60 +218,128 @@ export default function PlayerHome() {
 
       {/* ── Stats panel ── */}
       <div className="w-full max-w-xs">
-        {/* Header */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.3 }}
-          className="flex items-center gap-2.5 mb-3"
+          transition={{ delay: 0.32 }}
         >
-          <div className="h-px flex-1 bg-gradient-to-l from-amber-400/50 to-transparent" />
-          <span className="text-amber-300/90 font-black text-xs tracking-widest uppercase">הביצועים שלי</span>
-          <div className="h-px flex-1 bg-gradient-to-r from-amber-400/50 to-transparent" />
+          <SectionTitle icon={TrendingUp} className="mb-3">הביצועים שלי</SectionTitle>
         </motion.div>
 
-        {/* Tiles */}
         <div className="grid grid-cols-3 gap-2.5">
           <StatTile
-            icon={Trophy}
-            value={wins}
-            label="גביעים"
-            delay={0.38}
-            iconClass="bg-amber-500/15 text-amber-400"
+            icon={Trophy} value={wins} label="ניצחונות" delay={0.38}
+            iconClass="bg-amber-500/15 text-amber-300" valueClass="text-amber-300"
           />
           <StatTile
-            icon={Activity}
-            value={appearances}
-            label="הופעות"
-            delay={0.46}
-            iconClass="bg-emerald-500/15 text-emerald-400"
+            icon={Activity} value={appearances} label="הופעות" delay={0.46}
+            iconClass="bg-emerald-500/15 text-emerald-300" valueClass="text-white"
           />
           <StatTile
-            icon={Zap}
-            value={winRate}
-            suffix="%"
-            label="ניצחון"
-            delay={0.54}
-            iconClass="bg-sky-500/15 text-sky-400"
+            icon={Zap} value={winRate} suffix="%" label="אחוז ניצחון" delay={0.54}
+            iconClass="bg-sky-500/15 text-sky-300" valueClass="text-sky-300"
           />
         </div>
 
-        {/* Rank line */}
         {rank && appearances > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.62 }}
-            className="mt-2.5 flex items-center justify-center gap-1.5 text-xs text-slate-400"
+            className="mt-3 flex items-center justify-center gap-1.5 text-xs font-bold text-ink-2"
           >
-            <TrendingUp className="w-3.5 h-3.5 text-amber-400" />
-            <span>מדורג <span className="text-amber-300 font-black">#{rank}</span> בטבלת ההופעות</span>
+            <TrendingUp className="w-3.5 h-3.5 text-amber-400" strokeWidth={2.6} />
+            <span>מדורג <span className="text-amber-300 font-black tnum">#{rank}</span> בטבלת ההופעות</span>
           </motion.div>
         )}
+
+        {/* ── Ratings received (anonymous) ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7, type: 'spring', damping: 22, stiffness: 220 }}
+          className="mt-5"
+        >
+          {/* Eyebrow */}
+          <div className="flex items-center gap-2 mb-2.5">
+            <span className="h-px flex-1 bg-gradient-to-l from-transparent to-amber-400/40" />
+            <span className="text-[0.6rem] font-black tracking-[0.32em] text-amber-300/85 uppercase whitespace-nowrap">
+              כך מדרגים אותך
+            </span>
+            <span className="h-px flex-1 bg-gradient-to-r from-transparent to-amber-400/40" />
+          </div>
+
+          <div className="relative rounded-2xl p-px bg-gradient-to-br from-amber-300/55 via-slate-700/25 to-slate-800/10">
+            <div className="rounded-[15px] bg-gradient-to-b from-slate-800/95 to-slate-950 px-4 py-4">
+              {ratingsCount === 0 ? (
+                <div className="flex flex-col items-center text-center py-1">
+                  <div className="flex gap-0.5 mb-1.5 opacity-30">
+                    {[1, 2, 3, 4, 5].map(i => (
+                      <Star key={i} className="w-4 h-4 fill-amber-500 text-amber-500" />
+                    ))}
+                  </div>
+                  <p className="text-ink-2 text-xs font-bold">עדיין לא דירגו אותך</p>
+                  <p className="text-ink-3 text-[0.62rem] font-bold mt-1 leading-relaxed max-w-[14rem]">
+                    הציון הממוצע שלך יופיע כאן ברגע ששחקנים יתחילו לדרג
+                  </p>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between gap-3">
+                  {/* Average + stars */}
+                  <div className="flex-1 text-center">
+                    <div className="flex gap-0.5 justify-center mb-1.5" aria-label={`ממוצע ${ratingsAvg.toFixed(1)} מתוך 5`}>
+                      {[1, 2, 3, 4, 5].map(i => {
+                        const filled = ratingsAvg >= i;
+                        const half = !filled && ratingsAvg >= i - 0.5;
+                        return (
+                          <Star
+                            key={i}
+                            className={`w-4 h-4 ${
+                              filled ? 'fill-amber-400 text-amber-400'
+                              : half  ? 'fill-amber-400/55 text-amber-400'
+                                      : 'fill-transparent text-amber-700/40'
+                            }`}
+                          />
+                        );
+                      })}
+                    </div>
+                    <span className="block tnum text-3xl font-black st-gold-text leading-none">
+                      {ratingsAvg.toFixed(1)}
+                    </span>
+                    <span className="block text-[0.6rem] text-ink-3 font-bold mt-1 tracking-wide">
+                      דירוג ממוצע
+                    </span>
+                  </div>
+
+                  <div className="h-14 w-px bg-white/8" />
+
+                  {/* Count */}
+                  <div className="flex-1 text-center">
+                    <div className="grid place-items-center w-7 h-7 mx-auto mb-1.5 rounded-full bg-emerald-500/15 ring-1 ring-emerald-500/30">
+                      <Users className="w-3.5 h-3.5 text-emerald-300" strokeWidth={2.6} />
+                    </div>
+                    <span className="block tnum text-3xl font-black text-white leading-none">
+                      <CountUp to={ratingsCount} />
+                    </span>
+                    <span className="block text-[0.6rem] text-ink-3 font-bold mt-1 tracking-wide">
+                      {ratingsCount === 1 ? 'שחקן דירג' : 'שחקנים דירגו'}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Privacy note */}
+              <div className="mt-3 pt-2.5 border-t border-white/6 flex items-center justify-center gap-1.5">
+                <Lock className="w-[11px] h-[11px] text-ink-3" strokeWidth={2.6} />
+                <span className="text-[0.58rem] text-ink-3 font-bold tracking-wider">
+                  זהות המדרגים אנונימית ולא חשופה
+                </span>
+              </div>
+            </div>
+          </div>
+        </motion.div>
       </div>
 
-      {/* ── Active round ── */}
-      {activeRound && <ActiveRoundCard round={activeRound} />}
     </div>
   );
 }

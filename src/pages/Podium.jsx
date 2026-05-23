@@ -2,8 +2,87 @@ import React from 'react';
 import { Player } from '@/api/entities';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { Trophy, Crown, Zap } from 'lucide-react';
-import { PageHeader } from '@/components/ui/lux';
+import { Trophy, Crown, ListOrdered } from 'lucide-react';
+import { PageHeader, SectionTitle, EmptyState, Skeleton } from '@/components/ui/lux';
+
+const RANK_TEXT = ['text-amber-300', 'text-slate-300', 'text-orange-400'];
+
+function Avatar({ player, size = 'md', ring = 'ring-slate-600' }) {
+  const sizeClass =
+    size === 'lg' ? 'w-[68px] h-[68px] text-2xl'
+    : size === 'sm' ? 'w-11 h-11 text-base'
+    : 'w-12 h-12 text-lg';
+  return player?.image ? (
+    <img
+      src={player.image}
+      alt={player.name}
+      loading="lazy"
+      className={`${sizeClass} rounded-full object-cover ring-2 ${ring}`}
+    />
+  ) : (
+    <div className={`${sizeClass} rounded-full bg-slate-700 grid place-items-center ring-2 ${ring}`}>
+      <span className="font-black text-slate-300">{player?.name?.charAt(0)}</span>
+    </div>
+  );
+}
+
+function PodiumStep({ player, place, delay }) {
+  const config = {
+    1: {
+      ped: 'h-40 bg-gradient-to-b from-amber-400 to-amber-700 ring-amber-300/50',
+      num: 'text-stadium', cardRing: 'ring-amber-400/60', cardBg: 'from-amber-900/55 to-slate-900',
+      avatarRing: 'ring-amber-400', name: 'text-amber-200', winText: 'text-amber-300',
+      winIcon: 'text-amber-400', w: 'w-[88px]',
+    },
+    2: {
+      ped: 'h-28 bg-gradient-to-b from-slate-400 to-slate-600 ring-slate-300/40',
+      num: 'text-stadium', cardRing: 'ring-slate-400/40', cardBg: 'from-slate-800 to-slate-900',
+      avatarRing: 'ring-slate-400', name: 'text-white', winText: 'text-slate-200',
+      winIcon: 'text-slate-300', w: 'w-[78px]',
+    },
+    3: {
+      ped: 'h-[72px] bg-gradient-to-b from-orange-600 to-orange-900 ring-orange-400/40',
+      num: 'text-orange-100', cardRing: 'ring-orange-500/40', cardBg: 'from-slate-800 to-slate-900',
+      avatarRing: 'ring-orange-500/60', name: 'text-white', winText: 'text-orange-300',
+      winIcon: 'text-orange-400', w: 'w-[78px]',
+    },
+  }[place];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 44 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay, type: 'spring', damping: 20, stiffness: 180 }}
+      className={`flex flex-col items-center ${place === 1 ? 'relative z-10' : ''}`}
+    >
+      {place === 1 && (
+        <motion.div
+          initial={{ rotate: -18, y: -8, opacity: 0 }}
+          animate={{ rotate: 0, y: 0, opacity: 1 }}
+          transition={{ delay: delay + 0.3, type: 'spring', stiffness: 220 }}
+          className="mb-1.5"
+        >
+          <Crown className="w-8 h-8 text-amber-400 fill-amber-400 drop-shadow-[0_0_10px_rgba(251,191,36,0.6)]" />
+        </motion.div>
+      )}
+      <div className={`mb-3 rounded-2xl p-3 bg-gradient-to-br ${config.cardBg} ring-1 ${config.cardRing} shadow-xl`}>
+        <div className="flex flex-col items-center gap-1.5">
+          <Avatar player={player} size={place === 1 ? 'lg' : 'sm'} ring={config.avatarRing} />
+          <p className={`font-black text-xs text-center leading-tight max-w-[80px] truncate ${config.name}`}>
+            {player.name}
+          </p>
+          <div className="flex items-center gap-1">
+            <Trophy className={`w-3 h-3 ${config.winIcon}`} />
+            <span className={`tnum font-black text-sm ${config.winText}`}>{player.wins || 0}</span>
+          </div>
+        </div>
+      </div>
+      <div className={`${config.w} ${config.ped} rounded-t-xl ring-1 grid place-items-start justify-center pt-3 shadow-2xl`}>
+        <span className={`text-4xl font-black ${config.num}`}>{place}</span>
+      </div>
+    </motion.div>
+  );
+}
 
 export default function Podium() {
   const { data: players = [], isLoading } = useQuery({
@@ -11,153 +90,89 @@ export default function Podium() {
     queryFn: () => Player.list('-wins'),
   });
 
-  const first = players[0];
-  const second = players[1];
-  const third = players[2];
-
-  const Avatar = ({ player, size = 'md', ring = 'ring-slate-600' }) => {
-    const sizeClass = size === 'lg' ? 'w-16 h-16 text-2xl' : size === 'sm' ? 'w-10 h-10 text-base' : 'w-12 h-12 text-lg';
-    return player?.image ? (
-      <img src={player.image} alt={player.name} className={`${sizeClass} rounded-full object-cover ring-2 ${ring}`} />
-    ) : (
-      <div className={`${sizeClass} rounded-full bg-slate-700 flex items-center justify-center ring-2 ${ring}`}>
-        <span className="font-bold text-slate-300">{player?.name?.charAt(0)}</span>
-      </div>
-    );
-  };
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
+  const [first, second, third] = players;
 
   return (
-    <div className="pb-28 max-w-lg mx-auto">
-      <PageHeader icon={Trophy} title="הפודיום" accent="amber" />
-      <div className="px-4 mt-6">
+    <div className="pb-10 max-w-lg mx-auto">
+      <PageHeader
+        icon={Trophy}
+        title="הפודיום"
+        subtitle={players.length ? `${players.length} שחקנים בדירוג` : 'טבלת המנצחים'}
+        accent="amber"
+      />
 
-      {players.length === 0 ? (
-        <div className="text-center py-16">
-          <Trophy className="w-16 h-16 mx-auto mb-4 text-slate-600" />
-          <p className="text-slate-400">התחל לשחק כדי לראות את המובילים</p>
-        </div>
-      ) : (
-        <>
-          {/* Section Title */}
-          <div className="flex items-center justify-center gap-2 mb-6">
-            <Trophy className="w-4 h-4 text-amber-400" />
-            <span className="text-sm font-bold text-amber-400 uppercase tracking-widest">המניפים הגדולים</span>
-            <Trophy className="w-4 h-4 text-amber-400" />
+      <div className="px-4 mt-5">
+        {isLoading ? (
+          <div className="space-y-3">
+            <Skeleton className="h-56 rounded-2xl" />
+            <Skeleton className="h-14 rounded-xl" />
+            <Skeleton className="h-14 rounded-xl" />
+            <Skeleton className="h-14 rounded-xl" />
           </div>
+        ) : players.length === 0 ? (
+          <EmptyState
+            icon={Trophy}
+            title="הפודיום עוד ריק"
+            hint="ברגע שיירשמו ניצחונות, המובילים יופיעו כאן."
+          />
+        ) : (
+          <>
+            <SectionTitle icon={Crown} className="mb-6">המנצחים הגדולים</SectionTitle>
 
-          {/* Podium */}
-          <div className="relative min-h-[380px] flex items-end justify-center gap-2 mb-10">
-            {second && (
-              <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="flex flex-col items-center">
-                <div className="mb-3 bg-slate-800 border border-slate-600 rounded-2xl p-3 shadow-xl">
-                  <div className="flex flex-col items-center gap-1.5">
-                    <Avatar player={second} size="sm" ring="ring-slate-500" />
-                    <p className="font-bold text-white text-xs text-center">{second.name}</p>
-                    <div className="flex items-center gap-1">
-                      <Trophy className="w-3 h-3 text-slate-400" />
-                      <span className="text-xs font-bold text-slate-300">{second.wins || 0}</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="w-20 h-28 bg-gradient-to-b from-slate-600 to-slate-700 rounded-t-2xl shadow-xl flex items-start justify-center pt-3 border border-slate-500 border-b-0">
-                  <span className="text-3xl font-black text-slate-300">2</span>
-                </div>
-              </motion.div>
-            )}
-            {first && (
-              <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="flex flex-col items-center relative z-10">
-                <motion.div initial={{ rotate: -20, y: -10 }} animate={{ rotate: 0, y: 0 }} transition={{ delay: 0.5, type: 'spring', stiffness: 200 }} className="mb-2">
-                  <Crown className="w-8 h-8 text-amber-400 fill-amber-400" />
-                </motion.div>
-                <div className="mb-3 bg-gradient-to-br from-amber-900/60 to-slate-800 border-2 border-amber-400/60 rounded-2xl p-3 shadow-2xl">
-                  <div className="flex flex-col items-center gap-1.5">
-                    <Avatar player={first} size="lg" ring="ring-amber-400" />
-                    <p className="font-black text-amber-300 text-xs text-center">{first.name}</p>
-                    <div className="flex items-center gap-1">
-                      <Trophy className="w-3 h-3 text-amber-400" />
-                      <span className="text-sm font-black text-amber-300">{first.wins || 0}</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="w-24 h-44 bg-gradient-to-b from-emerald-600 to-emerald-800 rounded-t-2xl shadow-2xl flex items-start justify-center pt-4 border border-emerald-500 border-b-0">
-                  <span className="text-5xl font-black text-white">1</span>
-                </div>
-              </motion.div>
-            )}
-            {third && (
-              <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="flex flex-col items-center">
-                <div className="mb-3 bg-slate-800 border border-slate-600 rounded-2xl p-3 shadow-xl">
-                  <div className="flex flex-col items-center gap-1.5">
-                    <Avatar player={third} size="sm" ring="ring-orange-500/50" />
-                    <p className="font-bold text-white text-xs text-center">{third.name}</p>
-                    <div className="flex items-center gap-1">
-                      <Trophy className="w-3 h-3 text-orange-400" />
-                      <span className="text-xs font-bold text-slate-300">{third.wins || 0}</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="w-20 h-20 bg-gradient-to-b from-slate-700 to-slate-800 rounded-t-2xl shadow-xl flex items-start justify-center pt-2 border border-slate-600 border-b-0">
-                  <span className="text-3xl font-black text-orange-400">3</span>
-                </div>
-              </motion.div>
-            )}
-          </div>
-
-          {/* Full Leaderboard */}
-          <div className="flex items-center gap-2 mb-4">
-            <Zap className="w-4 h-4 text-emerald-400" />
-            <span className="text-sm font-bold text-emerald-400 uppercase tracking-widest">דירוג מלא</span>
-          </div>
-          <div className="rounded-2xl overflow-hidden border border-amber-500/15 bg-slate-900/60 shadow-xl shadow-black/30">
-            {/* Table header */}
-            <div className="grid grid-cols-[44px_1fr_70px_70px] items-center px-4 py-2.5 bg-gradient-to-l from-slate-800 to-slate-800/60 border-b border-amber-500/15">
-              <span className="text-xs font-black text-amber-400/80 uppercase">#</span>
-              <span className="text-xs font-black text-amber-400/80 uppercase">שחקן</span>
-              <span className="text-xs font-black text-amber-400/80 uppercase text-center">גביעים</span>
-              <span className="text-xs font-black text-amber-400/80 uppercase text-center">הופעות</span>
+            <div className="flex items-end justify-center gap-2 mb-9 min-h-[320px]">
+              {second && <PodiumStep player={second} place={2} delay={0.16} />}
+              {first && <PodiumStep player={first} place={1} delay={0.05} />}
+              {third && <PodiumStep player={third} place={3} delay={0.27} />}
             </div>
-            {players.map((player, index) => (
-              <motion.div
-                key={player.id}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.03 }}
-                className="grid grid-cols-[44px_1fr_70px_70px] items-center px-4 py-3 border-b border-slate-800 last:border-b-0 hover:bg-slate-800/50 transition-all duration-200 group"
-              >
-                <span className={`text-sm font-black ${index === 0 ? 'text-amber-400' : index === 1 ? 'text-slate-400' : index === 2 ? 'text-orange-500' : 'text-slate-600'}`}>
-                  {index + 1}
-                </span>
-                <div className="flex items-center gap-2.5">
-                  {player.image ? (
-                    <img src={player.image} alt={player.name} className="w-8 h-8 rounded-full object-cover border border-slate-700 group-hover:border-emerald-600 transition-colors" />
-                  ) : (
-                    <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center border border-slate-600 group-hover:border-emerald-600 transition-colors">
-                      <span className="text-xs font-bold text-slate-400">{player.name.charAt(0)}</span>
-                    </div>
-                  )}
-                  <span className="font-semibold text-white text-sm group-hover:text-emerald-300 transition-colors">{player.name}</span>
-                </div>
-                <div className="flex justify-center">
-                  <span className="bg-amber-500/15 text-amber-400 font-bold text-sm px-2.5 py-1 rounded-lg border border-amber-500/20">
-                    {player.wins || 0}
+
+            <SectionTitle icon={ListOrdered} className="mb-4">דירוג מלא</SectionTitle>
+
+            <div className="rounded-2xl overflow-hidden ring-1 ring-amber-500/15 bg-slate-900/60">
+              <div className="grid grid-cols-[40px_1fr_60px_60px] items-center px-4 py-2.5 bg-slate-800/80 border-b border-amber-500/15">
+                <span className="text-[0.7rem] font-black text-amber-400/80">#</span>
+                <span className="text-[0.7rem] font-black text-amber-400/80">שחקן</span>
+                <span className="text-[0.7rem] font-black text-amber-400/80 text-center">נצחונות</span>
+                <span className="text-[0.7rem] font-black text-amber-400/80 text-center">הופעות</span>
+              </div>
+              {players.map((player, index) => (
+                <motion.div
+                  key={player.id}
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: Math.min(index * 0.03, 0.4) }}
+                  className="grid grid-cols-[40px_1fr_60px_60px] items-center px-4 py-3 border-b border-slate-800/80 last:border-b-0"
+                >
+                  <span className={`text-sm font-black tnum ${RANK_TEXT[index] || 'text-slate-600'}`}>
+                    {index + 1}
                   </span>
-                </div>
-                <div className="flex justify-center">
-                  <span className="text-slate-400 text-sm font-medium">{player.appearances || 0}</span>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </>
-      )}
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    {player.image ? (
+                      <img
+                        src={player.image}
+                        alt={player.name}
+                        loading="lazy"
+                        className="w-8 h-8 rounded-full object-cover ring-1 ring-slate-700 shrink-0"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-slate-700 grid place-items-center ring-1 ring-slate-600 shrink-0">
+                        <span className="text-xs font-black text-slate-400">{player.name.charAt(0)}</span>
+                      </div>
+                    )}
+                    <span className="font-bold text-white text-sm truncate">{player.name}</span>
+                  </div>
+                  <div className="flex justify-center">
+                    <span className="tnum bg-amber-500/12 text-amber-300 font-black text-sm px-2.5 py-1 rounded-lg ring-1 ring-amber-500/25">
+                      {player.wins || 0}
+                    </span>
+                  </div>
+                  <span className="tnum text-ink-2 text-sm font-bold text-center">
+                    {player.appearances || 0}
+                  </span>
+                </motion.div>
+              ))}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

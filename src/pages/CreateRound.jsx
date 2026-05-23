@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
 import { Player } from '@/api/entities';
 import { useQuery } from '@tanstack/react-query';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Shuffle, Users, Zap } from 'lucide-react';
+import { AnimatePresence } from 'framer-motion';
+import { Shuffle, Zap, Check, Users } from 'lucide-react';
 import QuickRoundModal from '@/components/round/QuickRoundModal';
 import { toast } from 'sonner';
 import StepSettings from '@/components/round/StepSettings';
 import StepSelectPlayers from '@/components/round/StepSelectPlayers';
 import StepTeamsPreview from '@/components/round/StepTeamsPreview';
 import StepOpeningTeam from '@/components/round/StepOpeningTeam';
+import { EmptyState } from '@/components/ui/lux';
+
+const STEP_LABELS = ['הגדרות', 'בחירה', 'תצוגה', 'שמירה'];
 export default function CreateRound() {
   const [step, setStep] = useState(1);
   const [numTeams, setNumTeams] = useState(2);
@@ -129,13 +132,13 @@ export default function CreateRound() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+        <div className="w-10 h-10 border-4 border-amber-400/30 border-t-amber-400 rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="p-4 pb-8">
+    <div className="p-4 pb-10">
       {showQuickModal && (
         <QuickRoundModal
           players={players}
@@ -143,72 +146,68 @@ export default function CreateRound() {
           onConfirm={handleQuickRound}
         />
       )}
+
       {/* Header */}
       <div className="mb-6">
-        <div className="flex items-center justify-between gap-3 mb-2">
-          <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-emerald-900/50 rounded-xl">
-            <Shuffle className="w-6 h-6 text-emerald-400" />
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="grid place-items-center w-11 h-11 rounded-xl bg-emerald-500/15 ring-1 ring-emerald-500/30">
+              <Shuffle className="w-5 h-5 text-emerald-300" strokeWidth={2.3} />
+            </div>
+            <h1 className="text-[clamp(1.3rem,5vw,1.65rem)] font-black text-white tracking-tight">
+              יצירת מחזור
+            </h1>
           </div>
-          <h1 className="text-2xl font-bold text-white">יצירת מחזור</h1>
-        </div>
-        <button
-          onClick={() => setShowQuickModal(true)}
-          className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold px-4 py-2 rounded-xl shadow transition-colors"
-        >
-          <Zap className="w-4 h-4" />
-          מחזור מהיר
-        </button>
+          <button
+            onClick={() => setShowQuickModal(true)}
+            className="flex items-center gap-1.5 min-h-[44px] px-3.5 rounded-xl st-foil text-sm font-black shadow-[0_6px_18px_-6px_rgba(212,160,40,0.6)] active:scale-95 transition-transform shrink-0"
+          >
+            <Zap className="w-4 h-4" />
+            מחזור מהיר
+          </button>
         </div>
 
-        {/* Step Indicator */}
-        <div className="flex items-center gap-1 mt-4">
-          {[1, 2, 3, 4].map((s) => (
-            <div key={s} className="flex items-center">
-              <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${
-                  step >= s
-                    ? 'bg-emerald-500 text-white'
-                    : 'bg-slate-700 text-slate-500'
-                }`}
-              >
-                {s}
-              </div>
-              {s < 4 && (
-                <div
-                  className={`w-5 h-1 mx-0.5 rounded ${
-                    step > s ? 'bg-emerald-500' : 'bg-slate-700'
-                  }`}
-                />
-              )}
-            </div>
-          ))}
-        </div>
-        <div className="flex gap-2 mt-2 text-xs text-slate-500">
-          <span>הגדרות</span>
-          <span>בחירה</span>
-          <span>תצוגה</span>
-          <span>שמירה</span>
+        {/* Step indicator */}
+        <div className="mt-6 flex items-start">
+          {[1, 2, 3, 4].map((s) => {
+            const done = step > s;
+            const current = step === s;
+            return (
+              <React.Fragment key={s}>
+                <div className="flex flex-col items-center gap-1.5 shrink-0">
+                  <div
+                    className={`grid place-items-center w-9 h-9 rounded-full text-sm font-black transition-all duration-200 ${
+                      done
+                        ? 'st-foil'
+                        : current
+                          ? 'bg-emerald-500/20 text-emerald-300 ring-2 ring-emerald-400/60'
+                          : 'bg-slate-800 text-slate-500 ring-1 ring-white/8'
+                    }`}
+                  >
+                    {done ? <Check className="w-4 h-4" strokeWidth={3} /> : s}
+                  </div>
+                  <span className={`text-[0.62rem] font-black ${current || done ? 'text-amber-300' : 'text-slate-600'}`}>
+                    {STEP_LABELS[s - 1]}
+                  </span>
+                </div>
+                {s < 4 && (
+                  <div className="flex-1 h-1 mt-4 mx-1 rounded-full bg-slate-800 overflow-hidden">
+                    <div className={`h-full rounded-full transition-all duration-300 ${step > s ? 'w-full bg-gradient-to-l from-amber-400 to-amber-600' : 'w-0'}`} />
+                  </div>
+                )}
+              </React.Fragment>
+            );
+          })}
         </div>
       </div>
 
-      {/* No Players Warning */}
+      {/* No players */}
       {players.length === 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center py-16"
-        >
-          <div className="w-20 h-20 mx-auto mb-4 bg-slate-800 rounded-full flex items-center justify-center">
-            <Users className="w-10 h-10 text-slate-600" />
-          </div>
-          <h3 className="text-lg font-medium text-slate-300 mb-2">
-            אין שחקנים בסגל
-          </h3>
-          <p className="text-slate-400">
-            הוסף שחקנים בעמוד "סגל שחקנים" כדי ליצור מחזור
-          </p>
-        </motion.div>
+        <EmptyState
+          icon={Users}
+          title="אין שחקנים בסגל"
+          hint="הוסף שחקנים בעמוד ״סגל שחקנים״ כדי ליצור מחזור."
+        />
       )}
 
       {/* Steps */}

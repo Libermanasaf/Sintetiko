@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, X, Users, Mail, Clock } from 'lucide-react';
+import { Check, X, UserCheck, Mail, Clock, User } from 'lucide-react';
 import { toast } from 'sonner';
+import { PageHeader, EmptyState, Skeleton } from '@/components/ui/lux';
 
 export default function UserApprovals() {
   const [pendingPlayers, setPendingPlayers] = useState([]);
@@ -13,7 +14,6 @@ export default function UserApprovals() {
     setIsLoading(true);
     try {
       if (!supabase) {
-        // Fallback for simulation - load from local storage
         try {
           const playersKey = 'sintetiko_Player';
           const players = JSON.parse(localStorage.getItem(playersKey) || '[]');
@@ -37,7 +37,7 @@ export default function UserApprovals() {
       setPendingPlayers(data || []);
     } catch (err) {
       console.error('Error fetching pending players:', err.message);
-      toast.error("שגיאה בטעינת המשתמשים", { description: err.message });
+      toast.error('שגיאה בטעינת המשתמשים', { description: err.message });
     } finally {
       setIsLoading(false);
     }
@@ -55,7 +55,6 @@ export default function UserApprovals() {
           .from('players')
           .update({ is_approved: true })
           .eq('id', playerId);
-
         if (error) throw error;
       } else {
         const playersKey = 'sintetiko_Player';
@@ -66,12 +65,10 @@ export default function UserApprovals() {
           localStorage.setItem(playersKey, JSON.stringify(players));
         }
       }
-
-      toast.success("השחקן אושר בהצלחה", { description: `חשבונו של ${name} הופעל והוא יכול כעת להתחבר.` });
-
+      toast.success('השחקן אושר בהצלחה', { description: `חשבונו של ${name} הופעל והוא יכול כעת להתחבר.` });
       setPendingPlayers(prev => prev.filter(p => p.id !== playerId));
     } catch (err) {
-      toast.error("שגיאה באישור השחקן", { description: err.message });
+      toast.error('שגיאה באישור השחקן', { description: err.message });
     } finally {
       setActionInProgress(null);
     }
@@ -86,13 +83,8 @@ export default function UserApprovals() {
       if (supabase) {
         const { error } = await supabase
           .from('players')
-          .update({ 
-            user_id: null, 
-            email: null, 
-            is_approved: false 
-          })
+          .update({ user_id: null, email: null, is_approved: false })
           .eq('id', playerId);
-
         if (error) throw error;
       } else {
         const playersKey = 'sintetiko_Player';
@@ -105,107 +97,114 @@ export default function UserApprovals() {
           localStorage.setItem(playersKey, JSON.stringify(players));
         }
       }
-
-      toast.success("בקשת ההרשמה נדחתה", { description: `בקשתו של ${name} הוסרה והפרופיל שלו חזר להיות פנוי בסגל.` });
-
+      toast.success('בקשת ההרשמה נדחתה', { description: `בקשתו של ${name} הוסרה והפרופיל שלו חזר להיות פנוי בסגל.` });
       setPendingPlayers(prev => prev.filter(p => p.id !== playerId));
     } catch (err) {
-      toast.error("שגיאה בדחיית הבקשה", { description: err.message });
+      toast.error('שגיאה בדחיית הבקשה', { description: err.message });
     } finally {
       setActionInProgress(null);
     }
   };
 
   return (
-    <div className="container max-w-4xl mx-auto px-4 py-8 pb-32" dir="rtl">
-      <div className="flex items-center gap-3 mb-8">
-        <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-600 dark:text-emerald-400">
-          <Users className="w-6 h-6" />
-        </div>
-        <div>
-          <h1 className="text-3xl font-black text-slate-800 dark:text-white">אישור משתמשים חדשים</h1>
-          <p className="text-slate-500 dark:text-slate-400">נהל ואשר בקשות הרשמה לסגל הקבוצה</p>
-        </div>
-      </div>
+    <div className="pb-10">
+      <PageHeader
+        icon={UserCheck}
+        title="אישור משתמשים"
+        subtitle={pendingPlayers.length ? `${pendingPlayers.length} בקשות ממתינות` : 'בקשות הרשמה לסגל'}
+        accent="emerald"
+      />
 
-      {isLoading ? (
-        <div className="flex flex-col items-center justify-center py-16">
-          <div className="w-10 h-10 border-4 border-slate-200 border-t-emerald-600 rounded-full animate-spin mb-4"></div>
-          <p className="text-slate-500">טוען בקשות אישור...</p>
-        </div>
-      ) : (
-        <AnimatePresence mode="popLayout">
-          {pendingPlayers.length === 0 ? (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 rounded-2xl p-10 text-center shadow-lg"
-            >
-              <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400">
-                <Users className="w-8 h-8" />
-              </div>
-              <h3 className="text-xl font-bold text-slate-850 dark:text-white mb-1">אין בקשות אישור ממתינות</h3>
-              <p className="text-slate-500 max-w-sm mx-auto text-sm">כל המשתמשים הנרשמים במערכת מאושרים ופעילים כרגע.</p>
-            </motion.div>
-          ) : (
-            <div className="space-y-4">
-              {pendingPlayers.map((player) => (
-                <motion.div
-                  key={player.id}
-                  layout
-                  initial={{ opacity: 0, y: 15 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 rounded-2xl p-5 md:p-6 shadow-md hover:shadow-lg transition-all flex flex-col md:flex-row md:items-center justify-between gap-4"
-                >
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 bg-emerald-50 dark:bg-emerald-950/30 rounded-xl flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
-                      <span className="text-xl">⚽</span>
-                    </div>
-                    <div className="space-y-1">
-                      <h4 className="text-lg font-bold text-slate-850 dark:text-white flex items-center gap-2">
-                        {player.name}
-                        {player.email === 'libermanasaf@gmail.com' && (
-                          <span className="bg-amber-100 text-amber-800 text-xs px-2.5 py-0.5 rounded-full font-bold">יו"ר</span>
-                        )}
-                      </h4>
-                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-500">
-                        <span className="flex items-center gap-1.5">
-                          <Mail className="w-4 h-4 text-slate-400" />
-                          <span className="font-mono">{player.email}</span>
-                        </span>
-                        <span className="flex items-center gap-1.5">
-                          <Clock className="w-4 h-4 text-slate-400" />
-                          <span>נרשם ב: {new Date(player.created_date).toLocaleDateString('he-IL', { hour: '2-digit', minute: '2-digit' })}</span>
-                        </span>
+      <div className="p-4">
+        {isLoading ? (
+          <div className="space-y-3">
+            {[1, 2, 3].map(i => <Skeleton key={i} className="h-28 rounded-2xl" />)}
+          </div>
+        ) : (
+          <AnimatePresence mode="popLayout">
+            {pendingPlayers.length === 0 ? (
+              <EmptyState
+                key="empty"
+                icon={UserCheck}
+                title="אין בקשות ממתינות"
+                hint="כל המשתמשים הרשומים במערכת מאושרים ופעילים."
+              />
+            ) : (
+              <div className="space-y-3">
+                {pendingPlayers.map((player) => {
+                  const busy = actionInProgress === player.id;
+                  return (
+                    <motion.div
+                      key={player.id}
+                      layout
+                      initial={{ opacity: 0, y: 14 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      className="rounded-2xl bg-slate-900/70 ring-1 ring-white/8 overflow-hidden"
+                    >
+                      {/* Squad name banner */}
+                      <div className="flex items-center gap-2.5 px-4 py-2.5 bg-amber-500/8 border-b border-amber-500/15">
+                        <User className="w-3.5 h-3.5 text-amber-400 shrink-0" strokeWidth={2.4} />
+                        <span className="text-[0.72rem] font-bold text-ink-3">שם שנבחר מהסגל:</span>
+                        <span className="font-black text-amber-200 text-sm truncate">{player.name}</span>
                       </div>
-                    </div>
-                  </div>
 
-                  <div className="flex items-center gap-3 justify-end border-t border-slate-50 dark:border-slate-800/50 pt-3 md:pt-0 md:border-0">
-                    <button
-                      onClick={() => handleReject(player.id, player.name)}
-                      disabled={actionInProgress === player.id}
-                      className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-rose-200 hover:bg-rose-50 dark:border-rose-950/30 dark:hover:bg-rose-950/20 text-rose-600 dark:text-rose-400 font-bold text-sm transition-all disabled:opacity-50"
-                    >
-                      <X className="w-4 h-4" />
-                      <span>דחייה</span>
-                    </button>
-                    <button
-                      onClick={() => handleApprove(player.id, player.name)}
-                      disabled={actionInProgress === player.id}
-                      className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 dark:bg-emerald-700 dark:hover:bg-emerald-600 text-white font-bold text-sm transition-all shadow-[0_4px_12px_rgba(16,185,129,0.15)] disabled:opacity-50"
-                    >
-                      <Check className="w-4 h-4" />
-                      <span>אישור כניסה</span>
-                    </button>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          )}
-        </AnimatePresence>
-      )}
+                      <div className="p-4">
+                        <div className="flex items-start gap-3">
+                          {/* Avatar */}
+                          <div className="grid place-items-center w-11 h-11 rounded-xl st-foil text-base font-black shrink-0">
+                            {(player.name?.[0] || '?').toUpperCase()}
+                          </div>
+
+                          {/* Info */}
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-col gap-1.5 text-xs font-medium text-ink-2">
+                              <span className="flex items-center gap-1.5">
+                                <Mail className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                                <bdi dir="ltr" className="truncate">{player.email}</bdi>
+                              </span>
+                              <span className="flex items-center gap-1.5">
+                                <Clock className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                                <span className="tnum">
+                                  נרשם: {new Date(player.created_date).toLocaleDateString('he-IL', { hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Action buttons */}
+                        <div className="flex items-center gap-2.5 mt-4">
+                          <button
+                            onClick={() => handleReject(player.id, player.name)}
+                            disabled={busy}
+                            className="flex items-center justify-center gap-1.5 min-h-[48px] px-4 rounded-xl ring-1 ring-rose-500/30 bg-rose-500/10 text-rose-300 font-black text-sm active:scale-95 transition-transform disabled:opacity-50"
+                          >
+                            <X className="w-4 h-4" strokeWidth={2.8} />
+                            דחייה
+                          </button>
+                          <button
+                            onClick={() => handleApprove(player.id, player.name)}
+                            disabled={busy}
+                            className="flex-1 flex items-center justify-center gap-1.5 min-h-[48px] rounded-xl bg-gradient-to-l from-emerald-500 to-emerald-700 text-white font-black text-sm shadow-[0_8px_20px_-8px_rgba(16,185,129,0.6)] active:scale-[0.98] transition-transform disabled:opacity-50"
+                          >
+                            {busy ? (
+                              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            ) : (
+                              <Check className="w-4 h-4" strokeWidth={2.8} />
+                            )}
+                            אישור כניסה
+                          </button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            )}
+          </AnimatePresence>
+        )}
+      </div>
     </div>
   );
 }

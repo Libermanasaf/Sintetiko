@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { Player } from '@/api/entities';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Users, Search } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Button } from '@/components/ui/button';
+import { AnimatePresence } from 'framer-motion';
 import PlayerCard from '@/components/players/PlayerCard';
 import PlayerForm from '@/components/players/PlayerForm';
+import { PageHeader, EmptyState, Skeleton } from '@/components/ui/lux';
 
 export default function Players() {
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -56,77 +56,68 @@ export default function Players() {
   );
 
   return (
-    <div className="pb-28">
-      {/* Sticky Header */}
-      <div className="sticky top-16 z-20 bg-slate-950/95 backdrop-blur-md border-b border-slate-800 px-4 py-3">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-emerald-500/20 rounded-xl border border-emerald-500/30">
-              <Users className="w-5 h-5 text-emerald-400" />
-            </div>
-            <div>
-              <h1 className="text-xl font-black text-white tracking-tight">סגל שחקנים</h1>
-              <p className="text-slate-500 text-xs">{players.length} שחקנים</p>
-            </div>
-          </div>
-          <Button
+    <div className="pb-10">
+      <PageHeader
+        icon={Users}
+        title="סגל שחקנים"
+        subtitle={`${players.length} שחקנים`}
+        accent="emerald"
+        right={
+          <button
             onClick={() => { setEditingPlayer(null); setIsFormOpen(true); }}
-            className="h-9 w-9 p-0 rounded-xl bg-emerald-600 hover:bg-emerald-500 shadow-lg shadow-emerald-900/40 transition-all duration-200 hover:scale-105"
+            aria-label="הוסף שחקן"
+            className="grid place-items-center w-11 h-11 rounded-xl st-foil shadow-[0_6px_18px_-6px_rgba(212,160,40,0.6)] active:scale-95 transition-transform shrink-0"
           >
-            <Plus className="w-5 h-5" />
-          </Button>
-        </div>
-      </div>
+            <Plus className="w-5 h-5" strokeWidth={2.8} />
+          </button>
+        }
+      />
 
       <div className="p-4">
-      {/* Search */}
-      <div className="relative mb-4">
-        <Search className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-        <input
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="חיפוש שחקן..."
-          className="w-full h-11 pr-10 pl-4 rounded-xl bg-slate-800/70 border border-slate-700 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-emerald-500 transition-colors"
-        />
-      </div>
-
-      {/* Players List */}
-      {isLoading ? (
-        <div className="space-y-3">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-20 bg-slate-800/50 rounded-2xl animate-pulse" />
-          ))}
+        {/* Search */}
+        <div className="relative mb-4">
+          <Search className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+          <input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="חיפוש שחקן..."
+            aria-label="חיפוש שחקן"
+            className="w-full h-12 pr-10 pl-4 rounded-xl bg-slate-900/70 ring-1 ring-white/10 text-white placeholder-slate-500 text-sm font-medium focus:outline-none focus:ring-amber-400/50 transition-all"
+          />
         </div>
-      ) : filteredPlayers.length === 0 ? (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center py-16">
-          <div className="w-16 h-16 mx-auto mb-4 bg-slate-800 rounded-full flex items-center justify-center border border-slate-700">
-            <Users className="w-8 h-8 text-slate-600" />
+
+        {isLoading ? (
+          <div className="space-y-2.5">
+            {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-20 rounded-2xl" />)}
           </div>
-          <p className="text-slate-400">{searchQuery ? 'לא נמצאו שחקנים' : 'הוסף שחקנים לסגל כדי להתחיל'}</p>
-        </motion.div>
-      ) : (
-        <div className="space-y-2.5">
-          <AnimatePresence>
-            {filteredPlayers.map((player) => (
-              <PlayerCard
-                key={player.id}
-                player={player}
-                onUpdate={handleUpdate}
-                onDelete={(id) => deleteMutation.mutate(id)}
-                onEdit={handleEdit}
-              />
-            ))}
-          </AnimatePresence>
-        </div>
-      )}
+        ) : filteredPlayers.length === 0 ? (
+          <EmptyState
+            icon={Users}
+            title={searchQuery ? 'לא נמצאו שחקנים' : 'הסגל ריק'}
+            hint={searchQuery ? 'נסה חיפוש אחר.' : 'הוסף את השחקן הראשון כדי להתחיל לבנות את הסגל.'}
+          />
+        ) : (
+          <div className="space-y-2.5">
+            <AnimatePresence>
+              {filteredPlayers.map((player) => (
+                <PlayerCard
+                  key={player.id}
+                  player={player}
+                  onUpdate={handleUpdate}
+                  onDelete={(id) => deleteMutation.mutate(id)}
+                  onEdit={handleEdit}
+                />
+              ))}
+            </AnimatePresence>
+          </div>
+        )}
 
-
-<PlayerForm
-        isOpen={isFormOpen}
-        onClose={() => { setIsFormOpen(false); setEditingPlayer(null); }}
-        onSubmit={handleSubmit}
-        player={editingPlayer}
-      />
+        <PlayerForm
+          isOpen={isFormOpen}
+          onClose={() => { setIsFormOpen(false); setEditingPlayer(null); }}
+          onSubmit={handleSubmit}
+          player={editingPlayer}
+        />
       </div>
     </div>
   );

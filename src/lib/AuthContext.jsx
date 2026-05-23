@@ -6,6 +6,7 @@ const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [role, setRole] = useState(null);
+  const [loginMode, setLoginMode] = useState(() => localStorage.getItem('sintetiko_login_mode') || null);
   const [isInitializing, setIsInitializing] = useState(true);
 
   useEffect(() => {
@@ -23,10 +24,11 @@ export const AuthProvider = ({ children }) => {
       if (session?.user) {
         const userEmail = session.user.email?.toLowerCase();
         
-        // If it's the admin, bypass player approval check
+        // If it's the admin email, role depends on how they logged in
         if (userEmail === 'libermanasaf@gmail.com') {
           setUser(session.user);
-          setRole('admin');
+          const savedMode = localStorage.getItem('sintetiko_login_mode');
+          setRole(savedMode === 'player' ? 'player' : 'admin');
           setIsInitializing(false);
           return;
         }
@@ -77,8 +79,10 @@ export const AuthProvider = ({ children }) => {
       
       // If it's the admin, bypass player approval check
       if (userEmail === 'libermanasaf@gmail.com') {
-        sessionStorage.setItem('sintetiko_role', 'admin');
-        setRole('admin');
+        sessionStorage.setItem('sintetiko_role', selectedRole);
+        localStorage.setItem('sintetiko_login_mode', selectedRole);
+        setLoginMode(selectedRole);
+        setRole(selectedRole === 'admin' ? 'admin' : 'player');
         setUser({ email: userEmail, id: 'mock-admin' });
         return { error: null };
       }
@@ -99,6 +103,8 @@ export const AuthProvider = ({ children }) => {
 
         // Approved player
         sessionStorage.setItem('sintetiko_role', 'player');
+        localStorage.setItem('sintetiko_login_mode', 'player');
+        setLoginMode('player');
         setRole('player');
         setUser({ email: userEmail, id: player.user_id || `mock-user-${player.id}` });
         return { error: null };
@@ -132,7 +138,9 @@ export const AuthProvider = ({ children }) => {
       }
     }
 
-    const detectedRole = userEmail === 'libermanasaf@gmail.com' ? 'admin' : 'player';
+    const detectedRole = userEmail === 'libermanasaf@gmail.com' ? selectedRole : 'player';
+    localStorage.setItem('sintetiko_login_mode', selectedRole);
+    setLoginMode(selectedRole);
     setRole(detectedRole);
     return { error: null };
   };
@@ -182,6 +190,8 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
+    localStorage.removeItem('sintetiko_login_mode');
+    setLoginMode(null);
     if (supabase) {
       await supabase.auth.signOut();
     } else {
@@ -194,7 +204,7 @@ export const AuthProvider = ({ children }) => {
   const isPlayer = role === 'player';
 
   return (
-    <AuthContext.Provider value={{ user, role, login, register, logout, isAdmin, isPlayer, isInitializing }}>
+    <AuthContext.Provider value={{ user, role, loginMode, login, register, logout, isAdmin, isPlayer, isInitializing }}>
       {children}
     </AuthContext.Provider>
   );
