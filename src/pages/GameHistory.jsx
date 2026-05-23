@@ -165,31 +165,33 @@ export default function GameHistory() {
           />
         ) : (
           <>
-            {/* Calendar */}
-            <div className="rounded-2xl p-3 bg-slate-900/60 ring-1 ring-white/8 overflow-hidden">
-              <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={setSelectedDate}
-                locale={he}
-                className="mx-auto w-full"
-                modifiers={{ hasGame: datesWithGames }}
-                modifiersStyles={{ hasGame: { fontWeight: 'bold', textDecoration: 'underline', color: '#fbbf24' } }}
-              />
-            </div>
+            {/* Calendar — centered card, natural calendar width */}
+            <div className="flex flex-col items-center gap-4">
+              <div className="w-full max-w-sm rounded-2xl p-4 bg-slate-900/60 ring-1 ring-white/8 overflow-hidden">
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={setSelectedDate}
+                  locale={he}
+                  className="mx-auto"
+                  modifiers={{ hasGame: datesWithGames }}
+                  modifiersStyles={{ hasGame: { fontWeight: 'bold', textDecoration: 'underline', color: '#fbbf24' } }}
+                />
+              </div>
 
-            {!selectedDate && (
-              <div className="text-center py-9 rounded-2xl bg-slate-900/40 ring-1 ring-white/5">
-                <CalendarDays className="w-9 h-9 text-slate-600 mx-auto mb-2" strokeWidth={1.8} />
-                <p className="text-ink-3 text-sm font-bold">בחר תאריך מלוח השנה</p>
-              </div>
-            )}
-            {selectedDate && !selectedRound && (
-              <div className="text-center py-9 rounded-2xl bg-slate-900/40 ring-1 ring-white/5">
-                <History className="w-9 h-9 text-slate-600 mx-auto mb-2" strokeWidth={1.8} />
-                <p className="text-ink-3 text-sm font-bold">לא נמצא משחק בתאריך זה</p>
-              </div>
-            )}
+              {!selectedDate && (
+                <div className="w-full max-w-sm text-center py-8 rounded-2xl bg-slate-900/40 ring-1 ring-white/5">
+                  <CalendarDays className="w-8 h-8 text-slate-600 mx-auto mb-2" strokeWidth={1.8} />
+                  <p className="text-ink-3 text-sm font-bold">בחר תאריך מלוח השנה</p>
+                </div>
+              )}
+              {selectedDate && !selectedRound && (
+                <div className="w-full max-w-sm text-center py-8 rounded-2xl bg-slate-900/40 ring-1 ring-white/5">
+                  <History className="w-8 h-8 text-slate-600 mx-auto mb-2" strokeWidth={1.8} />
+                  <p className="text-ink-3 text-sm font-bold">לא נמצא משחק בתאריך זה</p>
+                </div>
+              )}
+            </div>
 
             {/* Round details */}
             {selectedRound && (
