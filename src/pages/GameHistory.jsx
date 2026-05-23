@@ -205,7 +205,7 @@ export default function GameHistory() {
                       {editingRound === selectedRound.id ? (
                         <button
                           onClick={saveResults}
-                          className="flex-1 flex items-center justify-center gap-2 min-h-[52px] rounded-xl st-foil font-black text-base shadow-[0_8px_22px_-8px_rgba(212,160,40,0.6)] active:scale-[0.98] transition-transform"
+                          className="flex-1 flex items-center justify-center gap-2 min-h-[52px] rounded-xl st-foil font-black text-base shadow-[0_8px_22px_-8px_rgba(212,160,40,0.6)] active:scale-[0.98] transition-transform touch-manipulation"
                         >
                           <Save className="w-5 h-5" />
                           שמור תוצאות
@@ -213,7 +213,7 @@ export default function GameHistory() {
                       ) : (
                         <button
                           onClick={() => startEditing(selectedRound)}
-                          className="flex-1 flex items-center justify-center min-h-[52px] rounded-xl bg-slate-800/90 ring-1 ring-white/10 text-white font-black text-base active:scale-[0.98] transition-transform"
+                          className="flex-1 flex items-center justify-center min-h-[52px] rounded-xl bg-slate-800/90 ring-1 ring-white/10 text-white font-black text-base active:scale-[0.98] transition-transform touch-manipulation"
                         >
                           עדכן תוצאות
                         </button>
@@ -221,7 +221,7 @@ export default function GameHistory() {
                       <button
                         onClick={() => setShowMover(true)}
                         aria-label="העברת שחקנים בין קבוצות"
-                        className="grid place-items-center w-[52px] min-h-[52px] rounded-xl bg-slate-800/90 ring-1 ring-white/10 text-amber-300 active:scale-95 transition-transform shrink-0"
+                        className="grid place-items-center w-[52px] min-h-[52px] rounded-xl bg-slate-800/90 ring-1 ring-white/10 text-amber-300 active:scale-95 transition-transform touch-manipulation shrink-0"
                       >
                         <ArrowLeftRight className="w-5 h-5" />
                       </button>
@@ -312,7 +312,7 @@ export default function GameHistory() {
                                 <button
                                   onClick={() => updateWins(teamIndex, -1)}
                                   aria-label="הפחת ניצחון"
-                                  className="grid place-items-center w-8 h-8 rounded-full bg-black/40 text-white active:bg-black/60"
+                                  className="grid place-items-center w-10 h-10 rounded-full bg-black/40 text-white active:bg-black/60 touch-manipulation"
                                 >
                                   <Minus className="w-4 h-4" />
                                 </button>
@@ -322,7 +322,7 @@ export default function GameHistory() {
                                 <button
                                   onClick={() => updateWins(teamIndex, 1)}
                                   aria-label="הוסף ניצחון"
-                                  className="grid place-items-center w-8 h-8 rounded-full bg-black/40 text-white active:bg-black/60"
+                                  className="grid place-items-center w-10 h-10 rounded-full bg-black/40 text-white active:bg-black/60 touch-manipulation"
                                 >
                                   <Plus className="w-4 h-4" />
                                 </button>

@@ -21,7 +21,7 @@ function RatingChips({ value, onChange }) {
             onClick={() => onChange(r)}
             aria-label={`דרג ${r}`}
             aria-pressed={selected}
-            className={`shrink-0 min-w-[38px] h-10 px-1.5 rounded-xl font-black text-sm tnum transition-all duration-100 active:scale-90 ${
+            className={`shrink-0 min-w-[44px] h-11 px-1.5 rounded-xl font-black text-sm tnum touch-manipulation transition-all duration-100 active:scale-90 ${
               selected
                 ? 'st-foil shadow-[0_4px_12px_-4px_rgba(212,160,40,0.7)]'
                 : 'bg-slate-800/90 text-slate-300 ring-1 ring-white/8 active:bg-slate-700'
