@@ -25,22 +25,32 @@ function CountUp({ to, duration = 1.1, suffix = '' }) {
   return <>{val}{suffix}</>;
 }
 
+// ─── Half-star: left half filled, right half empty ─────────────────────────
+function HalfStarIcon({ size = 18, fillClass = 'fill-amber-500 text-amber-500', emptyClass = 'fill-transparent text-amber-700/40' }) {
+  return (
+    <div className="relative shrink-0" style={{ width: size, height: size }}>
+      <Star style={{ width: size, height: size }} className={emptyClass} />
+      <div className="absolute inset-0 overflow-hidden" style={{ width: '50%' }}>
+        <Star style={{ width: size, height: size }} className={fillClass} />
+      </div>
+    </div>
+  );
+}
+
 // ─── Star rating ───────────────────────────────────────────────────────────
 function StarRating({ rating }) {
   const r = rating || 3;
   return (
-    <div className="flex gap-0.5 justify-center" aria-label={`דירוג ${r} מתוך 5`}>
+    <div className="flex gap-1 justify-center" aria-label={`דירוג ${r} מתוך 5`}>
       {[1, 2, 3, 4, 5].map(i => {
         const filled = r >= i;
         const half = !filled && r >= i - 0.5;
+        if (half) return <HalfStarIcon key={i} size={20} />;
         return (
           <Star
             key={i}
-            className={`w-[18px] h-[18px] ${
-              filled ? 'fill-amber-500 text-amber-500'
-              : half  ? 'fill-amber-500/50 text-amber-500'
-                      : 'fill-transparent text-amber-700/40'
-            }`}
+            style={{ width: 20, height: 20 }}
+            className={filled ? 'fill-amber-500 text-amber-500' : 'fill-transparent text-amber-700/40'}
           />
         );
       })}
@@ -291,13 +301,19 @@ export default function PlayerHome() {
                       {[1, 2, 3, 4, 5].map(i => {
                         const filled = ratingsAvg >= i;
                         const half = !filled && ratingsAvg >= i - 0.5;
+                        if (half) return (
+                          <HalfStarIcon
+                            key={i}
+                            size={16}
+                            fillClass="fill-amber-400 text-amber-400"
+                            emptyClass="fill-transparent text-amber-700/40"
+                          />
+                        );
                         return (
                           <Star
                             key={i}
                             className={`w-4 h-4 ${
-                              filled ? 'fill-amber-400 text-amber-400'
-                              : half  ? 'fill-amber-400/55 text-amber-400'
-                                      : 'fill-transparent text-amber-700/40'
+                              filled ? 'fill-amber-400 text-amber-400' : 'fill-transparent text-amber-700/40'
                             }`}
                           />
                         );
