@@ -29,7 +29,8 @@ export default function BottomNav({ hidden = false }) {
 
   return (
     <nav
-      className="fixed bottom-0 inset-x-0 z-40 bg-stadium/95 backdrop-blur-xl pb-[env(safe-area-inset-bottom)]"
+      className="fixed bottom-0 inset-x-0 z-40 bg-stadium/95 backdrop-blur-xl"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       aria-label="ניווט תחתון"
     >
       <div className="st-rule absolute top-0 inset-x-0" />

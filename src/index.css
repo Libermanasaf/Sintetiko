@@ -156,10 +156,23 @@ html, body, #root {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Safe area utility */
-.safe-area-pb {
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+/* ─── Safe-area utilities (reliable cross-browser, bypasses Tailwind purge) ── */
+:root {
+  --sat: env(safe-area-inset-top,    0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left,   0px);
+  --sar: env(safe-area-inset-right,  0px);
+  /* Header total height = 64px content + safe-area-top */
+  --header-h: calc(4rem + var(--sat));
+  /* Bottom nav total height = 60px content + safe-area-bottom */
+  --bottom-nav-h: calc(60px + var(--sab));
 }
+
+.pt-sat  { padding-top:    var(--sat); }
+.pb-sab  { padding-bottom: var(--sab); }
+.pt-header  { padding-top: var(--header-h); }
+.pb-bottom  { padding-bottom: var(--bottom-nav-h); }
+.safe-area-pb { padding-bottom: var(--sab); }
 
 /* ═══════════════════════════════════════════════════════════════════
    TYPOGRAPHY — Heebo, single family, weight-driven hierarchy

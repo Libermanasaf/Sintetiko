@@ -89,11 +89,15 @@ export default function Sidebar({ isOpen, onClose }) {
             <div className="absolute -top-16 -right-10 w-44 h-44 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none" aria-hidden="true" />
 
             {/* Brand header */}
-            <div className="relative px-5 pt-[calc(1.5rem+env(safe-area-inset-top))] pb-5">
+            <div
+              className="relative px-5 pb-5"
+              style={{ paddingTop: 'calc(1.5rem + env(safe-area-inset-top, 0px))' }}
+            >
               <button
                 onClick={onClose}
                 aria-label="סגור תפריט"
-                className="absolute top-[calc(1rem+env(safe-area-inset-top))] left-4 grid place-items-center w-9 h-9 rounded-lg bg-slate-900/70 ring-1 ring-white/10 text-slate-400 active:scale-95 transition-transform"
+                className="absolute left-4 grid place-items-center w-9 h-9 rounded-lg bg-slate-900/70 ring-1 ring-white/10 text-slate-400 active:scale-95 transition-transform"
+                style={{ top: 'calc(1rem + env(safe-area-inset-top, 0px))' }}
               >
                 <X className="w-5 h-5" />
               </button>
@@ -158,7 +162,10 @@ export default function Sidebar({ isOpen, onClose }) {
             </nav>
 
             {/* Footer — user + logout */}
-            <div className="relative px-4 pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))] border-t border-white/10">
+            <div
+              className="relative px-4 pt-3 border-t border-white/10"
+              style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}
+            >
               {user?.email && (
                 <div className="flex items-center gap-2.5 mb-3 px-1">
                   <span className="grid place-items-center w-8 h-8 rounded-full st-foil text-xs font-black shrink-0">

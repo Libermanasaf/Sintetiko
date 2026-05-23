@@ -72,17 +72,18 @@ export default function Layout({ children }) {
         aria-hidden="true"
       />
 
-      {/* Header */}
+      {/* Header — safe-area via inline style (guaranteed on iOS PWA) */}
       <header
         role="banner"
-        className="fixed top-0 inset-x-0 z-30 bg-stadium/85 backdrop-blur-xl pt-[env(safe-area-inset-top)]"
+        className="fixed top-0 inset-x-0 z-30 bg-stadium/85 backdrop-blur-xl"
+        style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
       >
         <div className="st-rule absolute bottom-0 inset-x-0" />
         <div className="flex items-center justify-between px-4 h-16">
           <button
             onClick={() => setSidebarOpen(true)}
             aria-label="פתח תפריט ניווט"
-            className="grid place-items-center w-11 h-11 rounded-xl bg-slate-900/80 ring-1 ring-amber-400/25 text-amber-300 active:scale-95 transition-transform"
+            className="grid place-items-center w-11 h-11 rounded-xl bg-slate-900/80 ring-1 ring-amber-400/25 text-amber-300 active:scale-95 transition-transform touch-manipulation"
           >
             <Menu className="w-5 h-5" strokeWidth={2.4} />
           </button>
@@ -107,7 +108,11 @@ export default function Layout({ children }) {
 
       <main
         id="main-content"
-        className="relative z-10 min-h-screen pt-[calc(4rem+env(safe-area-inset-top))] pb-[calc(68px+env(safe-area-inset-bottom))]"
+        className="relative z-10 min-h-screen"
+        style={{
+          paddingTop: 'calc(4rem + env(safe-area-inset-top, 0px))',
+          paddingBottom: 'calc(68px + env(safe-area-inset-bottom, 0px))',
+        }}
       >
         {children}
       </main>
