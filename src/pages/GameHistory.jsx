@@ -3,7 +3,7 @@ import { Round, Player, uploadFile } from '@/api/entities';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { History, Trophy, User, Star, Shield, Plus, Minus, Save, ArrowLeftRight, Camera, Upload, X, CalendarDays } from 'lucide-react';
-import { format, isSameDay } from 'date-fns';
+import { isSameDay } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { Calendar } from '@/components/ui/calendar';
 import { toast } from 'sonner';
@@ -167,13 +167,12 @@ export default function GameHistory() {
           <>
             {/* Calendar — centered card, natural calendar width */}
             <div className="flex flex-col items-center gap-4">
-              <div className="w-full max-w-sm rounded-2xl p-4 bg-slate-900/60 ring-1 ring-white/8 overflow-hidden">
+              <div className="w-full max-w-sm rounded-2xl p-4 bg-slate-900/60 ring-1 ring-white/8 overflow-hidden flex justify-center">
                 <Calendar
                   mode="single"
                   selected={selectedDate}
                   onSelect={setSelectedDate}
                   locale={he}
-                  className="mx-auto"
                   modifiers={{ hasGame: datesWithGames }}
                   modifiersStyles={{ hasGame: { fontWeight: 'bold', textDecoration: 'underline', color: '#fbbf24' } }}
                 />
@@ -196,19 +195,6 @@ export default function GameHistory() {
             {/* Round details */}
             {selectedRound && (
               <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-                {/* Game info banner */}
-                <div className="relative rounded-2xl p-4 overflow-hidden bg-gradient-to-l from-emerald-800/70 to-emerald-950/70 ring-1 ring-emerald-500/30">
-                  <div className="absolute -top-8 -left-8 w-24 h-24 bg-emerald-500/20 rounded-full blur-2xl pointer-events-none" />
-                  <h2 className="relative text-white text-lg font-black">
-                    {format(new Date(selectedRound.date), 'dd MMMM yyyy', { locale: he })}
-                  </h2>
-                  <div className="relative flex items-center gap-2.5 mt-1 text-sm font-bold text-emerald-200/90">
-                    <span className="tnum">{selectedRound.teams.length} קבוצות</span>
-                    <span className="text-emerald-400/50">·</span>
-                    <span className="tnum">{selectedRound.teams.flat().length} שחקנים</span>
-                  </div>
-                </div>
-
                 {/* Actions */}
                 <div className="flex gap-2.5">
                   {editingRound === selectedRound.id ? (
