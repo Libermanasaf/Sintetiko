@@ -1,5 +1,5 @@
--- Run this in the Supabase SQL Editor:
--- https://supabase.com/dashboard/project/xwrlgthrylaxoujtdull/sql
+-- Fix: player_ratings was previously defined with integer FK columns
+-- but players.id is TEXT. This creates the table with correct types.
 
 DROP TABLE IF EXISTS player_ratings;
 
