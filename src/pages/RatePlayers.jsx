@@ -6,6 +6,7 @@ import { useAuth } from '@/lib/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Star, Check, ShieldQuestion, Users } from 'lucide-react';
 import { PageHeader, EmptyState, Skeleton } from '@/components/ui/lux';
+import { toast } from 'sonner';
 
 const RATING_VALUES = [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5];
 
@@ -87,6 +88,8 @@ export default function RatePlayers() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [savedId, setSavedId] = useState(null);
+  // Optimistic local ratings — merged over server data for immediate UI feedback
+  const [localRatings, setLocalRatings] = useState({});
 
   const { data: myPlayer, isLoading: loadingProfile } = useQuery({
     queryKey: ['my-player-profile', user?.id],
@@ -114,6 +117,8 @@ export default function RatePlayers() {
   });
 
   const myRatingsMap = Object.fromEntries(myRatings.map(r => [r.rated_player_id, r.rating]));
+  // Merge server ratings with optimistic local ones
+  const displayRatings = { ...myRatingsMap, ...localRatings };
 
   const rateMutation = useMutation({
     mutationFn: ({ ratedPlayerId, rating }) =>
@@ -123,13 +128,26 @@ export default function RatePlayers() {
       ),
     onSuccess: (_, { ratedPlayerId }) => {
       queryClient.invalidateQueries({ queryKey: ['my-ratings', myPlayer?.id] });
+      // Invalidate the rated player's received-ratings so PlayerHome updates on next visit
+      queryClient.invalidateQueries({ queryKey: ['ratings-received', ratedPlayerId] });
       setSavedId(ratedPlayerId);
-      setTimeout(() => setSavedId(null), 1500);
+      setTimeout(() => setSavedId(null), 1800);
+    },
+    onError: (err, { ratedPlayerId }) => {
+      // Revert optimistic update
+      setLocalRatings(prev => {
+        const next = { ...prev };
+        delete next[ratedPlayerId];
+        return next;
+      });
+      toast.error('שגיאה בשמירת הדירוג', { description: err?.message || 'נסה שוב' });
     },
   });
 
   const handleRate = useCallback((ratedPlayerId, rating) => {
     if (!myPlayer?.id) return;
+    // Apply optimistic update immediately so chip highlights without waiting for server
+    setLocalRatings(prev => ({ ...prev, [ratedPlayerId]: rating }));
     rateMutation.mutate({ ratedPlayerId, rating });
   }, [myPlayer?.id, rateMutation]);
 
@@ -170,7 +188,7 @@ export default function RatePlayers() {
                 <PlayerRatingRow
                   key={player.id}
                   player={player}
-                  myRating={myRatingsMap[player.id] ?? 0}
+                  myRating={displayRatings[player.id] ?? 0}
                   onRate={handleRate}
                   savedId={savedId}
                 />
