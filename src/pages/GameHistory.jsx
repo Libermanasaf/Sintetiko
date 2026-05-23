@@ -9,6 +9,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { toast } from 'sonner';
 import TeamPlayerMover from '@/components/history/TeamPlayerMover';
 import { PageHeader, SectionTitle, EmptyState, Skeleton } from '@/components/ui/lux';
+import { useAuth } from '@/lib/AuthContext';
 
 const TEAM = [
   { name: 'הצהובים', dot: 'bg-yellow-400', header: 'from-yellow-500/20 to-yellow-600/5', ring: 'ring-yellow-500/35', text: 'text-yellow-300' },
@@ -18,6 +19,8 @@ const TEAM = [
 const teamOf = (i) => TEAM[i % 3];
 
 export default function GameHistory() {
+  const { loginMode, role } = useAuth();
+  const isAdmin = loginMode ? loginMode === 'admin' : role === 'admin';
   const [selectedDate, setSelectedDate] = useState(null);
   const [editingRound, setEditingRound] = useState(null);
   const [tempWins, setTempWins] = useState({});
@@ -195,66 +198,80 @@ export default function GameHistory() {
             {/* Round details */}
             {selectedRound && (
               <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-                {/* Actions */}
-                <div className="flex gap-2.5">
-                  {editingRound === selectedRound.id ? (
-                    <button
-                      onClick={saveResults}
-                      className="flex-1 flex items-center justify-center gap-2 min-h-[52px] rounded-xl st-foil font-black text-base shadow-[0_8px_22px_-8px_rgba(212,160,40,0.6)] active:scale-[0.98] transition-transform"
-                    >
-                      <Save className="w-5 h-5" />
-                      שמור תוצאות
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => startEditing(selectedRound)}
-                      className="flex-1 flex items-center justify-center min-h-[52px] rounded-xl bg-slate-800/90 ring-1 ring-white/10 text-white font-black text-base active:scale-[0.98] transition-transform"
-                    >
-                      עדכן תוצאות
-                    </button>
-                  )}
-                  <button
-                    onClick={() => setShowMover(true)}
-                    aria-label="העברת שחקנים בין קבוצות"
-                    className="grid place-items-center w-[52px] min-h-[52px] rounded-xl bg-slate-800/90 ring-1 ring-white/10 text-amber-300 active:scale-95 transition-transform shrink-0"
-                  >
-                    <ArrowLeftRight className="w-5 h-5" />
-                  </button>
-                </div>
-
-                {/* Victory photo */}
-                <div className="rounded-2xl bg-slate-900/60 ring-1 ring-white/8 overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-3 border-b border-white/8">
-                    <Camera className="w-4 h-4 text-amber-400" strokeWidth={2.4} />
-                    <span className="font-black text-white text-sm">תמונת ניצחון</span>
-                  </div>
-                  {selectedRound.victoryPhoto ? (
-                    <div className="relative">
-                      <img src={selectedRound.victoryPhoto} alt="תמונת ניצחון" loading="lazy" className="w-full object-contain bg-black max-h-72" />
+                {/* Admin-only: edit results + photo */}
+                {isAdmin && (
+                  <>
+                    <div className="flex gap-2.5">
+                      {editingRound === selectedRound.id ? (
+                        <button
+                          onClick={saveResults}
+                          className="flex-1 flex items-center justify-center gap-2 min-h-[52px] rounded-xl st-foil font-black text-base shadow-[0_8px_22px_-8px_rgba(212,160,40,0.6)] active:scale-[0.98] transition-transform"
+                        >
+                          <Save className="w-5 h-5" />
+                          שמור תוצאות
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => startEditing(selectedRound)}
+                          className="flex-1 flex items-center justify-center min-h-[52px] rounded-xl bg-slate-800/90 ring-1 ring-white/10 text-white font-black text-base active:scale-[0.98] transition-transform"
+                        >
+                          עדכן תוצאות
+                        </button>
+                      )}
                       <button
-                        onClick={removePhoto}
-                        aria-label="הסר תמונה"
-                        className="absolute top-2 left-2 grid place-items-center w-9 h-9 bg-black/65 text-white rounded-full"
+                        onClick={() => setShowMover(true)}
+                        aria-label="העברת שחקנים בין קבוצות"
+                        className="grid place-items-center w-[52px] min-h-[52px] rounded-xl bg-slate-800/90 ring-1 ring-white/10 text-amber-300 active:scale-95 transition-transform shrink-0"
                       >
-                        <X className="w-4 h-4" />
+                        <ArrowLeftRight className="w-5 h-5" />
                       </button>
                     </div>
-                  ) : (
-                    <label className="flex flex-col items-center justify-center gap-2 py-8 cursor-pointer active:bg-white/5 transition-colors">
-                      <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} disabled={uploadingPhoto} />
-                      {uploadingPhoto ? (
-                        <div className="w-8 h-8 border-4 border-amber-400 border-t-transparent rounded-full animate-spin" />
+
+                    <div className="rounded-2xl bg-slate-900/60 ring-1 ring-white/8 overflow-hidden">
+                      <div className="flex items-center gap-2 px-4 py-3 border-b border-white/8">
+                        <Camera className="w-4 h-4 text-amber-400" strokeWidth={2.4} />
+                        <span className="font-black text-white text-sm">תמונת ניצחון</span>
+                      </div>
+                      {selectedRound.victoryPhoto ? (
+                        <div className="relative">
+                          <img src={selectedRound.victoryPhoto} alt="תמונת ניצחון" loading="lazy" className="w-full object-contain bg-black max-h-72" />
+                          <button
+                            onClick={removePhoto}
+                            aria-label="הסר תמונה"
+                            className="absolute top-2 left-2 grid place-items-center w-9 h-9 bg-black/65 text-white rounded-full"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
                       ) : (
-                        <>
-                          <div className="grid place-items-center w-12 h-12 rounded-full bg-amber-500/15 ring-1 ring-amber-500/30">
-                            <Upload className="w-5 h-5 text-amber-400" />
-                          </div>
-                          <p className="text-ink-3 text-sm font-bold">לחץ להעלאת תמונת ניצחון</p>
-                        </>
+                        <label className="flex flex-col items-center justify-center gap-2 py-8 cursor-pointer active:bg-white/5 transition-colors">
+                          <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} disabled={uploadingPhoto} />
+                          {uploadingPhoto ? (
+                            <div className="w-8 h-8 border-4 border-amber-400 border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <>
+                              <div className="grid place-items-center w-12 h-12 rounded-full bg-amber-500/15 ring-1 ring-amber-500/30">
+                                <Upload className="w-5 h-5 text-amber-400" />
+                              </div>
+                              <p className="text-ink-3 text-sm font-bold">לחץ להעלאת תמונת ניצחון</p>
+                            </>
+                          )}
+                        </label>
                       )}
-                    </label>
-                  )}
-                </div>
+                    </div>
+                  </>
+                )}
+
+                {/* Victory photo — players see it read-only if it exists */}
+                {!isAdmin && selectedRound.victoryPhoto && (
+                  <div className="rounded-2xl bg-slate-900/60 ring-1 ring-white/8 overflow-hidden">
+                    <div className="flex items-center gap-2 px-4 py-3 border-b border-white/8">
+                      <Camera className="w-4 h-4 text-amber-400" strokeWidth={2.4} />
+                      <span className="font-black text-white text-sm">תמונת ניצחון</span>
+                    </div>
+                    <img src={selectedRound.victoryPhoto} alt="תמונת ניצחון" loading="lazy" className="w-full object-contain bg-black max-h-72" />
+                  </div>
+                )}
 
                 {/* Teams */}
                 <SectionTitle icon={Trophy}>הרכבי הקבוצות</SectionTitle>
@@ -358,7 +375,7 @@ export default function GameHistory() {
         )}
       </div>
 
-      {showMover && selectedRound && (
+      {isAdmin && showMover && selectedRound && (
         <TeamPlayerMover
           round={selectedRound}
           players={players}
