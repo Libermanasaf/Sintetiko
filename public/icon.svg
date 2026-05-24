@@ -1,18 +1,75 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#0a7d5e"/>
-      <stop offset="1" stop-color="#043b2c"/>
+    <!-- Stadium dark background -->
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0a1a13"/>
+      <stop offset="55%" stop-color="#04100b"/>
+      <stop offset="100%" stop-color="#000000"/>
     </linearGradient>
+    <!-- Soft inner halo -->
+    <radialGradient id="halo" cx="50%" cy="48%" r="60%">
+      <stop offset="0%" stop-color="#0a7d5e" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#0a7d5e" stop-opacity="0"/>
+    </radialGradient>
+    <!-- Gold foil — main crest body -->
+    <linearGradient id="goldFoil" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#fde9b8"/>
+      <stop offset="32%" stop-color="#e8b94a"/>
+      <stop offset="62%" stop-color="#c08a1e"/>
+      <stop offset="100%" stop-color="#7a4f0d"/>
+    </linearGradient>
+    <!-- Gold shine — for highlights -->
+    <linearGradient id="goldShine" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fff5d7"/>
+      <stop offset="50%" stop-color="#e0a92e"/>
+      <stop offset="100%" stop-color="#9a6a16"/>
+    </linearGradient>
+    <!-- Inner dark of crest -->
+    <radialGradient id="crestCore" cx="42%" cy="36%" r="78%">
+      <stop offset="0%" stop-color="#1a6047"/>
+      <stop offset="100%" stop-color="#05130d"/>
+    </radialGradient>
   </defs>
-  <rect width="512" height="512" fill="url(#bg)"/>
-  <circle cx="256" cy="256" r="132" fill="#ffffff" stroke="#fbbf24" stroke-width="10"/>
-  <g stroke="#0f2e23" stroke-width="15" stroke-linecap="round" fill="none">
-    <line x1="256" y1="201" x2="256" y2="138"/>
-    <line x1="308.3" y1="239" x2="368.2" y2="219.5"/>
-    <line x1="288.3" y1="300.5" x2="325.3" y2="351.5"/>
-    <line x1="223.7" y1="300.5" x2="186.7" y2="351.5"/>
-    <line x1="203.7" y1="239" x2="143.8" y2="219.5"/>
+
+  <!-- Rounded square base -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad)"/>
+  <rect width="512" height="512" rx="112" fill="url(#halo)"/>
+
+  <!-- Subtle pitch stripes -->
+  <g opacity="0.05">
+    <rect y="0"   width="512" height="64" fill="#ffffff"/>
+    <rect y="128" width="512" height="64" fill="#ffffff"/>
+    <rect y="256" width="512" height="64" fill="#ffffff"/>
+    <rect y="384" width="512" height="64" fill="#ffffff"/>
   </g>
-  <path d="M 256,201 L 308.3,239 L 288.3,300.5 L 223.7,300.5 L 203.7,239 Z" fill="#0f2e23"/>
+
+  <!-- Outer gold ring (subtle frame) -->
+  <rect x="24" y="24" width="464" height="464" rx="92"
+        fill="none" stroke="url(#goldShine)" stroke-width="2" opacity="0.55"/>
+
+  <!-- Pentagonal shield — gold foil -->
+  <path d="M256,72 L432,192 L368,432 L144,432 L80,192 Z"
+        fill="url(#goldFoil)"
+        stroke="url(#goldShine)" stroke-width="4"/>
+
+  <!-- Inner pentagon — dark stadium core -->
+  <path d="M256,120 L394,214 L342,398 L170,398 L118,214 Z"
+        fill="url(#crestCore)"/>
+  <path d="M256,120 L394,214 L342,398 L170,398 L118,214 Z"
+        fill="none" stroke="#f3d27e" stroke-width="1.5" stroke-opacity="0.45"/>
+
+  <!-- 5 radiating gold rays from center -->
+  <g transform="translate(256 268)" stroke="url(#goldShine)"
+     stroke-width="14" stroke-linecap="round" fill="none">
+    <line x1="0"     y1="-44"  x2="0"     y2="-112"/>
+    <line x1="42"    y1="-13.6" x2="106"  y2="-34.6"/>
+    <line x1="26"    y1="35.7" x2="66"    y2="91.2"/>
+    <line x1="-26"   y1="35.7" x2="-66"   y2="91.2"/>
+    <line x1="-42"   y1="-13.6" x2="-106" y2="-34.6"/>
+  </g>
+
+  <!-- Central gold pentagon (the keystone) -->
+  <path d="M256,212 L308,250 L288,310 L224,310 L204,250 Z"
+        fill="url(#goldShine)"
+        stroke="#fff5d7" stroke-width="2" stroke-opacity="0.6"/>
 </svg>
