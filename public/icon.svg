@@ -1,75 +1,135 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <defs>
-    <!-- Stadium dark background -->
-    <linearGradient id="bgGrad" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#0a1a13"/>
-      <stop offset="55%" stop-color="#04100b"/>
+    <!-- ── Deep onyx canvas — warm undertone ── -->
+    <radialGradient id="onyx" cx="50%" cy="30%" r="90%">
+      <stop offset="0%" stop-color="#1a1410"/>
+      <stop offset="55%" stop-color="#0a0805"/>
       <stop offset="100%" stop-color="#000000"/>
-    </linearGradient>
-    <!-- Soft inner halo -->
-    <radialGradient id="halo" cx="50%" cy="48%" r="60%">
-      <stop offset="0%" stop-color="#0a7d5e" stop-opacity="0.22"/>
-      <stop offset="100%" stop-color="#0a7d5e" stop-opacity="0"/>
     </radialGradient>
-    <!-- Gold foil — main crest body -->
-    <linearGradient id="goldFoil" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#fde9b8"/>
-      <stop offset="32%" stop-color="#e8b94a"/>
-      <stop offset="62%" stop-color="#c08a1e"/>
+
+    <!-- ── Warm halo from top (cinematic light) ── -->
+    <radialGradient id="warmHalo" cx="50%" cy="-5%" r="60%">
+      <stop offset="0%" stop-color="#4a3210" stop-opacity="0.42"/>
+      <stop offset="100%" stop-color="#4a3210" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- ── Premium gold foil — luxury multi-stop ── -->
+    <linearGradient id="goldFoil" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#fff4cf"/>
+      <stop offset="22%"  stop-color="#f7d77c"/>
+      <stop offset="50%"  stop-color="#c89529"/>
+      <stop offset="78%"  stop-color="#7a5012"/>
+      <stop offset="100%" stop-color="#3a2208"/>
+    </linearGradient>
+
+    <!-- ── Gold bevel edge (highlights upper edges of shield) ── -->
+    <linearGradient id="goldBevel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"  stop-color="#fff4cf"/>
+      <stop offset="60%" stop-color="#e0a92e"/>
+      <stop offset="100%" stop-color="#5a3a0c"/>
+    </linearGradient>
+
+    <!-- ── Inner panel — deep darkness with hint of warmth ── -->
+    <radialGradient id="innerPanel" cx="50%" cy="38%" r="80%">
+      <stop offset="0%"  stop-color="#120d08"/>
+      <stop offset="100%" stop-color="#000000"/>
+    </radialGradient>
+
+    <!-- ── Luminous gold orb — spherical lighting ── -->
+    <radialGradient id="goldOrb" cx="36%" cy="30%" r="78%">
+      <stop offset="0%"   stop-color="#fff7d8"/>
+      <stop offset="18%"  stop-color="#fae08f"/>
+      <stop offset="42%"  stop-color="#daa53a"/>
+      <stop offset="72%"  stop-color="#8a5d18"/>
+      <stop offset="100%" stop-color="#2a1a05"/>
+    </radialGradient>
+
+    <!-- ── Hairline gold (for thin frames and details) ── -->
+    <linearGradient id="hairline" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#fcdf9e"/>
       <stop offset="100%" stop-color="#7a4f0d"/>
     </linearGradient>
-    <!-- Gold shine — for highlights -->
-    <linearGradient id="goldShine" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#fff5d7"/>
-      <stop offset="50%" stop-color="#e0a92e"/>
-      <stop offset="100%" stop-color="#9a6a16"/>
+
+    <!-- ── Horizontal gold rule (for the elegant base line) ── -->
+    <linearGradient id="ruleGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%"   stop-color="#7a4f0d" stop-opacity="0"/>
+      <stop offset="22%"  stop-color="#e0a92e" stop-opacity="0.9"/>
+      <stop offset="50%"  stop-color="#fff4cf"/>
+      <stop offset="78%"  stop-color="#e0a92e" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#7a4f0d" stop-opacity="0"/>
     </linearGradient>
-    <!-- Inner dark of crest -->
-    <radialGradient id="crestCore" cx="42%" cy="36%" r="78%">
-      <stop offset="0%" stop-color="#1a6047"/>
-      <stop offset="100%" stop-color="#05130d"/>
-    </radialGradient>
   </defs>
 
-  <!-- Rounded square base -->
-  <rect width="512" height="512" rx="112" fill="url(#bgGrad)"/>
-  <rect width="512" height="512" rx="112" fill="url(#halo)"/>
+  <!-- ── Canvas ── -->
+  <rect width="512" height="512" rx="120" fill="url(#onyx)"/>
+  <rect width="512" height="512" rx="120" fill="url(#warmHalo)"/>
 
-  <!-- Subtle pitch stripes -->
-  <g opacity="0.05">
-    <rect y="0"   width="512" height="64" fill="#ffffff"/>
-    <rect y="128" width="512" height="64" fill="#ffffff"/>
-    <rect y="256" width="512" height="64" fill="#ffffff"/>
-    <rect y="384" width="512" height="64" fill="#ffffff"/>
+  <!-- ── Inset hairline frame (luxury restraint) ── -->
+  <rect x="22" y="22" width="468" height="468" rx="100"
+        fill="none" stroke="url(#hairline)" stroke-width="1.5" opacity="0.5"/>
+
+  <!-- ── 4 corner luxury dots ── -->
+  <g fill="url(#goldFoil)" opacity="0.78">
+    <circle cx="54" cy="54" r="3"/>
+    <circle cx="458" cy="54" r="3"/>
+    <circle cx="54" cy="458" r="3"/>
+    <circle cx="458" cy="458" r="3"/>
   </g>
 
-  <!-- Outer gold ring (subtle frame) -->
-  <rect x="24" y="24" width="464" height="464" rx="92"
-        fill="none" stroke="url(#goldShine)" stroke-width="2" opacity="0.55"/>
+  <!-- ── Main shield ── -->
+  <path d="M 256,86
+           L 408,122
+           L 408,288
+           Q 408,358 354,400
+           Q 308,434 256,452
+           Q 204,434 158,400
+           Q 104,358 104,288
+           L 104,122 Z"
+        fill="url(#goldFoil)"/>
 
-  <!-- Pentagonal shield — gold foil -->
-  <path d="M256,72 L432,192 L368,432 L144,432 L80,192 Z"
-        fill="url(#goldFoil)"
-        stroke="url(#goldShine)" stroke-width="4"/>
+  <!-- Top edge bevel highlight on shield -->
+  <path d="M 256,86 L 408,122 L 104,122 Z"
+        fill="url(#goldBevel)" opacity="0.55"/>
 
-  <!-- Inner pentagon — dark stadium core -->
-  <path d="M256,120 L394,214 L342,398 L170,398 L118,214 Z"
-        fill="url(#crestCore)"/>
-  <path d="M256,120 L394,214 L342,398 L170,398 L118,214 Z"
-        fill="none" stroke="#f3d27e" stroke-width="1.5" stroke-opacity="0.45"/>
+  <!-- ── Inner dark panel ── -->
+  <path d="M 256,112
+           L 386,142
+           L 386,286
+           Q 386,346 340,378
+           Q 300,406 256,420
+           Q 212,406 172,378
+           Q 126,346 126,286
+           L 126,142 Z"
+        fill="url(#innerPanel)"
+        stroke="url(#hairline)" stroke-width="1.5" stroke-opacity="0.62"/>
 
-  <!-- 5 radiating gold rays from center -->
-  <g transform="translate(256 268)" stroke="url(#goldShine)"
-     stroke-width="14" stroke-linecap="round" fill="none">
-    <line x1="0"     y1="-44"  x2="0"     y2="-112"/>
-    <line x1="42"    y1="-13.6" x2="106"  y2="-34.6"/>
-    <line x1="26"    y1="35.7" x2="66"    y2="91.2"/>
-    <line x1="-26"   y1="35.7" x2="-66"   y2="91.2"/>
-    <line x1="-42"   y1="-13.6" x2="-106" y2="-34.6"/>
+  <!-- ── 2 champion stars near top of shield ── -->
+  <g fill="url(#goldFoil)">
+    <g transform="translate(224 186) scale(0.62)">
+      <path d="M 0,-20 L 5.9,-6.2 L 20.8,-6.2 L 9.0,3.5 L 13.6,18 L 0,9.5 L -13.6,18 L -9.0,3.5 L -20.8,-6.2 L -5.9,-6.2 Z"/>
+    </g>
+    <g transform="translate(288 186) scale(0.62)">
+      <path d="M 0,-20 L 5.9,-6.2 L 20.8,-6.2 L 9.0,3.5 L 13.6,18 L 0,9.5 L -13.6,18 L -9.0,3.5 L -20.8,-6.2 L -5.9,-6.2 Z"/>
+    </g>
   </g>
 
-  <!-- Central gold pentagon (the keystone) -->
-  <path d="M256,212 L308,250 L288,310 L224,310 L204,250 Z"
-        fill="url(#goldShine)"
-        stroke="#fff5d7" stroke-width="2" stroke-opacity="0.6"/>
+  <!-- ── Central luminous gold orb (polished metal sphere) ── -->
+  <!-- Outer dark rim -->
+  <circle cx="256" cy="288" r="64" fill="#1a1108"/>
+  <!-- Main orb body -->
+  <circle cx="256" cy="288" r="62" fill="url(#goldOrb)"/>
+  <!-- Soft specular highlight (large diffuse) -->
+  <ellipse cx="236" cy="262" rx="22" ry="10" fill="#fff7d8" opacity="0.42"/>
+  <!-- Sharp specular highlight (small bright) -->
+  <ellipse cx="230" cy="258" rx="7" ry="3.5" fill="#ffffff" opacity="0.62"/>
+  <!-- Subtle bottom reflected light (warmth from below) -->
+  <ellipse cx="270" cy="332" rx="20" ry="6" fill="#f7d77c" opacity="0.18"/>
+
+  <!-- ── Elegant horizontal gold rule beneath orb ── -->
+  <rect x="158" y="384" width="196" height="1.5" fill="url(#ruleGrad)"/>
+
+  <!-- Tiny center marker on the rule (diamond accent) -->
+  <g transform="translate(256 385)">
+    <path d="M 0,-3 L 3,0 L 0,3 L -3,0 Z" fill="url(#goldFoil)"/>
+  </g>
 </svg>
