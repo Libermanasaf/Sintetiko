@@ -6,6 +6,7 @@ import { motion, animate } from 'framer-motion';
 import { Star, Trophy, Zap, Activity, TrendingUp, ShieldQuestion, Users, Lock } from 'lucide-react';
 import { Player, PlayerRating } from '@/api/entities';
 import { SectionTitle, EmptyState, Skeleton } from '@/components/ui/lux';
+import InstallBanner from '@/components/InstallBanner';
 
 // ─── Count-up number animation ─────────────────────────────────────────────
 function CountUp({ to, duration = 1.1, suffix = '' }) {
@@ -152,6 +153,11 @@ export default function PlayerHome() {
 
   return (
     <div className="flex flex-col items-center px-6 pt-6 pb-10 gap-6" dir="rtl">
+      {/* ── Install app banner ── */}
+      <div className="w-full max-w-xs">
+        <InstallBanner />
+      </div>
+
       {/* ── Hero: FIFA gold card, floating ── */}
       <motion.div
         initial={{ opacity: 0, y: 36, scale: 0.84 }}
