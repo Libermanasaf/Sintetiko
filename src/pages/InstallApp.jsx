@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Download, Plus, CheckCircle2, Smartphone, Chrome, MoreVertical, ArrowUpFromLine, Sparkles, X } from 'lucide-react';
 import { toast } from 'sonner';
@@ -245,72 +246,75 @@ export default function InstallApp() {
 
       </div>
 
-      {/* ── Device chooser modal ── */}
-      <AnimatePresence>
-        {chooserOpen && (
-          <>
+      {/* ── Device chooser modal ── rendered via portal to escape parent contexts */}
+      {typeof document !== 'undefined' && createPortal(
+        <AnimatePresence>
+          {chooserOpen && (
             <motion.div
+              dir="rtl"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
               onClick={() => setChooserOpen(false)}
-              className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50"
-              aria-hidden="true"
-            />
-            <motion.div
-              initial={{ opacity: 0, y: 40, scale: 0.94 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 40, scale: 0.94 }}
-              transition={{ type: 'spring', damping: 24, stiffness: 260 }}
-              className="fixed left-1/2 -translate-x-1/2 bottom-4 sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 w-[calc(100vw-32px)] max-w-sm z-50"
-              role="dialog"
-              aria-modal="true"
-              aria-label="בחר סוג מכשיר"
             >
-              <div className="relative rounded-2xl p-px bg-gradient-to-br from-amber-400/60 via-slate-700/30 to-slate-800/10">
-                <div className="rounded-[15px] bg-gradient-to-b from-slate-900 to-slate-950 p-5">
-                  <button
-                    onClick={() => setChooserOpen(false)}
-                    aria-label="סגור"
-                    className="absolute top-3 left-3 grid place-items-center w-8 h-8 rounded-lg bg-slate-800/80 text-slate-400 active:scale-95 transition-transform touch-manipulation"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-
-                  <div className="text-center mb-5">
-                    <p className="st-gold-text font-black text-lg">איזה מכשיר יש לך?</p>
-                    <p className="text-slate-400 text-xs font-bold mt-1">בחר כדי להמשיך בהתקנה</p>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.92 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.92 }}
+                transition={{ type: 'spring', damping: 24, stiffness: 260 }}
+                className="w-full max-w-sm"
+                onClick={(e) => e.stopPropagation()}
+                role="dialog"
+                aria-modal="true"
+                aria-label="בחר סוג מכשיר"
+              >
+                <div className="relative rounded-2xl p-px bg-gradient-to-br from-amber-400/60 via-slate-700/30 to-slate-800/10">
+                  <div className="rounded-[15px] bg-gradient-to-b from-slate-900 to-slate-950 p-5">
                     <button
-                      onClick={() => handleChoose('ios')}
-                      className="flex flex-col items-center justify-center gap-2 py-5 rounded-xl bg-slate-800/80 ring-1 ring-sky-500/30 active:scale-[0.97] transition-transform touch-manipulation"
+                      onClick={() => setChooserOpen(false)}
+                      aria-label="סגור"
+                      className="absolute top-3 left-3 grid place-items-center w-8 h-8 rounded-lg bg-slate-800/80 text-slate-400 active:scale-95 transition-transform touch-manipulation"
                     >
-                      <div className="grid place-items-center w-12 h-12 rounded-2xl bg-sky-500/15 ring-1 ring-sky-400/40">
-                        <Smartphone className="w-6 h-6 text-sky-300" strokeWidth={2.2} />
-                      </div>
-                      <span className="text-sky-300 font-black text-base">אייפון</span>
-                      <span className="text-ink-3 text-[0.6rem] font-bold">iPhone / iPad</span>
+                      <X className="w-4 h-4" />
                     </button>
 
-                    <button
-                      onClick={() => handleChoose('android')}
-                      className="flex flex-col items-center justify-center gap-2 py-5 rounded-xl bg-slate-800/80 ring-1 ring-emerald-500/30 active:scale-[0.97] transition-transform touch-manipulation"
-                    >
-                      <div className="grid place-items-center w-12 h-12 rounded-2xl bg-emerald-500/15 ring-1 ring-emerald-400/40">
-                        <Chrome className="w-6 h-6 text-emerald-300" strokeWidth={2.2} />
-                      </div>
-                      <span className="text-emerald-300 font-black text-base">אנדרואיד</span>
-                      <span className="text-ink-3 text-[0.6rem] font-bold">Android</span>
-                    </button>
+                    <div className="text-center mb-5">
+                      <p className="st-gold-text font-black text-lg">איזה מכשיר יש לך?</p>
+                      <p className="text-slate-400 text-xs font-bold mt-1">בחר כדי להמשיך בהתקנה</p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        onClick={() => handleChoose('ios')}
+                        className="flex flex-col items-center justify-center gap-2 py-5 rounded-xl bg-slate-800/80 ring-1 ring-sky-500/30 active:scale-[0.97] transition-transform touch-manipulation"
+                      >
+                        <div className="grid place-items-center w-12 h-12 rounded-2xl bg-sky-500/15 ring-1 ring-sky-400/40">
+                          <Smartphone className="w-6 h-6 text-sky-300" strokeWidth={2.2} />
+                        </div>
+                        <span className="text-sky-300 font-black text-base">אייפון</span>
+                        <span className="text-ink-3 text-[0.6rem] font-bold">iPhone / iPad</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleChoose('android')}
+                        className="flex flex-col items-center justify-center gap-2 py-5 rounded-xl bg-slate-800/80 ring-1 ring-emerald-500/30 active:scale-[0.97] transition-transform touch-manipulation"
+                      >
+                        <div className="grid place-items-center w-12 h-12 rounded-2xl bg-emerald-500/15 ring-1 ring-emerald-400/40">
+                          <Chrome className="w-6 h-6 text-emerald-300" strokeWidth={2.2} />
+                        </div>
+                        <span className="text-emerald-300 font-black text-base">אנדרואיד</span>
+                        <span className="text-ink-3 text-[0.6rem] font-bold">Android</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </div>
   );
 }
