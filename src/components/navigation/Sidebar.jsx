@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import {
   Home, Users, BarChart3, Shuffle, X, History, Trophy,
-  CreditCard, Shield, LogOut, UserCheck, Star, Download,
+  CreditCard, Shield, LogOut, UserCheck, Star, Download, UsersRound,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/lib/AuthContext';
@@ -19,6 +19,7 @@ const menuItems = [
   { name: 'דרג שחקנים', page: 'RatePlayers',  icon: Star,      admin: true, player: true },
   { name: 'תשלומים',    page: 'Payments',     icon: CreditCard, admin: true },
   { name: 'אישור משתמשים', page: 'UserApprovals', icon: UserCheck, admin: true },
+  { name: 'משתמשים רשומים', page: 'RegisteredUsers', icon: UsersRound, admin: true },
   { name: 'גיבוי ושחזור', page: 'Backup',     icon: Shield,    admin: true },
   { name: 'הורד את האפליקציה', page: 'InstallApp', icon: Download, admin: true, player: true },
 ];
