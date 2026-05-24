@@ -171,19 +171,43 @@ export const AuthProvider = ({ children }) => {
     if (error) return { error };
 
     // Link this auth user with the selected existing player profile in the database
+    let playerName = null;
     if (data?.user && playerId) {
-      const { error: updateError } = await supabase
+      const { data: linked, error: updateError } = await supabase
         .from('players')
         .update({
           user_id: data.user.id,
           email: email.toLowerCase(),
           is_approved: false
         })
-        .eq('id', playerId);
+        .eq('id', playerId)
+        .select('name')
+        .single();
 
       if (updateError) {
         console.error('Error linking player profile during sign up:', updateError.message);
+      } else {
+        playerName = linked?.name || null;
       }
+    }
+
+    // Fire a push notification to the admin so they can approve the request.
+    // Fail-soft: never block registration on a push error.
+    try {
+      await fetch('/api/send-notification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          targetEmail: 'libermanasaf@gmail.com',
+          title: '🆕 רישום חדש לסינתטיקו',
+          body: playerName
+            ? `${playerName} (${email}) ממתין לאישור`
+            : `${email} ממתין לאישור`,
+          url: '/UserApprovals',
+        }),
+      });
+    } catch (pushErr) {
+      console.warn('Admin push notification failed:', pushErr);
     }
 
     return { data, error: null };

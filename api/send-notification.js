@@ -20,7 +20,7 @@ export default async function handler(req, res) {
 
   webpush.setVapidDetails('mailto:libermanasaf@gmail.com', VAPID_PUBLIC, VAPID_PRIVATE);
 
-  const { title, body, url } = req.body || {};
+  const { title, body, url, targetEmail } = req.body || {};
   const payload = JSON.stringify({
     title: title || 'סינתטיקו חולון',
     body: body || '',
@@ -28,7 +28,9 @@ export default async function handler(req, res) {
   });
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-  const { data: subs, error } = await supabase.from('push_subscriptions').select('*');
+  let query = supabase.from('push_subscriptions').select('*');
+  if (targetEmail) query = query.eq('user_email', targetEmail.toLowerCase());
+  const { data: subs, error } = await query;
   if (error) {
     return res.status(500).json({ error: error.message });
   }
