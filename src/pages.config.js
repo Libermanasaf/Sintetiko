@@ -59,6 +59,7 @@ import PlayerHome from './pages/PlayerHome';
 import UserApprovals from './pages/UserApprovals';
 import RatePlayers from './pages/RatePlayers';
 import MatchDay from './pages/MatchDay';
+import InstallApp from './pages/InstallApp';
 import __Layout from './Layout.jsx';
 
 export const PAGES = {
@@ -74,6 +75,7 @@ export const PAGES = {
     "UserApprovals": UserApprovals,
     "RatePlayers": RatePlayers,
     "MatchDay": MatchDay,
+    "InstallApp": InstallApp,
 }
 
 export const pagesConfig = {
