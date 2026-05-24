@@ -1,13 +1,24 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import {
-  BellRing, Check, X, AlertTriangle, Send, RefreshCw, Smartphone, Globe2, Shield,
+  BellRing, Check, X, AlertTriangle, Send, RefreshCw, Smartphone, Globe2, Shield, Bug,
 } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { supabase } from '@/lib/supabase';
-import { pushSupported, subscribeToPush } from '@/lib/push';
+import { pushSupported } from '@/lib/push';
 import { PageHeader } from '@/components/ui/lux';
 import { toast } from 'sonner';
+
+const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = atob(base64);
+  const output = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) output[i] = raw.charCodeAt(i);
+  return output;
+}
 
 const TONES = {
   emerald: {
@@ -53,7 +64,10 @@ export default function PushDiagnostics() {
   const [tableExists, setTableExists] = useState(null);  // null | true | false
   const [vapidConfigured, setVapidConfigured] = useState(true);
   const [busy, setBusy] = useState(null);
+  const [lastError, setLastError] = useState(null);
+  const [debugLog, setDebugLog] = useState([]);
   const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.userAgent.includes('Macintosh') && 'ontouchend' in document);
+  const log = (msg) => setDebugLog((l) => [...l, `${new Date().toLocaleTimeString('he-IL')} · ${msg}`]);
 
   const refresh = useCallback(async () => {
     setSupported(pushSupported());
@@ -101,12 +115,55 @@ export default function PushDiagnostics() {
 
   const handleEnable = async () => {
     setBusy('subscribe');
+    setLastError(null);
+    setDebugLog([]);
     try {
-      const ok = await subscribeToPush(user?.email);
-      if (ok) toast.success('הרשמה הצליחה! מנוי נשמר ב-DB.');
-      else toast.error('ההרשמה נכשלה — בדוק שאישרת את ההתראות');
+      log('checking push support...');
+      if (!pushSupported() || !VAPID_PUBLIC_KEY) {
+        throw new Error(!VAPID_PUBLIC_KEY ? 'VITE_VAPID_PUBLIC_KEY is empty in this build' : 'Push not supported by this browser');
+      }
+      log('requesting permission...');
+      const perm = await Notification.requestPermission();
+      log(`permission = ${perm}`);
+      if (perm !== 'granted') throw new Error(`permission denied (${perm})`);
+
+      log('waiting for service worker...');
+      const reg = await navigator.serviceWorker.ready;
+      log(`SW scope: ${reg.scope}`);
+
+      let sub = await reg.pushManager.getSubscription();
+      if (sub) {
+        log('found existing subscription, unsubscribing first (key may be stale)');
+        await sub.unsubscribe();
+      }
+
+      log('calling pushManager.subscribe()...');
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+      });
+      log(`subscribed, endpoint = ...${sub.endpoint.slice(-30)}`);
+
+      log('upserting to Supabase...');
+      const payload = sub.toJSON();
+      const { error: upErr } = await supabase
+        .from('push_subscriptions')
+        .upsert(
+          {
+            endpoint: payload.endpoint,
+            subscription: payload,
+            user_email: user?.email || null,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'endpoint' }
+        );
+      if (upErr) throw new Error(`DB upsert: ${upErr.message}`);
+      log('✓ saved in DB');
+      toast.success('הרשמה הצליחה!');
     } catch (e) {
-      toast.error('שגיאה: ' + e.message);
+      log(`✗ ${e.message}`);
+      setLastError(e.message);
+      toast.error('נכשל: ' + e.message);
     }
     setBusy(null);
     await refresh();
@@ -206,9 +263,41 @@ export default function PushDiagnostics() {
             icon={Shield}
             label="VAPID public key מוגדר ב-build"
             ok={vapidConfigured}
-            hint={vapidConfigured ? 'VITE_VAPID_PUBLIC_KEY טעון' : 'חסר VITE_VAPID_PUBLIC_KEY — בדוק Vercel env'}
+            hint={
+              vapidConfigured
+                ? `${VAPID_PUBLIC_KEY.slice(0, 18)}…${VAPID_PUBLIC_KEY.slice(-10)} (${VAPID_PUBLIC_KEY.length} chars)`
+                : 'חסר VITE_VAPID_PUBLIC_KEY — בדוק Vercel env'
+            }
           />
         </div>
+
+        {/* Last error banner */}
+        {lastError && (
+          <div className="rounded-2xl bg-rose-500/10 ring-1 ring-rose-400/40 p-3.5">
+            <div className="flex items-start gap-2.5">
+              <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" strokeWidth={2.2} />
+              <div className="min-w-0 flex-1">
+                <p className="text-rose-200 font-black text-sm">השגיאה האחרונה</p>
+                <p className="text-rose-100 text-xs font-medium mt-1 break-words" dir="ltr">{lastError}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Debug log */}
+        {debugLog.length > 0 && (
+          <div className="rounded-2xl bg-slate-950 ring-1 ring-white/10 p-3.5">
+            <div className="flex items-center gap-2 mb-2">
+              <Bug className="w-4 h-4 text-amber-400" />
+              <p className="text-amber-300 font-black text-xs">לוג ניפוי שגיאות</p>
+            </div>
+            <div className="space-y-1 font-mono text-[0.65rem] text-slate-300" dir="ltr">
+              {debugLog.map((line, i) => (
+                <div key={i} className="break-all">{line}</div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Actions */}
         <div className="space-y-2.5">
