@@ -31,6 +31,7 @@ export default function InstallPrompt() {
 
     const handler = (e) => {
       e.preventDefault();
+      window.__pwaPrompt = e; // share with other components
       setDeferredPrompt(e);
       setShow(true);
     };
