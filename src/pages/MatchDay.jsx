@@ -20,7 +20,7 @@ const TEAM = [
 const teamOf = (i) => TEAM[i % 3];
 
 // ─── Compact team card ────────────────────────────────────────────────────
-function TeamCard({ teamIndex, playerIds, allPlayers, isOpening, goals, isAdmin, onTapPlayer }) {
+function TeamCard({ teamIndex, playerIds, allPlayers, isOpening, isAdmin, onTapPlayer }) {
   const t = teamOf(teamIndex);
   return (
     <div className={`rounded-2xl overflow-hidden flex flex-col bg-slate-900/70 ring-1 ${t.tint.split(' ')[1]}`}>
@@ -37,7 +37,6 @@ function TeamCard({ teamIndex, playerIds, allPlayers, isOpening, goals, isAdmin,
         {playerIds.map(pid => {
           const p = allPlayers.find(x => x.id === pid);
           if (!p) return null;
-          const goalCount = goals?.[pid] || 0;
           const RowTag = isAdmin ? 'button' : 'div';
           return (
             <RowTag
@@ -55,12 +54,6 @@ function TeamCard({ teamIndex, playerIds, allPlayers, isOpening, goals, isAdmin,
                 </div>
               )}
               <p className="flex-1 text-white text-[0.72rem] font-bold truncate leading-tight">{p.name}</p>
-              {goalCount > 0 && (
-                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-amber-500/20 ring-1 ring-amber-400/40 text-amber-200 text-[0.65rem] font-black tnum shrink-0">
-                  <Target className="w-2.5 h-2.5" strokeWidth={3} />
-                  {goalCount}
-                </span>
-              )}
             </RowTag>
           );
         })}
@@ -504,7 +497,6 @@ export default function MatchDay() {
                 playerIds={playerIds}
                 allPlayers={allPlayers}
                 isOpening={openingIdx.includes(idx)}
-                goals={goals}
                 isAdmin={isAdmin}
                 onTapPlayer={setEditingPlayer}
               />
