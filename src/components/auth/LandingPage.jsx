@@ -270,19 +270,6 @@ export default function LandingPage() {
               transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
               className="w-full flex flex-col items-center"
             >
-              {/* Hero crest */}
-              <motion.div
-                initial={{ scale: 0.7, opacity: 0, rotateY: -18 }}
-                animate={{ scale: 1, opacity: 1, rotateY: 0 }}
-                transition={{ duration: 1.0, ease: [0.22, 1, 0.36, 1] }}
-                style={{
-                  filter: 'drop-shadow(0 14px 28px rgba(0,0,0,0.55)) drop-shadow(0 0 32px rgba(224,169,46,0.42))',
-                }}
-                className="mb-5"
-              >
-                <HeroCrest />
-              </motion.div>
-
               {/* Eyebrow */}
               <motion.div
                 initial={{ opacity: 0, y: 6 }}

@@ -193,27 +193,8 @@ export default function Home() {
           </button>
         </motion.div>
 
-        {/* ── Hero — cinematic crest moment ─────────────────────────── */}
+        {/* ── Hero ─────────────────────────────────────────────────── */}
         <div className="text-center">
-          <motion.div
-            initial={{ scale: 0.6, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.2, type: 'spring', stiffness: 140, damping: 15 }}
-            className="relative flex justify-center mb-5"
-          >
-            {/* stadium light cone */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-52 h-52 bg-amber-500/20 rounded-full blur-[70px] pointer-events-none" />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-emerald-500/20 rounded-full blur-3xl pointer-events-none" />
-            <motion.div
-              animate={{ y: [0, -7, 0] }}
-              transition={{ duration: 4.6, repeat: Infinity, ease: 'easeInOut' }}
-              className="relative"
-              style={{ filter: 'drop-shadow(0 14px 26px rgba(0,0,0,0.6))' }}
-            >
-              <CrestEmblem />
-            </motion.div>
-          </motion.div>
-
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
