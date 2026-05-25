@@ -4,10 +4,12 @@ import { useAuth } from '../lib/AuthContext';
 import { supabase } from '../lib/supabase';
 import { useQuery } from '@tanstack/react-query';
 import { motion, animate } from 'framer-motion';
-import { Star, Trophy, Zap, Activity, TrendingUp, ShieldQuestion, Users, Lock, ChevronLeft, Flame } from 'lucide-react';
+import { Star, Trophy, Zap, Activity, TrendingUp, ShieldQuestion, Users, Lock, ChevronLeft, Flame, Bell } from 'lucide-react';
 import { Player, PlayerRating, Round } from '@/api/entities';
 import { SectionTitle, EmptyState, Skeleton } from '@/components/ui/lux';
 import InstallBanner from '@/components/InstallBanner';
+import { pushSupported, subscribeToPush } from '@/lib/push';
+import { toast } from 'sonner';
 
 // ─── Count-up number animation ─────────────────────────────────────────────
 function CountUp({ to, duration = 1.1, suffix = '' }) {
@@ -85,6 +87,27 @@ function StatTile({ icon: Icon, value, suffix, label, delay, iconClass, valueCla
 // ─── Main page ─────────────────────────────────────────────────────────────
 export default function PlayerHome() {
   const { user } = useAuth();
+  const [notifPermission, setNotifPermission] = useState(
+    typeof Notification !== 'undefined' ? Notification.permission : 'denied'
+  );
+  const [enablingNotif, setEnablingNotif] = useState(false);
+
+  const handleEnableNotifications = async () => {
+    setEnablingNotif(true);
+    const ok = await subscribeToPush(user?.email);
+    setEnablingNotif(false);
+    if (ok) {
+      setNotifPermission('granted');
+      toast.success('התראות הופעלו!', { description: 'תקבל הודעה כשהרכבים מתפרסמים' });
+    } else {
+      toast.error('לא ניתן להפעיל התראות', {
+        description: Notification.permission === 'denied'
+          ? 'הרשאת ההתראות נחסמה. יש לאפשר ידנית בהגדרות הדפדפן.'
+          : 'נסה שוב',
+      });
+      setNotifPermission(Notification.permission);
+    }
+  };
 
   const { data: player, isLoading } = useQuery({
     queryKey: ['my-player', user?.id, user?.email],
@@ -219,6 +242,34 @@ export default function PlayerHome() {
       <div className="w-full max-w-xs">
         <InstallBanner />
       </div>
+
+      {/* ── Enable notifications — shown only when not yet granted ── */}
+      {pushSupported() && notifPermission !== 'granted' && notifPermission !== 'denied' && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full max-w-xs"
+        >
+          <button
+            onClick={handleEnableNotifications}
+            disabled={enablingNotif}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-emerald-900/40 ring-1 ring-emerald-500/35 active:scale-[0.98] hover:bg-emerald-900/60 transition-all touch-manipulation disabled:opacity-60"
+          >
+            <div className="grid place-items-center w-9 h-9 rounded-xl bg-emerald-500/20 shrink-0">
+              {enablingNotif
+                ? <div className="w-4 h-4 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
+                : <Bell className="w-4 h-4 text-emerald-400" />
+              }
+            </div>
+            <div className="text-right flex-1 min-w-0">
+              <p className="text-white font-black text-sm">הפעל התראות</p>
+              <p className="text-emerald-300/70 text-[0.65rem] font-bold leading-tight">
+                קבל הודעה כשהרכבים מתפרסמים
+              </p>
+            </div>
+          </button>
+        </motion.div>
+      )}
 
       {/* ── Hero: FIFA gold card, floating ── */}
       <motion.div
