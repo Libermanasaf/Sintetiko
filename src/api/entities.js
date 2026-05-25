@@ -7,93 +7,46 @@ export const Payment = createStorage('Payment');
 export const PlayerRating = createStorage('PlayerRating');
 export const RoundBet = createStorage('RoundBet');
 
-/* ─── Signup entity with graceful Supabase → localStorage fallback ─── */
-const SIGNUPS_KEY = 'sintetiko_signups_local';
-const localGet = () => { try { return JSON.parse(localStorage.getItem(SIGNUPS_KEY) || '[]'); } catch { return []; } };
-const localSet = (items) => { try { localStorage.setItem(SIGNUPS_KEY, JSON.stringify(items)); } catch {} };
-
+/* ─── Signup entity — Supabase only (no silent fallback so errors are visible) ─── */
 export const Signup = {
   async list(sortField) {
-    if (supabase) {
-      try {
-        let query = supabase.from('signups').select('*');
-        if (sortField) {
-          const desc = sortField.startsWith('-');
-          const field = desc ? sortField.slice(1) : sortField;
-          query = query.order(field, { ascending: !desc });
-        }
-        const { data, error } = await query;
-        if (error) throw error;
-        return data || [];
-      } catch (e) {
-        console.warn('[Signup.list] Supabase failed, falling back to localStorage:', e.message);
-      }
-    }
-    const items = localGet();
+    if (!supabase) throw new Error('Supabase לא מוגדר');
+    let query = supabase.from('signups').select('*');
     if (sortField) {
       const desc = sortField.startsWith('-');
       const field = desc ? sortField.slice(1) : sortField;
-      items.sort((a, b) => {
-        const av = a[field] || '';
-        const bv = b[field] || '';
-        return desc ? String(bv).localeCompare(String(av)) : String(av).localeCompare(String(bv));
-      });
+      query = query.order(field, { ascending: !desc });
     }
-    return items;
+    const { data, error } = await query;
+    if (error) throw new Error(`קריאת רישומים נכשלה: ${error.message}`);
+    return data || [];
   },
 
   async create(data) {
+    if (!supabase) throw new Error('Supabase לא מוגדר');
     const item = {
       ...data,
       id: data.id || crypto.randomUUID(),
       created_date: data.created_date || new Date().toISOString(),
       updated_date: new Date().toISOString(),
     };
-    if (supabase) {
-      try {
-        const { data: created, error } = await supabase.from('signups').insert([item]).select().single();
-        if (error) throw error;
-        return created;
-      } catch (e) {
-        console.warn('[Signup.create] Supabase failed, saving to localStorage:', e.message);
-      }
-    }
-    const items = localGet();
-    items.push(item);
-    localSet(items);
-    return item;
+    const { data: created, error } = await supabase.from('signups').insert([item]).select().single();
+    if (error) throw new Error(`רישום ל-Supabase נכשל: ${error.message}`);
+    return created;
   },
 
   async update(id, data) {
+    if (!supabase) throw new Error('Supabase לא מוגדר');
     const updateData = { ...data, updated_date: new Date().toISOString() };
-    if (supabase) {
-      try {
-        const { data: updated, error } = await supabase.from('signups').update(updateData).eq('id', id).select().single();
-        if (error) throw error;
-        return updated;
-      } catch (e) {
-        console.warn('[Signup.update] Supabase failed, updating localStorage:', e.message);
-      }
-    }
-    const items = localGet();
-    const idx = items.findIndex(i => i.id === id);
-    if (idx === -1) throw new Error(`Signup not found: ${id}`);
-    items[idx] = { ...items[idx], ...updateData };
-    localSet(items);
-    return items[idx];
+    const { data: updated, error } = await supabase.from('signups').update(updateData).eq('id', id).select().single();
+    if (error) throw new Error(`עדכון רישום נכשל: ${error.message}`);
+    return updated;
   },
 
   async delete(id) {
-    if (supabase) {
-      try {
-        const { error } = await supabase.from('signups').delete().eq('id', id);
-        if (error) throw error;
-        return;
-      } catch (e) {
-        console.warn('[Signup.delete] Supabase failed, deleting from localStorage:', e.message);
-      }
-    }
-    localSet(localGet().filter(i => i.id !== id));
+    if (!supabase) throw new Error('Supabase לא מוגדר');
+    const { error } = await supabase.from('signups').delete().eq('id', id);
+    if (error) throw new Error(`מחיקת רישום נכשלה: ${error.message}`);
   },
 };
 
