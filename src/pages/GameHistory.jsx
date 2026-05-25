@@ -127,6 +127,7 @@ export default function GameHistory() {
   const [savingGoals, setSavingGoals] = useState(false);
   const [aiSummary, setAiSummary] = useState(null);
   const [generatingSummary, setGeneratingSummary] = useState(false);
+  const [summaryError, setSummaryError] = useState(null);
   const queryClient = useQueryClient();
 
   const { data: rounds = [], isLoading } = useQuery({
@@ -183,6 +184,7 @@ export default function GameHistory() {
 
   const handleGenerateSummary = async () => {
     if (!selectedRound) return;
+    setSummaryError(null);
     setGeneratingSummary(true);
     try {
       const playerNames = {};
@@ -202,10 +204,13 @@ export default function GameHistory() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || `שגיאת שרת ${res.status}`);
+      if (!data.summary) throw new Error('לא התקבל סיכום מה-AI');
       setAiSummary(data.summary);
       queryClient.invalidateQueries({ queryKey: ['rounds'] });
       toast.success('הסיכום נוצר בהצלחה!');
     } catch (e) {
+      console.error('[AI summary]', e.message);
+      setSummaryError(e.message);
       toast.error('שגיאה ביצירת הסיכום', { description: e.message });
     } finally {
       setGeneratingSummary(false);
@@ -392,17 +397,24 @@ export default function GameHistory() {
 
                     {/* AI Summary button — only when no summary yet */}
                     {!aiSummary && (
-                      <button
-                        onClick={handleGenerateSummary}
-                        disabled={generatingSummary}
-                        className="w-full flex items-center justify-center gap-2 min-h-[48px] rounded-xl bg-gradient-to-l from-violet-900/40 to-indigo-900/40 ring-1 ring-violet-400/30 text-violet-200 font-black text-sm active:scale-[0.98] hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed transition-all touch-manipulation"
-                      >
-                        {generatingSummary
-                          ? <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                          : <Sparkles className="w-4 h-4 text-violet-300" />
-                        }
-                        {generatingSummary ? 'מייצר סיכום...' : '✨ צור סיכום AI'}
-                      </button>
+                      <div className="space-y-2">
+                        <button
+                          onClick={handleGenerateSummary}
+                          disabled={generatingSummary}
+                          className="w-full flex items-center justify-center gap-2 min-h-[48px] rounded-xl bg-gradient-to-l from-violet-900/40 to-indigo-900/40 ring-1 ring-violet-400/30 text-violet-200 font-black text-sm active:scale-[0.98] hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed transition-all touch-manipulation"
+                        >
+                          {generatingSummary
+                            ? <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                            : <Sparkles className="w-4 h-4 text-violet-300" />
+                          }
+                          {generatingSummary ? 'מייצר סיכום...' : '✨ צור סיכום AI'}
+                        </button>
+                        {summaryError && (
+                          <div className="rounded-xl bg-rose-900/30 ring-1 ring-rose-500/30 px-3 py-2.5 text-rose-300 text-xs font-bold" dir="ltr">
+                            ❌ {summaryError}
+                          </div>
+                        )}
+                      </div>
                     )}
 
                     <div className="rounded-2xl bg-slate-900/60 ring-1 ring-white/8 overflow-hidden">
