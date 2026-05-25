@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import {
   Home, Users, BarChart3, Shuffle, X, History, Trophy,
-  CreditCard, Shield, LogOut, UserCheck, Star, Download, UsersRound, BellRing, Bell, Send,
+  CreditCard, Shield, LogOut, UserCheck, Star, Download, UsersRound, BellRing, Bell, Send, ClipboardList,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/lib/AuthContext';
@@ -17,6 +17,7 @@ const menuItems = [
   { name: 'יצירת מחזור', page: 'CreateRound', icon: Shuffle,   admin: true },
   { name: 'היסטוריית משחקים', page: 'GameHistory', icon: History, admin: true, player: true },
   { name: 'דרג שחקנים', page: 'RatePlayers',  icon: Star,      admin: true, player: true },
+  { name: 'רשימות',      page: 'Lists',        icon: ClipboardList, admin: true },
   { name: 'תשלומים',    page: 'Payments',     icon: CreditCard, admin: true },
   { name: 'אישור משתמשים', page: 'UserApprovals', icon: UserCheck, admin: true },
   { name: 'משתמשים רשומים', page: 'RegisteredUsers', icon: UsersRound, admin: true },

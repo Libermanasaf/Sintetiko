@@ -578,7 +578,7 @@ export default function GameHistory() {
                                   <p className="text-white font-bold text-sm truncate">{player.name}</p>
                                   <div className="flex items-center gap-0.5 mt-0.5">{renderStars(player.rating || 3)}</div>
                                 </div>
-                                {goals > 0 && (
+                                {isAdmin && goals > 0 && (
                                   <div className="flex items-center gap-1 shrink-0 px-2 py-0.5 rounded-full bg-amber-500/15 ring-1 ring-amber-500/30">
                                     <Target className="w-3 h-3 text-amber-400" strokeWidth={2.4} />
                                     <span className="text-amber-300 font-black text-xs tnum">{goals}</span>
