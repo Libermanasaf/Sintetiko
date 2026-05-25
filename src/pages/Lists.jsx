@@ -1,10 +1,24 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ClipboardList, RotateCcw, Pencil, Check, CheckCircle2, X as XIcon, Clock } from 'lucide-react';
+import { ClipboardList, RotateCcw, Pencil, Check, CheckCircle2, X as XIcon, Clock, AlertTriangle, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/ui/lux';
 import { Signup, Player } from '@/api/entities';
+import { supabase } from '@/lib/supabase';
+
+const SIGNUPS_TABLE_SQL = `CREATE TABLE signups (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  player_id UUID,
+  player_name TEXT NOT NULL,
+  user_email TEXT NOT NULL,
+  day TEXT NOT NULL,
+  note TEXT,
+  status TEXT DEFAULT 'waiting',
+  created_date TIMESTAMPTZ DEFAULT NOW(),
+  updated_date TIMESTAMPTZ DEFAULT NOW()
+);
+ALTER TABLE signups DISABLE ROW LEVEL SECURITY;`;
 
 const WAITING_ROWS = 6;
 
@@ -95,7 +109,19 @@ function EditableHeader({ value, color, onChange }) {
 export default function Lists() {
   const [data, setData] = useState(load);
   const [busyId, setBusyId] = useState(null);
+  const [tableMissing, setTableMissing] = useState(false);
   const queryClient = useQueryClient();
+
+  // Probe whether signups table exists in Supabase
+  useEffect(() => {
+    if (!supabase) return;
+    (async () => {
+      const { error } = await supabase.from('signups').select('id').limit(1);
+      if (error && /does not exist|relation/i.test(error.message)) {
+        setTableMissing(true);
+      }
+    })();
+  }, []);
 
   // Live signups from the SignupPage flow
   const { data: signups = [] } = useQuery({
@@ -107,6 +133,15 @@ export default function Lists() {
     queryKey: ['players'],
     queryFn: () => Player.list(),
   });
+
+  const copySQL = async () => {
+    try {
+      await navigator.clipboard.writeText(SIGNUPS_TABLE_SQL);
+      toast.success('ה-SQL הועתק! הדבק ב-Supabase SQL Editor');
+    } catch {
+      toast.error('לא ניתן להעתיק — סמן ידנית');
+    }
+  };
 
   const handleRowChange = useCallback((day, idx, value) => {
     setData(prev => {
@@ -199,6 +234,31 @@ export default function Lists() {
   return (
     <div className="pb-10" dir="rtl">
       <PageHeader icon={ClipboardList} title="רשימות" subtitle="רשימות נוכחות לפי יום" accent="amber" />
+
+      {tableMissing && (
+        <div className="px-4 pt-2">
+          <div className="rounded-2xl bg-rose-900/30 ring-1 ring-rose-500/40 p-4 space-y-3">
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <p className="text-rose-200 font-black text-sm">רישומי השחקנים לא יסונכרנו בין מכשירים</p>
+                <p className="text-rose-300/80 text-xs font-medium mt-1 leading-snug">
+                  טבלת <span className="font-mono">signups</span> חסרה ב-Supabase. כל עוד היא לא קיימת — כשחקן נרשם, הרישום נשמר רק בדפדפן שלו ולא יופיע אצלך. הרץ את ה-SQL הבא ב-Supabase Dashboard → SQL Editor:
+                </p>
+              </div>
+            </div>
+            <pre className="rounded-lg bg-slate-950/70 ring-1 ring-white/10 p-3 text-[0.7rem] font-mono text-slate-300 overflow-x-auto" dir="ltr">{SIGNUPS_TABLE_SQL}</pre>
+            <button onClick={copySQL}
+              className="w-full flex items-center justify-center gap-2 min-h-[40px] rounded-lg bg-rose-500/20 ring-1 ring-rose-500/40 text-rose-200 font-black text-xs active:scale-[0.98] transition-all touch-manipulation">
+              <Copy className="w-3.5 h-3.5" />
+              העתק SQL ל-clipboard
+            </button>
+            <p className="text-rose-300/60 text-[0.65rem] font-medium leading-snug">
+              אחרי שתריץ את ה-SQL — רענן את העמוד. ההודעה הזו תיעלם והרישומים החיים יופיעו ב"ממתינים".
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="p-4">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
