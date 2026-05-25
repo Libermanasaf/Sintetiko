@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Round, Player, uploadFile } from '@/api/entities';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { History, Trophy, User, Star, Shield, Plus, Minus, Save, ArrowLeftRight, Camera, Upload, X, CalendarDays, Target } from 'lucide-react';
 import { isSameDay } from 'date-fns';
 import { he } from 'date-fns/locale';
@@ -10,6 +11,102 @@ import { toast } from 'sonner';
 import TeamPlayerMover from '@/components/history/TeamPlayerMover';
 import { PageHeader, SectionTitle, EmptyState, Skeleton } from '@/components/ui/lux';
 import { useAuth } from '@/lib/AuthContext';
+
+const TEAM_COLORS = [
+  { name: 'הצהובים', text: 'text-yellow-300' },
+  { name: 'הכחולים', text: 'text-blue-300' },
+  { name: 'הכתומים', text: 'text-orange-300' },
+];
+
+function GoalEditorSheet({ open, player, teamIndex, currentGoals, onClose, onChange, saving }) {
+  if (typeof document === 'undefined') return null;
+  const t = teamIndex != null ? TEAM_COLORS[teamIndex % 3] : null;
+  return createPortal(
+    <AnimatePresence>
+      {open && player && (
+        <motion.div
+          dir="rtl"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[1000] flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm"
+          onClick={onClose}
+        >
+          <motion.div
+            initial={{ y: 60, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 60, opacity: 0 }}
+            transition={{ type: 'spring', damping: 24, stiffness: 260 }}
+            className="w-full sm:max-w-sm sm:w-[calc(100vw-32px)]"
+            onClick={e => e.stopPropagation()}
+            role="dialog" aria-modal="true" aria-label="עריכת גולים"
+          >
+            <div className="relative rounded-t-3xl sm:rounded-3xl p-px bg-gradient-to-br from-amber-400/60 via-slate-700/30 to-slate-800/10">
+              <div className="rounded-t-[23px] sm:rounded-[23px] bg-gradient-to-b from-slate-900 to-slate-950 p-5">
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    {player.image ? (
+                      <img src={player.image} alt={player.name} className="w-10 h-10 rounded-full object-cover ring-2 ring-white/10 shrink-0" />
+                    ) : (
+                      <div className="grid place-items-center w-10 h-10 rounded-full bg-slate-700 shrink-0">
+                        <User className="w-5 h-5 text-slate-400" />
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <p className="text-white font-black text-base truncate">{player.name}</p>
+                      {t && <p className={`text-xs font-bold ${t.text}`}>{t.name}</p>}
+                    </div>
+                  </div>
+                  <button onClick={onClose} aria-label="סגור" className="grid place-items-center w-9 h-9 rounded-lg bg-slate-800/80 text-slate-400 active:scale-95 transition-transform shrink-0">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="st-rule my-4" />
+                <div className="flex items-center justify-between gap-3">
+                  <button
+                    onClick={() => onChange(Math.max(0, currentGoals - 1))}
+                    disabled={saving || currentGoals === 0}
+                    aria-label="הפחת גול"
+                    className="grid place-items-center w-16 h-16 rounded-2xl bg-rose-500/15 ring-1 ring-rose-500/30 text-rose-300 active:scale-95 disabled:opacity-40 transition-transform touch-manipulation"
+                  >
+                    <Minus className="w-7 h-7" strokeWidth={3} />
+                  </button>
+                  <div className="flex-1 text-center">
+                    <div className="flex items-center justify-center gap-2">
+                      <Target className="w-5 h-5 text-amber-400" strokeWidth={2.4} />
+                      <span className="text-amber-300 text-xs font-black tracking-wide">גולים</span>
+                    </div>
+                    <motion.p
+                      key={currentGoals}
+                      initial={{ scale: 0.7, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ type: 'spring', damping: 18, stiffness: 320 }}
+                      className="st-gold-text font-black text-6xl tnum leading-none mt-1"
+                    >
+                      {currentGoals}
+                    </motion.p>
+                  </div>
+                  <button
+                    onClick={() => onChange(currentGoals + 1)}
+                    disabled={saving}
+                    aria-label="הוסף גול"
+                    className="grid place-items-center w-16 h-16 rounded-2xl bg-emerald-500/15 ring-1 ring-emerald-500/30 text-emerald-300 active:scale-95 disabled:opacity-50 transition-transform touch-manipulation"
+                  >
+                    <Plus className="w-7 h-7" strokeWidth={3} />
+                  </button>
+                </div>
+                <p className="text-center text-ink-3 text-[0.65rem] font-bold mt-4">
+                  {saving ? 'שומר...' : 'השינויים נשמרים אוטומטית'}
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>,
+    document.body,
+  );
+}
 
 const TEAM = [
   { name: 'הצהובים', dot: 'bg-yellow-400', header: 'from-yellow-500/20 to-yellow-600/5', ring: 'ring-yellow-500/35', text: 'text-yellow-300' },
@@ -26,7 +123,7 @@ export default function GameHistory() {
   const [tempWins, setTempWins] = useState({});
   const [showMover, setShowMover] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
-  const [editingGoals, setEditingGoals] = useState(false);
+  const [editingPlayer, setEditingPlayer] = useState(null); // { player, teamIndex }
   const [savingGoals, setSavingGoals] = useState(false);
   const queryClient = useQueryClient();
 
@@ -72,7 +169,7 @@ export default function GameHistory() {
 
   const handleDateSelect = (date) => {
     setSelectedDate(date);
-    setEditingGoals(false);
+    setEditingPlayer(null);
     setEditingRound(null);
   };
 
@@ -143,14 +240,13 @@ export default function GameHistory() {
     }
   };
 
-  const handleGoalChange = async (roundId, playerId, delta) => {
-    const round = rounds.find(r => r.id === roundId);
-    if (!round) return;
-    const current = round.player_goals?.[playerId] || 0;
-    const next = Math.max(0, current + delta);
+  const handleGoalChange = async (newCount) => {
+    if (!selectedRound || !editingPlayer) return;
+    const pid = editingPlayer.player.id;
+    const nextGoals = { ...(selectedRound.player_goals || {}), [pid]: newCount };
     setSavingGoals(true);
     try {
-      await Round.update(roundId, { player_goals: { ...(round.player_goals || {}), [playerId]: next } });
+      await Round.update(selectedRound.id, { player_goals: nextGoals });
       queryClient.invalidateQueries({ queryKey: ['rounds'] });
     } catch {
       toast.error('שגיאה בשמירת הגולים');
@@ -236,22 +332,12 @@ export default function GameHistory() {
                       ) : (
                         <button
                           onClick={() => startEditing(selectedRound)}
-                          className="flex-1 flex items-center justify-center min-h-[52px] rounded-xl bg-slate-800/90 ring-1 ring-white/10 text-white font-black text-base active:scale-[0.98] transition-transform touch-manipulation"
+                          className="flex-1 flex items-center justify-center gap-2 min-h-[52px] rounded-xl bg-slate-800/90 ring-1 ring-white/10 text-white font-black text-base active:scale-[0.98] transition-transform touch-manipulation"
                         >
+                          <Save className="w-5 h-5 text-amber-300" />
                           עדכן תוצאות
                         </button>
                       )}
-                      <button
-                        onClick={() => setEditingGoals(v => !v)}
-                        aria-label="עדכן גולים"
-                        className={`grid place-items-center w-[52px] min-h-[52px] rounded-xl ring-1 active:scale-95 transition-all touch-manipulation shrink-0 ${
-                          editingGoals
-                            ? 'bg-amber-500/20 ring-amber-500/50 text-amber-300'
-                            : 'bg-slate-800/90 ring-white/10 text-amber-300'
-                        }`}
-                      >
-                        <Target className="w-5 h-5" />
-                      </button>
                       <button
                         onClick={() => setShowMover(true)}
                         aria-label="העברת שחקנים בין קבוצות"
@@ -260,6 +346,10 @@ export default function GameHistory() {
                         <ArrowLeftRight className="w-5 h-5" />
                       </button>
                     </div>
+                    <p className="text-[0.65rem] text-ink-3 font-bold text-center flex items-center justify-center gap-1">
+                      <Target className="w-3 h-3 text-amber-400" />
+                      לחץ על שחקן לעריכת גולים
+                    </p>
 
                     <div className="rounded-2xl bg-slate-900/60 ring-1 ring-white/8 overflow-hidden">
                       <div className="flex items-center gap-2 px-4 py-3 border-b border-white/8">
@@ -376,8 +466,15 @@ export default function GameHistory() {
                             if (!player) return null;
                             const isGoalkeeper = selectedRound.goalkeepers?.[teamIndex] === playerId;
                             const goals = selectedRound.player_goals?.[playerId];
+                            const RowTag = isAdmin ? 'button' : 'div';
                             return (
-                              <div key={playerId} className="flex items-center gap-3 px-3 py-2.5">
+                              <RowTag
+                                key={playerId}
+                                onClick={isAdmin ? () => setEditingPlayer({ player, teamIndex }) : undefined}
+                                className={`w-full flex items-center gap-3 px-3 py-2.5 text-right ${
+                                  isAdmin ? 'cursor-pointer hover:bg-white/5 active:bg-white/8 transition-colors touch-manipulation' : ''
+                                }`}
+                              >
                                 <div className="relative shrink-0">
                                   {player.image ? (
                                     <img src={player.image} alt={player.name} loading="lazy" className="w-9 h-9 rounded-full object-cover ring-1 ring-white/15" />
@@ -396,33 +493,13 @@ export default function GameHistory() {
                                   <p className="text-white font-bold text-sm truncate">{player.name}</p>
                                   <div className="flex items-center gap-0.5 mt-0.5">{renderStars(player.rating || 3)}</div>
                                 </div>
-                                {isAdmin && editingGoals ? (
-                                  <div className="flex items-center gap-1 shrink-0" onClick={e => e.stopPropagation()}>
-                                    <button
-                                      onClick={() => handleGoalChange(selectedRound.id, playerId, -1)}
-                                      disabled={savingGoals || !goals}
-                                      aria-label="הפחת גול"
-                                      className="grid place-items-center w-7 h-7 rounded-lg bg-rose-500/15 ring-1 ring-rose-500/30 text-rose-300 hover:bg-rose-500/25 disabled:opacity-40 transition-colors cursor-pointer"
-                                    >
-                                      <Minus className="w-3.5 h-3.5" strokeWidth={3} />
-                                    </button>
-                                    <span className="tnum text-amber-300 font-black text-sm min-w-[1.25rem] text-center">{goals || 0}</span>
-                                    <button
-                                      onClick={() => handleGoalChange(selectedRound.id, playerId, 1)}
-                                      disabled={savingGoals}
-                                      aria-label="הוסף גול"
-                                      className="grid place-items-center w-7 h-7 rounded-lg bg-emerald-500/15 ring-1 ring-emerald-500/30 text-emerald-300 hover:bg-emerald-500/25 disabled:opacity-50 transition-colors cursor-pointer"
-                                    >
-                                      <Plus className="w-3.5 h-3.5" strokeWidth={3} />
-                                    </button>
-                                  </div>
-                                ) : goals > 0 ? (
+                                {goals > 0 && (
                                   <div className="flex items-center gap-1 shrink-0 px-2 py-0.5 rounded-full bg-amber-500/15 ring-1 ring-amber-500/30">
                                     <Target className="w-3 h-3 text-amber-400" strokeWidth={2.4} />
                                     <span className="text-amber-300 font-black text-xs tnum">{goals}</span>
                                   </div>
-                                ) : null}
-                              </div>
+                                )}
+                              </RowTag>
                             );
                           })}
                         </div>
@@ -444,6 +521,16 @@ export default function GameHistory() {
           onSave={(newTeams) => updateTeamsMutation.mutate({ roundId: selectedRound.id, teams: newTeams })}
         />
       )}
+
+      <GoalEditorSheet
+        open={!!editingPlayer}
+        player={editingPlayer?.player}
+        teamIndex={editingPlayer?.teamIndex}
+        currentGoals={editingPlayer ? (selectedRound?.player_goals?.[editingPlayer.player.id] || 0) : 0}
+        onClose={() => setEditingPlayer(null)}
+        onChange={handleGoalChange}
+        saving={savingGoals}
+      />
     </div>
   );
 }

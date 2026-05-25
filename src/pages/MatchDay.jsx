@@ -448,6 +448,7 @@ export default function MatchDay() {
     try {
       await Round.update(cached.id, { teamWins: nextWins });
       queryClient.invalidateQueries({ queryKey: ['latest-round'] });
+      queryClient.invalidateQueries({ queryKey: ['rounds'] });
     } catch (e) {
       toast.error('שגיאה בשמירת הניצחון', { description: e.message });
       queryClient.setQueryData(['latest-round'], cached);
@@ -468,6 +469,7 @@ export default function MatchDay() {
     try {
       await Round.update(cached.id, { player_goals: nextGoals });
       queryClient.invalidateQueries({ queryKey: ['latest-round'] });
+      queryClient.invalidateQueries({ queryKey: ['rounds'] });
     } catch (e) {
       console.error('goal save failed', e);
       toast.error('שגיאה בשמירת הגול', { description: e.message });
