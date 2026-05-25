@@ -1,15 +1,8 @@
 import React, { useState, useCallback, useRef } from 'react';
-import { ClipboardList, RotateCcw, Pencil, Check } from 'lucide-react';
+import { ClipboardList, Trash2, Pencil, Check } from 'lucide-react';
 import { PageHeader } from '@/components/ui/lux';
 
-const DEFAULT_PLAYERS = [
-  'גלעד עוזיאל', 'אריאל רביבו', 'יוסף משומר', 'אופיר אוחיון',
-  'מאור חימי', 'אביחי שרה קאן', 'מתן גינאדי', 'יניב אזולאי',
-  'תמיר אברהם', 'אלכס מור', 'ניב מזרחי', 'גל לוי',
-  'גל דניאל', 'חן נצר', 'לירן לוי', 'מאור קאקולי',
-  'בר ממן', 'דוד דסלין',
-];
-
+const ROWS = 18;
 const WAITING_ROWS = 6;
 
 const DAYS = [
@@ -18,15 +11,15 @@ const DAYS = [
   { key: 'thursday',  color: 'text-emerald-300',  ring: 'ring-emerald-400/30', bg: 'from-emerald-500/15 to-emerald-600/5', defaultLabel: 'יום חמישי' },
 ];
 
-const STORAGE_KEY = 'sintetiko_lists_v2';
+const STORAGE_KEY = 'sintetiko_lists';
 
 function getDefaults() {
   return {
     headers: { sunday: 'יום ראשון', wednesday: 'יום רביעי', thursday: 'יום חמישי' },
     rows: {
-      sunday:    [...DEFAULT_PLAYERS],
-      wednesday: [...DEFAULT_PLAYERS],
-      thursday:  [...DEFAULT_PLAYERS],
+      sunday:    Array(ROWS).fill(''),
+      wednesday: Array(ROWS).fill(''),
+      thursday:  Array(ROWS).fill(''),
     },
     waiting: {
       sunday:    Array(WAITING_ROWS).fill(''),
@@ -136,11 +129,11 @@ export default function Lists() {
     });
   }, []);
 
-  const resetDay = useCallback((day) => {
+  const clearDay = useCallback((day) => {
     setData(prev => {
       const next = {
         ...prev,
-        rows: { ...prev.rows, [day]: [...DEFAULT_PLAYERS] },
+        rows: { ...prev.rows, [day]: Array(ROWS).fill('') },
         waiting: { ...prev.waiting, [day]: Array(WAITING_ROWS).fill('') },
       };
       persist(next);
@@ -164,15 +157,15 @@ export default function Lists() {
                   onChange={val => handleHeaderChange(key, val)}
                 />
                 <button
-                  onClick={() => resetDay(key)}
-                  title="אפס לרשימת הקבועים"
-                  className="grid place-items-center w-8 h-8 rounded-lg bg-slate-800/60 text-slate-500 hover:text-amber-400 active:scale-95 transition-all shrink-0"
+                  onClick={() => clearDay(key)}
+                  title={`נקה ${data.headers[key]}`}
+                  className="grid place-items-center w-8 h-8 rounded-lg bg-slate-800/60 text-slate-500 hover:text-rose-400 active:scale-95 transition-all shrink-0"
                 >
-                  <RotateCcw className="w-3.5 h-3.5" />
+                  <Trash2 className="w-3.5 h-3.5" />
                 </button>
               </div>
 
-              {/* Main Players List */}
+              {/* Main List */}
               <div className="divide-y divide-white/5">
                 {data.rows[key].map((name, i) => (
                   <div key={`main-${i}`} className="flex items-center gap-3 px-3 py-1.5">
@@ -181,7 +174,8 @@ export default function Lists() {
                       type="text"
                       value={name}
                       onChange={e => handleRowChange(key, i, e.target.value)}
-                      className="flex-1 bg-transparent text-white text-sm font-bold outline-none py-1 min-w-0"
+                      placeholder="—"
+                      className="flex-1 bg-transparent text-white text-sm font-bold placeholder:text-white/15 outline-none py-1 min-w-0"
                       dir="rtl"
                     />
                   </div>
