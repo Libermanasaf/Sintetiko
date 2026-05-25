@@ -15,9 +15,12 @@ export default function NotificationPrompt() {
   useEffect(() => {
     if (!role) return;
     if (!pushSupported()) return;
-    if (Notification.permission !== 'default') return;
+    if (Notification.permission === 'granted') return;
+    if (Notification.permission === 'denied') return;
     if (localStorage.getItem(DISMISS_KEY) === '1') return;
-    setShow(true);
+    // Small delay so the page renders first
+    const t = setTimeout(() => setShow(true), 2000);
+    return () => clearTimeout(t);
   }, [role]);
 
   const handleEnable = async () => {

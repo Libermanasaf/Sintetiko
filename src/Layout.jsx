@@ -5,7 +5,8 @@ import BottomNav from '@/components/navigation/BottomNav';
 import InstallPrompt from '@/components/InstallPrompt';
 import { useAuth } from '@/lib/AuthContext';
 import LandingPage from '@/components/auth/LandingPage';
-import { registerServiceWorker, subscribeToPush } from '@/lib/push';
+import { registerServiceWorker, ensureSubscribed } from '@/lib/push';
+import NotificationPrompt from '@/components/NotificationPrompt';
 
 // Compact crest monogram for the header — gold ring + pitch core
 function HeaderCrest() {
@@ -50,7 +51,7 @@ export default function Layout({ children }) {
 
   useEffect(() => {
     if (role && user) {
-      subscribeToPush(user.email);
+      ensureSubscribed(user.email);
     }
   }, [role, user]);
 
@@ -114,6 +115,7 @@ export default function Layout({ children }) {
           paddingBottom: 'calc(68px + env(safe-area-inset-bottom, 0px))',
         }}
       >
+        <NotificationPrompt />
         {children}
       </main>
 
