@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ClipboardCheck, User, MessageSquare, CheckCircle2, Clock, X } from 'lucide-react';
@@ -6,6 +7,9 @@ import { toast } from 'sonner';
 import { Signup, Player } from '@/api/entities';
 import { PageHeader, Skeleton } from '@/components/ui/lux';
 import { useAuth } from '@/lib/AuthContext';
+import { createPageUrl } from '@/utils';
+
+const ADMIN_EMAIL = 'libermanasaf@gmail.com';
 
 const DAYS = [
   { key: 'sunday',    label: 'יום ראשון', color: 'text-amber-300',  ring: 'ring-amber-400/30',  bg: 'from-amber-500/20 to-amber-600/5',  dot: 'bg-amber-400'  },
@@ -14,12 +18,13 @@ const DAYS = [
 ];
 
 /* ─── Player view ────────────────────────────────────── */
-function PlayerRegistration({ players, user, signups }) {
+function PlayerRegistration({ players, user, signups, role }) {
   const [selectedDay, setSelectedDay] = useState(null);
   const [selectedPlayerId, setSelectedPlayerId] = useState('');
   const [note, setNote] = useState('');
   const [done, setDone] = useState(false);
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const registeredDays = useMemo(() =>
     new Set((signups || [])
@@ -27,14 +32,40 @@ function PlayerRegistration({ players, user, signups }) {
       .map(s => s.day)),
     [signups, user]);
 
+  // Navigate to PlayerHome 2s after success
+  useEffect(() => {
+    if (!done) return;
+    const t = setTimeout(() => navigate(createPageUrl('PlayerHome')), 2000);
+    return () => clearTimeout(t);
+  }, [done, navigate]);
+
+  const sendAdminPush = async (playerName, dayLabel) => {
+    try {
+      await fetch('/api/send-notification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          targetEmail: ADMIN_EMAIL,
+          title: 'סינתטיקו — רישום חדש',
+          body: `${playerName} נרשם ל${dayLabel}`,
+          url: createPageUrl('SignupPage'),
+        }),
+      });
+    } catch { /* push failure is non-critical */ }
+  };
+
   const createMutation = useMutation({
     mutationFn: (data) => Signup.create(data),
-    onSuccess: () => {
+    onSuccess: (_, vars) => {
       queryClient.invalidateQueries({ queryKey: ['signups'] });
+      const dayLabel = DAYS.find(d => d.key === vars.day)?.label || '';
+      sendAdminPush(vars.player_name, dayLabel);
       setDone(true);
-      toast.success('נרשמת בהצלחה! ממתין לאישור המנהל');
     },
-    onError: () => toast.error('שגיאה ברישום, נסה שוב'),
+    onError: (e) => {
+      console.error('[signup]', e);
+      toast.error('שגיאה ברישום — נסה שוב');
+    },
   });
 
   const handleSubmit = () => {
@@ -42,11 +73,14 @@ function PlayerRegistration({ players, user, signups }) {
     const player = players.find(p => p.id === selectedPlayerId);
     if (!player) return;
 
-    const emailMatch = player.email?.toLowerCase() === user?.email?.toLowerCase();
-    const idMatch = player.user_id === user?.id || user?.id?.includes(player.id);
-    if (!emailMatch && !idMatch) {
-      toast.error('לא ניתן להירשם בשם שחקן אחר', { description: 'בחר את שמך מהרשימה' });
-      return;
+    // Validate: logged-in user must match selected player (skip for admin role)
+    if (role !== 'admin') {
+      const emailMatch = player.email?.toLowerCase() === user?.email?.toLowerCase();
+      const idMatch = player.user_id && player.user_id === user?.id;
+      if (!emailMatch && !idMatch) {
+        toast.error('לא ניתן להירשם בשם שחקן אחר', { description: 'בחר את שמך מהרשימה' });
+        return;
+      }
     }
     if (registeredDays.has(selectedDay)) {
       toast.error('כבר נרשמת ליום זה');
@@ -72,12 +106,10 @@ function PlayerRegistration({ players, user, signups }) {
         <div className="grid place-items-center w-16 h-16 rounded-2xl bg-emerald-500/20 ring-1 ring-emerald-500/30 mx-auto mb-3">
           <CheckCircle2 className="w-8 h-8 text-emerald-400" />
         </div>
-        <h2 className="text-emerald-300 font-black text-lg">נרשמת!</h2>
-        <p className="text-slate-400 text-sm font-medium mt-1">{dayInfo?.label} — ממתין לאישור</p>
-        <button onClick={() => { setDone(false); setSelectedDay(null); setNote(''); setSelectedPlayerId(''); }}
-          className="mt-4 text-slate-400 text-xs font-bold underline active:opacity-70">
-          רישום נוסף
-        </button>
+        <h2 className="text-emerald-300 font-black text-lg">הרישום בוצע בהצלחה!</h2>
+        <p className="text-slate-300 text-sm font-bold mt-1">{dayInfo?.label}</p>
+        <p className="text-slate-400 text-xs font-medium mt-1">תעודכן בהקדם על ידי המנהל</p>
+        <p className="text-ink-3 text-[0.65rem] font-bold mt-3">חוזר למסך הבית...</p>
       </motion.div>
     );
   }
@@ -297,7 +329,7 @@ export default function SignupPage() {
       <div className="p-4 max-w-lg mx-auto space-y-4">
         {isAdmin
           ? <AdminSignups signups={signups} players={players} isLoading={isLoading} />
-          : <PlayerRegistration players={players} user={user} signups={signups} />
+          : <PlayerRegistration players={players} user={user} signups={signups} role={role} />
         }
       </div>
     </div>
