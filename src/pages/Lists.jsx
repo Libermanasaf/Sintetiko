@@ -60,23 +60,6 @@ const DAYS = [
 
 const STORAGE_KEY = 'sintetiko_lists_v2';
 
-// Day-of-week (0=Sun, 1=Mon, ..., 6=Sat) on which each list auto-resets.
-// Reset happens the day AFTER the game.
-const RESET_RULES = {
-  sunday:    1, // Mon  → reset Sunday's list
-  wednesday: 4, // Thu  → reset Wednesday's list
-  thursday:  5, // Fri  → reset Thursday's list
-};
-
-// Date of the most recent occurrence of a given weekday (at 00:00:00).
-function lastWeekdayDate(weekday, now = new Date()) {
-  const d = new Date(now);
-  const back = (d.getDay() - weekday + 7) % 7;
-  d.setDate(d.getDate() - back);
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-
 function emptyWaiting() {
   return { sunday: Array(WAITING_ROWS).fill(''), wednesday: Array(WAITING_ROWS).fill(''), thursday: Array(WAITING_ROWS).fill('') };
 }
@@ -87,21 +70,11 @@ function load() {
     if (raw) {
       const p = JSON.parse(raw);
       if (p.rows && p.headers) {
-        return {
-          ...p,
-          waiting: p.waiting || emptyWaiting(),
-          lastReset: p.lastReset || {},
-        };
+        return { ...p, waiting: p.waiting || emptyWaiting() };
       }
     }
   } catch {}
-  // Seed lastReset to the most recent trigger so a fresh install doesn't reset immediately
-  const now = new Date();
-  const lastReset = {};
-  for (const [day, weekday] of Object.entries(RESET_RULES)) {
-    lastReset[day] = lastWeekdayDate(weekday, now).toISOString();
-  }
-  return { ...DEFAULTS, waiting: emptyWaiting(), lastReset };
+  return { ...DEFAULTS, waiting: emptyWaiting() };
 }
 
 function persist(data) {
@@ -154,58 +127,6 @@ export default function Lists() {
   }, []);
 
   useEffect(() => { probe(); }, [probe]);
-
-  // Auto-reset rosters per RESET_RULES (runs on mount + every 30 min)
-  useEffect(() => {
-    const runReset = async () => {
-      const now = new Date();
-      // Read latest from setData so we always work with current state
-      let dueDays = [];
-      setData(prev => {
-        dueDays = [];
-        const lastReset = prev.lastReset || {};
-        for (const [day, weekday] of Object.entries(RESET_RULES)) {
-          const trigger = lastWeekdayDate(weekday, now);
-          const last = lastReset[day] ? new Date(lastReset[day]) : null;
-          if (!last || last < trigger) dueDays.push(day);
-        }
-        if (dueDays.length === 0) return prev;
-
-        const next = {
-          ...prev,
-          rows:      { ...prev.rows },
-          waiting:   { ...prev.waiting },
-          lastReset: { ...lastReset },
-        };
-        for (const day of dueDays) {
-          next.rows[day] = [...DEFAULTS.rows[day]];
-          next.waiting[day] = Array(WAITING_ROWS).fill('');
-          next.lastReset[day] = now.toISOString();
-        }
-        persist(next);
-        return next;
-      });
-
-      if (dueDays.length === 0) return;
-
-      // Wipe pending signups for those days from Supabase
-      if (supabase) {
-        for (const day of dueDays) {
-          try {
-            await supabase.from('signups').delete().eq('day', day);
-          } catch (e) { console.warn('[auto-reset] delete signups failed', day, e); }
-        }
-        queryClient.invalidateQueries({ queryKey: ['signups'] });
-      }
-
-      const labels = dueDays.map(d => DAY_LABELS[d]).join(', ');
-      toast.info(`רשימת ${labels} אופסה אוטומטית לקבועים`);
-    };
-
-    runReset();
-    const id = setInterval(runReset, 30 * 60 * 1000); // every 30 min
-    return () => clearInterval(id);
-  }, [queryClient]);
 
   // Live signups from the SignupPage flow
   const { data: signups = [], refetch: refetchSignups } = useQuery({
