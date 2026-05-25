@@ -65,6 +65,7 @@ import PushDiagnostics from './pages/PushDiagnostics';
 import SendNotification from './pages/SendNotification';
 import Notifications from './pages/Notifications';
 import Lists from './pages/Lists';
+import SignupPage from './pages/SignupPage';
 import __Layout from './Layout.jsx';
 
 export const PAGES = {
@@ -86,6 +87,7 @@ export const PAGES = {
     "SendNotification": SendNotification,
     "Notifications": Notifications,
     "Lists": Lists,
+    "SignupPage": SignupPage,
 }
 
 export const pagesConfig = {

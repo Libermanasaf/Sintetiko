@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import {
   Home, Users, BarChart3, Shuffle, X, History, Trophy,
-  CreditCard, Shield, LogOut, UserCheck, Star, Download, UsersRound, BellRing, Bell, Send, ClipboardList,
+  CreditCard, Shield, LogOut, UserCheck, Star, Download, UsersRound, BellRing, Bell, Send, ClipboardList, ClipboardCheck,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/lib/AuthContext';
@@ -24,6 +24,7 @@ const menuItems = [
   { name: 'גיבוי ושחזור', page: 'Backup',     icon: Shield,    admin: true },
   { name: 'שלח התראות',   page: 'SendNotification', icon: Send,     admin: true },
   { name: 'אבחון התראות',  page: 'PushDiagnostics', icon: BellRing, admin: true },
+  { name: 'רישום',             page: 'SignupPage',    icon: ClipboardCheck, player: true, admin: true },
   { name: 'התראות',            page: 'Notifications', icon: Bell,     player: true },
   { name: 'הורד את האפליקציה', page: 'InstallApp', icon: Download, admin: true, player: true },
 ];
