@@ -43,7 +43,7 @@ function TeamCard({ teamIndex, playerIds, allPlayers, isOpening, isAdmin, onTapP
               key={pid}
               onClick={isAdmin ? () => onTapPlayer({ player: p, teamIndex }) : undefined}
               className={`w-full flex items-center gap-1.5 px-2 py-2 text-right ${
-                isAdmin ? 'active:bg-white/5 transition-colors touch-manipulation' : ''
+                isAdmin ? 'cursor-pointer hover:bg-white/8 active:bg-white/5 transition-colors touch-manipulation' : ''
               }`}
             >
               {p.image ? (

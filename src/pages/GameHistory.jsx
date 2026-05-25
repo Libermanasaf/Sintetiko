@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Round, Player, uploadFile } from '@/api/entities';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { History, Trophy, User, Star, Shield, Plus, Minus, Save, ArrowLeftRight, Camera, Upload, X, CalendarDays } from 'lucide-react';
+import { History, Trophy, User, Star, Shield, Plus, Minus, Save, ArrowLeftRight, Camera, Upload, X, CalendarDays, Target } from 'lucide-react';
 import { isSameDay } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { Calendar } from '@/components/ui/calendar';
@@ -26,6 +26,8 @@ export default function GameHistory() {
   const [tempWins, setTempWins] = useState({});
   const [showMover, setShowMover] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [editingGoals, setEditingGoals] = useState(false);
+  const [savingGoals, setSavingGoals] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: rounds = [], isLoading } = useQuery({
@@ -67,6 +69,12 @@ export default function GameHistory() {
   const selectedRound = selectedDate
     ? rounds.find(round => isSameDay(new Date(round.date), selectedDate))
     : null;
+
+  const handleDateSelect = (date) => {
+    setSelectedDate(date);
+    setEditingGoals(false);
+    setEditingRound(null);
+  };
 
   const handlePhotoUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -135,6 +143,21 @@ export default function GameHistory() {
     }
   };
 
+  const handleGoalChange = async (roundId, playerId, delta) => {
+    const round = rounds.find(r => r.id === roundId);
+    if (!round) return;
+    const current = round.player_goals?.[playerId] || 0;
+    const next = Math.max(0, current + delta);
+    setSavingGoals(true);
+    try {
+      await Round.update(roundId, { player_goals: { ...(round.player_goals || {}), [playerId]: next } });
+      queryClient.invalidateQueries({ queryKey: ['rounds'] });
+    } catch {
+      toast.error('שגיאה בשמירת הגולים');
+    }
+    setSavingGoals(false);
+  };
+
   const renderStars = (rating) =>
     Array.from({ length: 5 }, (_, i) => (
       <Star key={i} className={`w-2.5 h-2.5 ${i < Math.floor(rating) ? 'fill-amber-400 text-amber-400' : 'text-white/20'}`} />
@@ -174,7 +197,7 @@ export default function GameHistory() {
                 <Calendar
                   mode="single"
                   selected={selectedDate}
-                  onSelect={setSelectedDate}
+                  onSelect={handleDateSelect}
                   locale={he}
                   modifiers={{ hasGame: datesWithGames }}
                   modifiersStyles={{ hasGame: { fontWeight: 'bold', textDecoration: 'underline', color: '#fbbf24' } }}
@@ -218,6 +241,17 @@ export default function GameHistory() {
                           עדכן תוצאות
                         </button>
                       )}
+                      <button
+                        onClick={() => setEditingGoals(v => !v)}
+                        aria-label="עדכן גולים"
+                        className={`grid place-items-center w-[52px] min-h-[52px] rounded-xl ring-1 active:scale-95 transition-all touch-manipulation shrink-0 ${
+                          editingGoals
+                            ? 'bg-amber-500/20 ring-amber-500/50 text-amber-300'
+                            : 'bg-slate-800/90 ring-white/10 text-amber-300'
+                        }`}
+                      >
+                        <Target className="w-5 h-5" />
+                      </button>
                       <button
                         onClick={() => setShowMover(true)}
                         aria-label="העברת שחקנים בין קבוצות"
@@ -341,6 +375,7 @@ export default function GameHistory() {
                             const player = players.find(p => p.id === playerId);
                             if (!player) return null;
                             const isGoalkeeper = selectedRound.goalkeepers?.[teamIndex] === playerId;
+                            const goals = selectedRound.player_goals?.[playerId];
                             return (
                               <div key={playerId} className="flex items-center gap-3 px-3 py-2.5">
                                 <div className="relative shrink-0">
@@ -361,6 +396,32 @@ export default function GameHistory() {
                                   <p className="text-white font-bold text-sm truncate">{player.name}</p>
                                   <div className="flex items-center gap-0.5 mt-0.5">{renderStars(player.rating || 3)}</div>
                                 </div>
+                                {isAdmin && editingGoals ? (
+                                  <div className="flex items-center gap-1 shrink-0" onClick={e => e.stopPropagation()}>
+                                    <button
+                                      onClick={() => handleGoalChange(selectedRound.id, playerId, -1)}
+                                      disabled={savingGoals || !goals}
+                                      aria-label="הפחת גול"
+                                      className="grid place-items-center w-7 h-7 rounded-lg bg-rose-500/15 ring-1 ring-rose-500/30 text-rose-300 hover:bg-rose-500/25 disabled:opacity-40 transition-colors cursor-pointer"
+                                    >
+                                      <Minus className="w-3.5 h-3.5" strokeWidth={3} />
+                                    </button>
+                                    <span className="tnum text-amber-300 font-black text-sm min-w-[1.25rem] text-center">{goals || 0}</span>
+                                    <button
+                                      onClick={() => handleGoalChange(selectedRound.id, playerId, 1)}
+                                      disabled={savingGoals}
+                                      aria-label="הוסף גול"
+                                      className="grid place-items-center w-7 h-7 rounded-lg bg-emerald-500/15 ring-1 ring-emerald-500/30 text-emerald-300 hover:bg-emerald-500/25 disabled:opacity-50 transition-colors cursor-pointer"
+                                    >
+                                      <Plus className="w-3.5 h-3.5" strokeWidth={3} />
+                                    </button>
+                                  </div>
+                                ) : goals > 0 ? (
+                                  <div className="flex items-center gap-1 shrink-0 px-2 py-0.5 rounded-full bg-amber-500/15 ring-1 ring-amber-500/30">
+                                    <Target className="w-3 h-3 text-amber-400" strokeWidth={2.4} />
+                                    <span className="text-amber-300 font-black text-xs tnum">{goals}</span>
+                                  </div>
+                                ) : null}
                               </div>
                             );
                           })}
