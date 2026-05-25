@@ -60,6 +60,21 @@ const DAYS = [
 
 const STORAGE_KEY = 'sintetiko_lists_v2';
 
+// Day-of-week (0=Sun..6=Sat) when each list auto-resets (day AFTER the game).
+const RESET_RULES = {
+  sunday:    1, // Mon → reset Sunday's list
+  wednesday: 4, // Thu → reset Wednesday's list
+  thursday:  5, // Fri → reset Thursday's list
+};
+
+// Most recent occurrence of `weekday` (at 00:00 local).
+function lastWeekdayDate(weekday, now = new Date()) {
+  const d = new Date(now);
+  d.setDate(d.getDate() - ((d.getDay() - weekday + 7) % 7));
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
 function emptyWaiting() {
   return { sunday: Array(WAITING_ROWS).fill(''), wednesday: Array(WAITING_ROWS).fill(''), thursday: Array(WAITING_ROWS).fill('') };
 }
@@ -70,11 +85,11 @@ function load() {
     if (raw) {
       const p = JSON.parse(raw);
       if (p.rows && p.headers) {
-        return { ...p, waiting: p.waiting || emptyWaiting() };
+        return { ...p, waiting: p.waiting || emptyWaiting(), lastReset: p.lastReset || {} };
       }
     }
   } catch {}
-  return { ...DEFAULTS, waiting: emptyWaiting() };
+  return { ...DEFAULTS, waiting: emptyWaiting(), lastReset: {} };
 }
 
 function persist(data) {
@@ -127,6 +142,64 @@ export default function Lists() {
   }, []);
 
   useEffect(() => { probe(); }, [probe]);
+
+  // Auto-reset rosters: trigger only when we cross a reset day.
+  // Missing lastReset for a day means "treat now as just-reset" so
+  // existing customizations are NOT wiped on first run.
+  useEffect(() => {
+    const tick = async () => {
+      const now = new Date();
+      let resetDays = [];
+      let stampedOnly = [];
+      setData(prev => {
+        const lastReset = { ...(prev.lastReset || {}) };
+        const rows = { ...prev.rows };
+        const waiting = { ...prev.waiting };
+        let changed = false;
+        resetDays = [];
+        stampedOnly = [];
+
+        for (const [day, weekday] of Object.entries(RESET_RULES)) {
+          if (!lastReset[day]) {
+            // First time — stamp NOW, do NOT reset existing data
+            lastReset[day] = now.toISOString();
+            stampedOnly.push(day);
+            changed = true;
+            continue;
+          }
+          const trigger = lastWeekdayDate(weekday, now);
+          if (new Date(lastReset[day]) < trigger) {
+            rows[day] = [...DEFAULTS.rows[day]];
+            waiting[day] = Array(WAITING_ROWS).fill('');
+            lastReset[day] = now.toISOString();
+            resetDays.push(day);
+            changed = true;
+          }
+        }
+
+        if (!changed) return prev;
+        const next = { ...prev, rows, waiting, lastReset };
+        persist(next);
+        return next;
+      });
+
+      if (resetDays.length > 0) {
+        if (supabase) {
+          for (const day of resetDays) {
+            try { await supabase.from('signups').delete().eq('day', day); }
+            catch (e) { console.warn('[auto-reset] delete signups failed', day, e); }
+          }
+          queryClient.invalidateQueries({ queryKey: ['signups'] });
+        }
+        const labels = resetDays.map(d => DAY_LABELS[d]).join(', ');
+        toast.info(`רשימת ${labels} אופסה אוטומטית לקבועים`);
+      }
+    };
+
+    tick();
+    const id = setInterval(tick, 30 * 60 * 1000); // every 30 min
+    return () => clearInterval(id);
+  }, [queryClient]);
 
   // Live signups from the SignupPage flow
   const { data: signups = [], refetch: refetchSignups } = useQuery({
