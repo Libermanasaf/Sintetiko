@@ -109,22 +109,25 @@ function EditableHeader({ value, color, onChange }) {
 export default function Lists() {
   const [data, setData] = useState(load);
   const [busyId, setBusyId] = useState(null);
-  const [tableMissing, setTableMissing] = useState(false);
+  const [diag, setDiag] = useState({ status: 'checking', error: null, count: null });
   const queryClient = useQueryClient();
 
-  // Probe whether signups table exists in Supabase
-  useEffect(() => {
-    if (!supabase) return;
-    (async () => {
-      const { error } = await supabase.from('signups').select('id').limit(1);
-      if (error && /does not exist|relation/i.test(error.message)) {
-        setTableMissing(true);
-      }
-    })();
+  // Probe Supabase signups table directly so we can show exactly what's wrong
+  const probe = useCallback(async () => {
+    if (!supabase) { setDiag({ status: 'no-supabase', error: null, count: null }); return; }
+    setDiag(d => ({ ...d, status: 'checking' }));
+    const { data: rows, error } = await supabase.from('signups').select('*');
+    if (error) {
+      setDiag({ status: 'error', error: error.message, count: null });
+    } else {
+      setDiag({ status: 'ok', error: null, count: (rows || []).length });
+    }
   }, []);
 
+  useEffect(() => { probe(); }, [probe]);
+
   // Live signups from the SignupPage flow
-  const { data: signups = [] } = useQuery({
+  const { data: signups = [], refetch: refetchSignups } = useQuery({
     queryKey: ['signups'],
     queryFn: () => Signup.list('-created_date'),
     refetchInterval: 10000,
@@ -133,6 +136,8 @@ export default function Lists() {
     queryKey: ['players'],
     queryFn: () => Player.list(),
   });
+
+  const refresh = () => { probe(); refetchSignups(); };
 
   const copySQL = async () => {
     try {
@@ -235,30 +240,40 @@ export default function Lists() {
     <div className="pb-10" dir="rtl">
       <PageHeader icon={ClipboardList} title="רשימות" subtitle="רשימות נוכחות לפי יום" accent="amber" />
 
-      {tableMissing && (
-        <div className="px-4 pt-2">
-          <div className="rounded-2xl bg-rose-900/30 ring-1 ring-rose-500/40 p-4 space-y-3">
-            <div className="flex items-start gap-2">
-              <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
-              <div className="flex-1 min-w-0">
-                <p className="text-rose-200 font-black text-sm">רישומי השחקנים לא יסונכרנו בין מכשירים</p>
-                <p className="text-rose-300/80 text-xs font-medium mt-1 leading-snug">
-                  טבלת <span className="font-mono">signups</span> חסרה ב-Supabase. כל עוד היא לא קיימת — כשחקן נרשם, הרישום נשמר רק בדפדפן שלו ולא יופיע אצלך. הרץ את ה-SQL הבא ב-Supabase Dashboard → SQL Editor:
-                </p>
-              </div>
-            </div>
+      {/* Diagnostics — shows whether Supabase signups table is reachable */}
+      <div className="px-4 pt-2">
+        <div className={`rounded-2xl ring-1 p-3 flex items-center gap-2 text-xs font-bold ${
+          diag.status === 'ok' ? 'bg-emerald-900/25 ring-emerald-500/30 text-emerald-300'
+          : diag.status === 'checking' ? 'bg-slate-800/60 ring-white/8 text-slate-400'
+          : 'bg-rose-900/30 ring-rose-500/40 text-rose-200'
+        }`}>
+          {diag.status === 'checking' && <><div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" /><span>בודק חיבור ל-Supabase...</span></>}
+          {diag.status === 'ok' && <><CheckCircle2 className="w-4 h-4" /><span>חיבור פעיל. {diag.count} רישומים בענן.</span></>}
+          {diag.status === 'no-supabase' && <><AlertTriangle className="w-4 h-4" /><span>Supabase לא מוגדר</span></>}
+          {diag.status === 'error' && <><AlertTriangle className="w-4 h-4 shrink-0" /><span className="flex-1 min-w-0 break-words">בעיה: {diag.error}</span></>}
+          <button onClick={refresh} className="mr-auto grid place-items-center w-7 h-7 rounded-md bg-black/30 active:scale-95 transition-transform shrink-0" title="רענן">
+            <RotateCcw className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        {diag.status === 'error' && (
+          <div className="mt-2 rounded-2xl bg-rose-900/30 ring-1 ring-rose-500/40 p-4 space-y-3">
+            <p className="text-rose-200 font-black text-sm">לתקן: הרץ את ה-SQL הבא ב-Supabase</p>
+            <p className="text-rose-300/80 text-xs font-medium leading-snug">
+              אם הטבלה קיימת אבל יש שגיאת permission denied — ה-SQL הזה גם משבית RLS:
+            </p>
             <pre className="rounded-lg bg-slate-950/70 ring-1 ring-white/10 p-3 text-[0.7rem] font-mono text-slate-300 overflow-x-auto" dir="ltr">{SIGNUPS_TABLE_SQL}</pre>
+            <p className="text-rose-300/60 text-[0.65rem] font-medium leading-snug">
+              אם הטבלה כבר קיימת אז ה-CREATE ייכשל — זה בסדר, החלק החשוב הוא הפקודה האחרונה (DISABLE ROW LEVEL SECURITY).
+            </p>
             <button onClick={copySQL}
               className="w-full flex items-center justify-center gap-2 min-h-[40px] rounded-lg bg-rose-500/20 ring-1 ring-rose-500/40 text-rose-200 font-black text-xs active:scale-[0.98] transition-all touch-manipulation">
               <Copy className="w-3.5 h-3.5" />
-              העתק SQL ל-clipboard
+              העתק SQL
             </button>
-            <p className="text-rose-300/60 text-[0.65rem] font-medium leading-snug">
-              אחרי שתריץ את ה-SQL — רענן את העמוד. ההודעה הזו תיעלם והרישומים החיים יופיעו ב"ממתינים".
-            </p>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       <div className="p-4">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
