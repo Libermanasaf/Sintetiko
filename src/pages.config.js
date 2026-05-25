@@ -63,6 +63,7 @@ import InstallApp from './pages/InstallApp';
 import RegisteredUsers from './pages/RegisteredUsers';
 import PushDiagnostics from './pages/PushDiagnostics';
 import SendNotification from './pages/SendNotification';
+import Notifications from './pages/Notifications';
 import __Layout from './Layout.jsx';
 
 export const PAGES = {
@@ -82,6 +83,7 @@ export const PAGES = {
     "RegisteredUsers": RegisteredUsers,
     "PushDiagnostics": PushDiagnostics,
     "SendNotification": SendNotification,
+    "Notifications": Notifications,
 }
 
 export const pagesConfig = {
