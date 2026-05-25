@@ -325,7 +325,10 @@ export default function MatchDay() {
         new Date(r.date) >= cutoff
       ) || null;
     },
-    refetchInterval: 15000, // live goal sync
+    refetchInterval: 15000,           // live goal sync
+    refetchOnWindowFocus: true,       // re-check when user comes back to the app
+    refetchOnMount: 'always',         // never trust stale cache when entering the page
+    staleTime: 0,                     // round publish is time-sensitive — always validate
   });
 
   const { data: allPlayers = [] } = useQuery({

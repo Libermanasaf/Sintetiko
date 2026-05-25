@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { supabase } from '../lib/supabase';
 import { useQuery } from '@tanstack/react-query';
 import { motion, animate } from 'framer-motion';
-import { Star, Trophy, Zap, Activity, TrendingUp, ShieldQuestion, Users, Lock } from 'lucide-react';
-import { Player, PlayerRating } from '@/api/entities';
+import { Star, Trophy, Zap, Activity, TrendingUp, ShieldQuestion, Users, Lock, ChevronLeft, Flame } from 'lucide-react';
+import { Player, PlayerRating, Round } from '@/api/entities';
 import { SectionTitle, EmptyState, Skeleton } from '@/components/ui/lux';
 import InstallBanner from '@/components/InstallBanner';
 
@@ -115,6 +116,26 @@ export default function PlayerHome() {
     refetchOnWindowFocus: true,
   });
 
+  // Active round indicator — same key as MatchDay so cache is shared
+  const { data: activeRound } = useQuery({
+    queryKey: ['latest-round'],
+    queryFn: async () => {
+      const rounds = await Round.list('-created_date');
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - 3);
+      cutoff.setHours(0, 0, 0, 0);
+      return rounds.find(r =>
+        Array.isArray(r.openingTeams) && r.openingTeams.length >= 2 &&
+        r.winningTeam == null &&
+        !r.victoryPhoto &&
+        new Date(r.date) >= cutoff
+      ) || null;
+    },
+    staleTime: 15_000,
+    refetchOnWindowFocus: true,
+    refetchInterval: 30_000,
+  });
+
   if (isLoading) {
     return (
       <div className="flex flex-col items-center px-6 pt-8 gap-7" dir="rtl">
@@ -153,6 +174,47 @@ export default function PlayerHome() {
 
   return (
     <div className="flex flex-col items-center px-6 pt-6 pb-10 gap-6" dir="rtl">
+      {/* ── Active round CTA — shown whenever there's an unfinished round ── */}
+      {activeRound && (
+        <motion.div
+          initial={{ opacity: 0, y: -12, scale: 0.96 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ type: 'spring', damping: 22, stiffness: 240 }}
+          className="w-full max-w-xs"
+        >
+          <Link
+            to="/MatchDay"
+            className="block relative rounded-2xl p-px bg-gradient-to-br from-amber-300 via-amber-500 to-amber-700 active:scale-[0.98] transition-transform touch-manipulation"
+            aria-label="מחזור פעיל — סביבת המשחק"
+          >
+            <div className="rounded-[15px] bg-gradient-to-b from-emerald-900 via-emerald-950 to-slate-950 px-4 py-3.5 flex items-center gap-3">
+              {/* Live dot */}
+              <div className="relative flex h-10 w-10 shrink-0">
+                <span className="absolute inset-0 rounded-xl bg-emerald-500/30 animate-ping" aria-hidden="true" />
+                <div className="relative grid place-items-center w-10 h-10 rounded-xl bg-emerald-500/25 ring-1 ring-emerald-400/60">
+                  <Flame className="w-5 h-5 text-amber-300" strokeWidth={2.4} />
+                </div>
+              </div>
+
+              <div className="flex-1 min-w-0 text-right">
+                <div className="flex items-center gap-1.5">
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-rose-500/20 ring-1 ring-rose-400/40">
+                    <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse" aria-hidden="true" />
+                    <span className="text-[0.55rem] text-rose-200 font-black tracking-wider">LIVE</span>
+                  </span>
+                  <p className="st-gold-text font-black text-sm">מחזור פעיל</p>
+                </div>
+                <p className="text-emerald-100/80 text-[0.7rem] font-bold leading-tight mt-0.5">
+                  ההרכבים פורסמו — היכנס לסביבת המשחק
+                </p>
+              </div>
+
+              <ChevronLeft className="w-5 h-5 text-amber-300 shrink-0" strokeWidth={2.6} />
+            </div>
+          </Link>
+        </motion.div>
+      )}
+
       {/* ── Install app banner ── */}
       <div className="w-full max-w-xs">
         <InstallBanner />

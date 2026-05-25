@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { Trophy, Users, Shuffle, History, Sun, Moon, Send, ChevronLeft, Plus, Check, CheckCircle2 } from 'lucide-react';
+import { Trophy, Users, Shuffle, History, Sun, Moon, Send, ChevronLeft, Plus, Check, CheckCircle2, Flame } from 'lucide-react';
 import InstallBanner from '@/components/InstallBanner';
 import { useTheme } from '@/lib/ThemeContext';
 import { useAuth } from '@/lib/AuthContext';
@@ -149,6 +149,28 @@ export default function Home() {
     refetchInterval: 30000,
   });
 
+  // Player-facing query — only unfinished rounds. Shares cache with MatchDay/PlayerHome.
+  const { data: playerActiveRound } = useQuery({
+    queryKey: ['latest-round'],
+    queryFn: async () => {
+      const rounds = await Round.list('-created_date');
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - 3);
+      cutoff.setHours(0, 0, 0, 0);
+      return rounds.find(r =>
+        Array.isArray(r.openingTeams) && r.openingTeams.length >= 2 &&
+        r.winningTeam == null &&
+        !r.victoryPhoto &&
+        new Date(r.date) >= cutoff
+      ) || null;
+    },
+    enabled: !isAdmin,
+    staleTime: 15_000,
+    refetchOnWindowFocus: true,
+    refetchOnMount: 'always',
+    refetchInterval: 30_000,
+  });
+
   const handlePublish = async () => {
     if (publishing || published) return;
     setPublishing(true);
@@ -173,6 +195,46 @@ export default function Home() {
   return (
     <div className="min-h-[calc(100vh-4rem)] flex flex-col items-center px-5 pt-5 pb-10">
       <div className="w-full max-w-sm">
+        {/* ── Active round CTA — player view, prominent on top ── */}
+        {!isAdmin && playerActiveRound && (
+          <motion.div
+            initial={{ opacity: 0, y: -12, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ type: 'spring', damping: 22, stiffness: 240 }}
+            className="mb-4"
+          >
+            <Link
+              to="/MatchDay"
+              className="block relative rounded-2xl p-px bg-gradient-to-br from-amber-300 via-amber-500 to-amber-700 active:scale-[0.98] transition-transform touch-manipulation"
+              aria-label="מחזור פעיל — היכנס לסביבת המשחק"
+            >
+              <div className="rounded-[15px] bg-gradient-to-b from-emerald-900 via-emerald-950 to-slate-950 px-4 py-3.5 flex items-center gap-3">
+                <div className="relative flex h-10 w-10 shrink-0">
+                  <span className="absolute inset-0 rounded-xl bg-emerald-500/30 animate-ping" aria-hidden="true" />
+                  <div className="relative grid place-items-center w-10 h-10 rounded-xl bg-emerald-500/25 ring-1 ring-emerald-400/60">
+                    <Flame className="w-5 h-5 text-amber-300" strokeWidth={2.4} />
+                  </div>
+                </div>
+
+                <div className="flex-1 min-w-0 text-right">
+                  <div className="flex items-center gap-1.5">
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-rose-500/20 ring-1 ring-rose-400/40">
+                      <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse" aria-hidden="true" />
+                      <span className="text-[0.55rem] text-rose-200 font-black tracking-wider">LIVE</span>
+                    </span>
+                    <p className="st-gold-text font-black text-sm">מחזור פעיל</p>
+                  </div>
+                  <p className="text-emerald-100/80 text-[0.7rem] font-bold leading-tight mt-0.5">
+                    ההרכבים פורסמו — היכנס לסביבת המשחק
+                  </p>
+                </div>
+
+                <ChevronLeft className="w-5 h-5 text-amber-300 shrink-0" strokeWidth={2.6} />
+              </div>
+            </Link>
+          </motion.div>
+        )}
+
         {/* Install app button */}
         <InstallBanner />
 
