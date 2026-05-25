@@ -44,17 +44,26 @@ function PlayerRegistration({ players, user, signups, role }) {
 
   const sendAdminPush = async (playerName, dayLabel) => {
     try {
-      await fetch('/api/send-notification', {
+      const res = await fetch('/api/send-notification', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           targetEmail: ADMIN_EMAIL,
-          title: 'סינתטיקו — רישום חדש',
-          body: `${playerName} נרשם ל${dayLabel}`,
-          url: createPageUrl('SignupPage'),
+          title: 'סינתטיקו — רישום חדש 📝',
+          body: `${playerName} נרשם ל${dayLabel} וממתין לאישור`,
+          url: createPageUrl('Lists'),
         }),
       });
-    } catch { /* push failure is non-critical */ }
+      const data = await res.json().catch(() => ({}));
+      console.log('[push to admin]', res.status, data);
+      if (!res.ok) {
+        console.warn('[push to admin] failed:', data.error || res.status);
+      } else if ((data.sent || 0) === 0) {
+        console.warn('[push to admin] no subscriptions for', ADMIN_EMAIL);
+      }
+    } catch (e) {
+      console.warn('[push to admin] network error', e);
+    }
   };
 
   const createMutation = useMutation({

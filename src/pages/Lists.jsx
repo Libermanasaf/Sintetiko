@@ -1,8 +1,14 @@
 import React, { useState, useCallback, useRef } from 'react';
-import { ClipboardList, RotateCcw, Pencil, Check } from 'lucide-react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ClipboardList, RotateCcw, Pencil, Check, CheckCircle2, X as XIcon, Clock } from 'lucide-react';
+import { toast } from 'sonner';
 import { PageHeader } from '@/components/ui/lux';
+import { Signup, Player } from '@/api/entities';
 
 const WAITING_ROWS = 6;
+
+const DAY_LABELS = { sunday: 'יום ראשון', wednesday: 'יום רביעי', thursday: 'יום חמישי' };
 
 const DEFAULTS = {
   headers: { sunday: 'יום ראשון', wednesday: 'יום רביעי', thursday: 'יום חמישי' },
@@ -88,6 +94,19 @@ function EditableHeader({ value, color, onChange }) {
 
 export default function Lists() {
   const [data, setData] = useState(load);
+  const [busyId, setBusyId] = useState(null);
+  const queryClient = useQueryClient();
+
+  // Live signups from the SignupPage flow
+  const { data: signups = [] } = useQuery({
+    queryKey: ['signups'],
+    queryFn: () => Signup.list('-created_date'),
+    refetchInterval: 10000,
+  });
+  const { data: players = [] } = useQuery({
+    queryKey: ['players'],
+    queryFn: () => Player.list(),
+  });
 
   const handleRowChange = useCallback((day, idx, value) => {
     setData(prev => {
@@ -117,51 +136,160 @@ export default function Lists() {
     });
   }, []);
 
+  // Confirm a signup: send push to player + add name to first empty main row + delete signup
+  const handleConfirmSignup = async (signup) => {
+    setBusyId(signup.id);
+    try {
+      // Add to main list at first empty slot
+      setData(prev => {
+        const rows = [...prev.rows[signup.day]];
+        const emptyIdx = rows.findIndex(r => !r || !r.trim());
+        if (emptyIdx >= 0) {
+          rows[emptyIdx] = signup.player_name;
+        } else {
+          rows.push(signup.player_name);
+        }
+        const next = { ...prev, rows: { ...prev.rows, [signup.day]: rows } };
+        persist(next);
+        return next;
+      });
+
+      // Send push to player
+      const player = players.find(p => p.id === signup.player_id);
+      const email = player?.email || signup.user_email;
+      if (email && email !== 'unknown') {
+        try {
+          const res = await fetch('/api/send-notification', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              targetEmail: email,
+              title: 'סינתטיקו חולון — אתה בפנים! ✅',
+              body: `${signup.player_name}, הגעתך ל${DAY_LABELS[signup.day]} אושרה`,
+              url: '/',
+            }),
+          });
+          if (!res.ok) console.warn('[push to player] failed', await res.text());
+        } catch (e) { console.warn('[push to player]', e); }
+      }
+
+      // Remove from signups
+      await Signup.delete(signup.id);
+      queryClient.invalidateQueries({ queryKey: ['signups'] });
+      toast.success(`${signup.player_name} אושר ונוסף לרשימה!`);
+    } catch (e) {
+      console.error('[confirm signup]', e);
+      toast.error('שגיאה באישור');
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const handleDeleteSignup = async (signup) => {
+    setBusyId(signup.id);
+    try {
+      await Signup.delete(signup.id);
+      queryClient.invalidateQueries({ queryKey: ['signups'] });
+      toast.info(`${signup.player_name} הוסר`);
+    } finally {
+      setBusyId(null);
+    }
+  };
+
   return (
     <div className="pb-10" dir="rtl">
       <PageHeader icon={ClipboardList} title="רשימות" subtitle="רשימות נוכחות לפי יום" accent="amber" />
 
       <div className="p-4">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {DAYS.map(({ key, color, ring, bg }) => (
-            <div key={key} className={`rounded-2xl bg-slate-900/70 ring-1 ${ring} overflow-hidden`}>
-              <div className={`bg-gradient-to-l ${bg} px-4 py-3 flex items-center justify-between border-b border-white/8 gap-2`}>
-                <EditableHeader value={data.headers[key]} color={color} onChange={val => handleHeaderChange(key, val)} />
-                <button onClick={() => resetDay(key)} title="אפס לרשימת הקבועים"
-                  className="grid place-items-center w-8 h-8 rounded-lg bg-slate-800/60 text-slate-500 hover:text-amber-400 active:scale-95 transition-all shrink-0">
-                  <RotateCcw className="w-3.5 h-3.5" />
-                </button>
-              </div>
-
-              <div className="divide-y divide-white/5">
-                {data.rows[key].map((name, i) => (
-                  <div key={i} className="flex items-center gap-3 px-3 py-1.5">
-                    <span className="text-ink-3 text-xs font-black tnum w-5 shrink-0 text-center">{i + 1}</span>
-                    <input type="text" value={name} onChange={e => handleRowChange(key, i, e.target.value)}
-                      placeholder="—"
-                      className="flex-1 bg-transparent text-white text-sm font-bold placeholder:text-white/15 outline-none py-1 min-w-0" dir="rtl" />
-                  </div>
-                ))}
-              </div>
-
-              <div className="border-t border-white/5 bg-slate-800/40">
-                <div className="px-3 py-2.5 text-ink-2 text-xs font-black tracking-wide flex items-center gap-2">
-                  <span className="w-5 shrink-0" />
-                  <span>ממתינים</span>
+          {DAYS.map(({ key, color, ring, bg }) => {
+            const daySignups = signups.filter(s => s.day === key);
+            return (
+              <div key={key} className={`rounded-2xl bg-slate-900/70 ring-1 ${ring} overflow-hidden`}>
+                <div className={`bg-gradient-to-l ${bg} px-4 py-3 flex items-center justify-between border-b border-white/8 gap-2`}>
+                  <EditableHeader value={data.headers[key]} color={color} onChange={val => handleHeaderChange(key, val)} />
+                  <button onClick={() => resetDay(key)} title="אפס לרשימת הקבועים"
+                    className="grid place-items-center w-8 h-8 rounded-lg bg-slate-800/60 text-slate-500 hover:text-amber-400 active:scale-95 transition-all shrink-0">
+                    <RotateCcw className="w-3.5 h-3.5" />
+                  </button>
                 </div>
+
+                {/* Main 18 rows */}
                 <div className="divide-y divide-white/5">
-                  {data.waiting[key].map((name, i) => (
+                  {data.rows[key].map((name, i) => (
                     <div key={i} className="flex items-center gap-3 px-3 py-1.5">
-                      <span className="w-5 shrink-0" />
-                      <input type="text" value={name} onChange={e => handleWaitingChange(key, i, e.target.value)}
+                      <span className="text-ink-3 text-xs font-black tnum w-5 shrink-0 text-center">{i + 1}</span>
+                      <input type="text" value={name} onChange={e => handleRowChange(key, i, e.target.value)}
                         placeholder="—"
-                        className="flex-1 bg-transparent text-slate-300 text-sm font-bold placeholder:text-white/10 outline-none py-1 min-w-0" dir="rtl" />
+                        className="flex-1 bg-transparent text-white text-sm font-bold placeholder:text-white/15 outline-none py-1 min-w-0" dir="rtl" />
                     </div>
                   ))}
                 </div>
+
+                {/* Waiting section */}
+                <div className="border-t border-white/5 bg-slate-800/40">
+                  <div className="px-3 py-2.5 text-ink-2 text-xs font-black tracking-wide flex items-center gap-2">
+                    <Clock className="w-3 h-3 text-amber-400" />
+                    <span>ממתינים</span>
+                    {daySignups.length > 0 && (
+                      <span className="grid place-items-center min-w-[20px] h-5 px-1.5 rounded-full bg-amber-500/20 ring-1 ring-amber-400/30 text-amber-300 text-[0.6rem] font-black tnum">
+                        {daySignups.length}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Live signups from the SignupPage flow */}
+                  <AnimatePresence>
+                    {daySignups.map(signup => {
+                      const busy = busyId === signup.id;
+                      return (
+                        <motion.div
+                          key={signup.id}
+                          layout
+                          initial={{ opacity: 0, y: -6 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, x: -10 }}
+                          className="px-3 py-2.5 bg-amber-500/8 border-t border-amber-400/15"
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0 animate-pulse" />
+                            <p className="flex-1 text-amber-200 text-sm font-black truncate">{signup.player_name}</p>
+                            <button onClick={() => handleConfirmSignup(signup)} disabled={busy}
+                              title="אשר הגעה ושלח פוש לשחקן"
+                              className="grid place-items-center w-7 h-7 rounded-lg bg-emerald-500/20 ring-1 ring-emerald-500/30 text-emerald-300 active:scale-95 disabled:opacity-50 transition-all">
+                              {busy
+                                ? <div className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin" />
+                                : <CheckCircle2 className="w-3.5 h-3.5" />}
+                            </button>
+                            <button onClick={() => handleDeleteSignup(signup)} disabled={busy}
+                              title="הסר רישום"
+                              className="grid place-items-center w-7 h-7 rounded-lg bg-slate-700/60 ring-1 ring-white/8 text-slate-500 hover:text-rose-400 active:scale-95 disabled:opacity-50 transition-all">
+                              <XIcon className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                          {signup.note && (
+                            <p className="text-slate-400 text-[0.7rem] font-medium leading-snug mt-1 pr-3.5">"{signup.note}"</p>
+                          )}
+                        </motion.div>
+                      );
+                    })}
+                  </AnimatePresence>
+
+                  {/* Manual editable waiting rows */}
+                  <div className="divide-y divide-white/5">
+                    {data.waiting[key].map((name, i) => (
+                      <div key={i} className="flex items-center gap-3 px-3 py-1.5">
+                        <span className="w-5 shrink-0" />
+                        <input type="text" value={name} onChange={e => handleWaitingChange(key, i, e.target.value)}
+                          placeholder="—"
+                          className="flex-1 bg-transparent text-slate-300 text-sm font-bold placeholder:text-white/10 outline-none py-1 min-w-0" dir="rtl" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>
