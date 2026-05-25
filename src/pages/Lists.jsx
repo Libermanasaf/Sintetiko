@@ -7,9 +7,9 @@ import { PageHeader } from '@/components/ui/lux';
 import { Signup, Player } from '@/api/entities';
 import { supabase } from '@/lib/supabase';
 
-const SIGNUPS_TABLE_SQL = `CREATE TABLE signups (
+const SIGNUPS_TABLE_SQL = `CREATE TABLE IF NOT EXISTS signups (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  player_id UUID,
+  player_id TEXT,
   player_name TEXT NOT NULL,
   user_email TEXT NOT NULL,
   day TEXT NOT NULL,
@@ -18,7 +18,9 @@ const SIGNUPS_TABLE_SQL = `CREATE TABLE signups (
   created_date TIMESTAMPTZ DEFAULT NOW(),
   updated_date TIMESTAMPTZ DEFAULT NOW()
 );
-ALTER TABLE signups DISABLE ROW LEVEL SECURITY;`;
+ALTER TABLE signups DISABLE ROW LEVEL SECURITY;
+-- If the table already existed with player_id as UUID, run also:
+ALTER TABLE signups ALTER COLUMN player_id TYPE TEXT;`;
 
 const WAITING_ROWS = 6;
 
