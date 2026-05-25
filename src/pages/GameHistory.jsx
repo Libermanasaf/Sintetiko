@@ -189,9 +189,12 @@ export default function GameHistory() {
   const updateRoundMutation = useMutation({
     mutationFn: ({ roundId, teamWins, winningTeam }) =>
       Round.update(roundId, { teamWins, winningTeam }),
-    onSuccess: () => {
+    onSuccess: (_, { teamWins }) => {
       queryClient.invalidateQueries({ queryKey: ['rounds'] });
       toast.success('התוצאות עודכנו בהצלחה');
+      if (selectedRound) {
+        setResultsSummary(buildSummary(selectedRound, players, teamWins));
+      }
       setEditingRound(null);
     },
   });
@@ -289,8 +292,6 @@ export default function GameHistory() {
     if (playerUpdates.length) {
       await updatePlayersMutation.mutateAsync(playerUpdates);
     }
-
-    setResultsSummary(buildSummary(selectedRound, players, tempWins));
   };
 
   const handleGoalChange = async (newCount) => {
