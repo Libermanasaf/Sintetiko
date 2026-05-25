@@ -139,9 +139,11 @@ export default function Home() {
       const cutoff = new Date();
       cutoff.setDate(cutoff.getDate() - 3);
       cutoff.setHours(0, 0, 0, 0);
-      // Admin sees the latest round from the past 3 days regardless of result status
+      // Admin sees only active (unfinished) rounds
       return rounds.find(r =>
         Array.isArray(r.openingTeams) && r.openingTeams.length >= 2 &&
+        r.winningTeam == null &&
+        !r.victoryPhoto &&
         new Date(r.date) >= cutoff
       ) || null;
     },
