@@ -18,6 +18,55 @@ const TEAM_COLORS = [
   { name: 'הכתומים', text: 'text-orange-300' },
 ];
 
+function buildSummary(round, players, tempWins) {
+  const NAMES = ['הצהובים', 'הכחולים', 'הכתומים'];
+
+  const dateStr = new Date(round.date).toLocaleDateString('he-IL', {
+    day: 'numeric', month: 'long', year: 'numeric',
+  });
+
+  const winsArr = (round.teams || []).map((_, i) => tempWins[i] || 0);
+  const maxWins = Math.max(...winsArr, 0);
+  const winnerIdxs = winsArr.map((w, i) => ({ w, i })).filter(x => x.w === maxWins && x.w > 0);
+
+  const scorers = Object.entries(round.player_goals || {})
+    .filter(([, g]) => g > 0)
+    .sort(([, a], [, b]) => b - a)
+    .map(([pid, goals]) => ({ name: players.find(p => p.id === pid)?.name || 'שחקן', goals }));
+
+  const totalGoals = scorers.reduce((s, x) => s + x.goals, 0);
+
+  const teamResults = winsArr.map((w, i) =>
+    `${NAMES[i] || `קבוצה ${i + 1}`} — ${w} ${w === 1 ? 'ניצחון' : 'ניצחונות'}`
+  ).join(', ');
+
+  let text = `מחזור ${dateStr}. ${teamResults}. `;
+
+  if (winnerIdxs.length === 1) {
+    text += `${NAMES[winnerIdxs[0].i]} סיימו את הערב כמנצחות עם ${winnerIdxs[0].w} ניצחונות. `;
+  } else if (winnerIdxs.length > 1) {
+    text += `הערב הסתיים בתיקו בין ${winnerIdxs.map(x => NAMES[x.i]).join(' ל')}. `;
+  } else {
+    text += 'לא נרשמו ניצחונות הערב. ';
+  }
+
+  if (scorers.length === 0) {
+    text += 'לא נרשמו גולים במהלך הערב.';
+  } else {
+    text += `סה"כ ${totalGoals} ${totalGoals === 1 ? 'גול' : 'גולים'} הערב. `;
+    const top = scorers[0];
+    if (scorers.length === 1) {
+      text += `${top.name} היה הכובש היחיד עם ${top.goals} ${top.goals === 1 ? 'גול' : 'גולים'}.`;
+    } else {
+      text += `בולט הערב: ${top.name} עם ${top.goals} ${top.goals === 1 ? 'גול' : 'גולים'}`;
+      const rest = scorers.slice(1).map(s => `${s.name} (${s.goals})`).join(', ');
+      text += `. כובשים נוספים: ${rest}.`;
+    }
+  }
+
+  return text;
+}
+
 function GoalEditorSheet({ open, player, teamIndex, currentGoals, onClose, onChange, saving }) {
   if (typeof document === 'undefined') return null;
   const t = teamIndex != null ? TEAM_COLORS[teamIndex % 3] : null;
@@ -241,23 +290,7 @@ export default function GameHistory() {
       await updatePlayersMutation.mutateAsync(playerUpdates);
     }
 
-    // Build computed summary
-    const teamsInfo = (selectedRound.teams || []).map((_, i) => ({
-      name: TEAM[i % 3].name,
-      text: TEAM[i % 3].text,
-      wins: tempWins[i] || 0,
-    }));
-    const topScorers = Object.entries(selectedRound.player_goals || {})
-      .filter(([, g]) => g > 0)
-      .sort(([, a], [, b]) => b - a)
-      .slice(0, 5)
-      .map(([pid, goals]) => ({ name: players.find(p => p.id === pid)?.name || 'שחקן', goals }));
-    setResultsSummary({
-      winnerName: winningTeam !== null ? TEAM[winningTeam % 3].name : 'תיקו',
-      isDraw: winningTeam === null,
-      teamsInfo,
-      topScorers,
-    });
+    setResultsSummary(buildSummary(selectedRound, players, tempWins));
   };
 
   const handleGoalChange = async (newCount) => {
@@ -431,7 +464,7 @@ export default function GameHistory() {
                           <div className="grid place-items-center w-7 h-7 rounded-lg bg-emerald-500/20 ring-1 ring-emerald-400/30 shrink-0">
                             <Trophy className="w-3.5 h-3.5 text-emerald-300" />
                           </div>
-                          <span className="font-black text-white text-sm">סיכום עדכון תוצאות</span>
+                          <span className="font-black text-white text-sm">סיכום המחזור</span>
                         </div>
                         <button
                           onClick={() => setResultsSummary(null)}
@@ -441,44 +474,9 @@ export default function GameHistory() {
                           <X className="w-3.5 h-3.5" />
                         </button>
                       </div>
-
-                      {/* Winner */}
-                      <div className={`flex items-center gap-2 mb-3 px-3 py-2 rounded-xl ${resultsSummary.isDraw ? 'bg-slate-700/50' : 'bg-amber-500/15 ring-1 ring-amber-400/25'}`}>
-                        <Trophy className={`w-4 h-4 shrink-0 ${resultsSummary.isDraw ? 'text-slate-400' : 'text-amber-400'}`} />
-                        <span className={`font-black text-sm ${resultsSummary.isDraw ? 'text-slate-300' : 'text-amber-200'}`}>
-                          {resultsSummary.isDraw ? 'תיקו — אין מנצחת' : `מנצחת: ${resultsSummary.winnerName}`}
-                        </span>
-                      </div>
-
-                      {/* Wins per team */}
-                      <div className="flex gap-2 mb-3">
-                        {resultsSummary.teamsInfo.map((t, i) => (
-                          <div key={i} className="flex-1 flex flex-col items-center gap-0.5 bg-slate-800/60 rounded-xl py-2">
-                            <span className={`text-[0.68rem] font-black ${t.text}`}>{t.name}</span>
-                            <span className="text-white font-black text-xl tnum">{t.wins}</span>
-                            <span className="text-ink-3 text-[0.6rem] font-bold">ניצחונות</span>
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* Top scorers */}
-                      {resultsSummary.topScorers.length > 0 && (
-                        <div className="space-y-1.5">
-                          <p className="text-ink-3 text-[0.65rem] font-black flex items-center gap-1">
-                            <Target className="w-3 h-3 text-amber-400" />
-                            כובשים
-                          </p>
-                          {resultsSummary.topScorers.map((s, i) => (
-                            <div key={i} className="flex items-center justify-between px-2 py-1 rounded-lg bg-slate-800/50">
-                              <span className="text-slate-200 text-xs font-bold">{s.name}</span>
-                              <div className="flex items-center gap-1">
-                                <Target className="w-3 h-3 text-amber-400" strokeWidth={2.4} />
-                                <span className="text-amber-300 font-black text-xs tnum">{s.goals}</span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                      <p className="text-slate-200 text-sm font-medium leading-relaxed" dir="rtl">
+                        {resultsSummary}
+                      </p>
                     </motion.div>
                   )}
                 </AnimatePresence>
