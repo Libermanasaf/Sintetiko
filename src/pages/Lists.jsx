@@ -10,6 +10,8 @@ const DEFAULT_PLAYERS = [
   'בר ממן', 'דוד דסלין',
 ];
 
+const WAITING_ROWS = 6;
+
 const DAYS = [
   { key: 'sunday',    color: 'text-amber-300',   ring: 'ring-amber-400/30',   bg: 'from-amber-500/15 to-amber-600/5',   defaultLabel: 'יום ראשון' },
   { key: 'wednesday', color: 'text-blue-300',     ring: 'ring-blue-400/30',    bg: 'from-blue-500/15 to-blue-600/5',     defaultLabel: 'יום רביעי' },
@@ -26,6 +28,11 @@ function getDefaults() {
       wednesday: [...DEFAULT_PLAYERS],
       thursday:  [...DEFAULT_PLAYERS],
     },
+    waiting: {
+      sunday:    Array(WAITING_ROWS).fill(''),
+      wednesday: Array(WAITING_ROWS).fill(''),
+      thursday:  Array(WAITING_ROWS).fill(''),
+    },
   };
 }
 
@@ -34,7 +41,7 @@ function load() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (parsed.rows && parsed.headers) return parsed;
+      if (parsed.rows && parsed.headers && parsed.waiting) return parsed;
     }
   } catch {}
   return getDefaults();
@@ -110,6 +117,17 @@ export default function Lists() {
     });
   }, []);
 
+  const handleWaitingChange = useCallback((day, idx, value) => {
+    setData(prev => {
+      const next = {
+        ...prev,
+        waiting: { ...prev.waiting, [day]: prev.waiting[day].map((v, i) => i === idx ? value : v) },
+      };
+      persist(next);
+      return next;
+    });
+  }, []);
+
   const handleHeaderChange = useCallback((day, value) => {
     setData(prev => {
       const next = { ...prev, headers: { ...prev.headers, [day]: value } };
@@ -120,7 +138,11 @@ export default function Lists() {
 
   const resetDay = useCallback((day) => {
     setData(prev => {
-      const next = { ...prev, rows: { ...prev.rows, [day]: [...DEFAULT_PLAYERS] } };
+      const next = {
+        ...prev,
+        rows: { ...prev.rows, [day]: [...DEFAULT_PLAYERS] },
+        waiting: { ...prev.waiting, [day]: Array(WAITING_ROWS).fill('') },
+      };
       persist(next);
       return next;
     });
@@ -150,10 +172,10 @@ export default function Lists() {
                 </button>
               </div>
 
-              {/* Rows */}
+              {/* Main Players List */}
               <div className="divide-y divide-white/5">
                 {data.rows[key].map((name, i) => (
-                  <div key={i} className="flex items-center gap-3 px-3 py-1.5">
+                  <div key={`main-${i}`} className="flex items-center gap-3 px-3 py-1.5">
                     <span className="text-ink-3 text-xs font-black tnum w-5 shrink-0 text-center">{i + 1}</span>
                     <input
                       type="text"
@@ -164,6 +186,29 @@ export default function Lists() {
                     />
                   </div>
                 ))}
+              </div>
+
+              {/* Waiting Section */}
+              <div className="border-t border-white/5 bg-slate-800/40">
+                <div className="px-3 py-2.5 text-ink-2 text-xs font-black tracking-wide flex items-center gap-2">
+                  <span className="w-5 shrink-0" />
+                  <span>ממתינים</span>
+                </div>
+                <div className="divide-y divide-white/5">
+                  {data.waiting[key].map((name, i) => (
+                    <div key={`waiting-${i}`} className="flex items-center gap-3 px-3 py-1.5">
+                      <span className="text-ink-3 text-xs font-black tnum w-5 shrink-0 text-center" />
+                      <input
+                        type="text"
+                        value={name}
+                        onChange={e => handleWaitingChange(key, i, e.target.value)}
+                        placeholder="—"
+                        className="flex-1 bg-transparent text-slate-300 text-sm font-bold placeholder:text-white/10 outline-none py-1 min-w-0"
+                        dir="rtl"
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           ))}
