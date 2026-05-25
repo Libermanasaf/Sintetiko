@@ -229,6 +229,18 @@ export default function Lists() {
     }
   };
 
+  const copyDayList = async (day) => {
+    const header = data.headers[day] || '';
+    const lines = data.rows[day].map((name, i) => `${i + 1}. ${name || ''}`.replace(/\s+$/, ''));
+    const text = [header, '', ...lines, '', 'ביטול אחרי 12:00 יחויב בתשלום'].join('\n');
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success('הרשימה הועתקה ללוח!');
+    } catch {
+      toast.error('לא ניתן להעתיק');
+    }
+  };
+
   const handleRowChange = useCallback((day, idx, value) => {
     setData(prev => {
       const next = { ...prev, rows: { ...prev.rows, [day]: prev.rows[day].map((v, i) => i === idx ? value : v) } };
@@ -364,10 +376,16 @@ export default function Lists() {
               <div key={key} className={`rounded-2xl bg-slate-900/70 ring-1 ${ring} overflow-hidden`}>
                 <div className={`bg-gradient-to-l ${bg} px-4 py-3 flex items-center justify-between border-b border-white/8 gap-2`}>
                   <EditableHeader value={data.headers[key]} color={color} onChange={val => handleHeaderChange(key, val)} />
-                  <button onClick={() => resetDay(key)} title="אפס לרשימת הקבועים"
-                    className="grid place-items-center w-8 h-8 rounded-lg bg-slate-800/60 text-slate-500 hover:text-amber-400 active:scale-95 transition-all shrink-0">
-                    <RotateCcw className="w-3.5 h-3.5" />
-                  </button>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button onClick={() => copyDayList(key)} title="העתק רשימה ל-WhatsApp"
+                      className="grid place-items-center w-8 h-8 rounded-lg bg-slate-800/60 text-slate-500 hover:text-emerald-400 active:scale-95 transition-all">
+                      <Copy className="w-3.5 h-3.5" />
+                    </button>
+                    <button onClick={() => resetDay(key)} title="אפס לרשימת הקבועים"
+                      className="grid place-items-center w-8 h-8 rounded-lg bg-slate-800/60 text-slate-500 hover:text-amber-400 active:scale-95 transition-all">
+                      <RotateCcw className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
 
                 {/* Main 18 rows */}
