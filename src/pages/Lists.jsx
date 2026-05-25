@@ -11,7 +11,7 @@ const DAYS = [
   { key: 'thursday',  color: 'text-emerald-300',  ring: 'ring-emerald-400/30', bg: 'from-emerald-500/15 to-emerald-600/5', defaultLabel: 'יום חמישי' },
 ];
 
-const STORAGE_KEY = 'sintetiko_lists';
+const STORAGE_KEY = 'sintetiko_lists_v2';
 
 function getDefaults() {
   return {
