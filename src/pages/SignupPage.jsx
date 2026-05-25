@@ -23,8 +23,11 @@ function PlayerRegistration({ players, user, signups, role }) {
   const [selectedPlayerId, setSelectedPlayerId] = useState('');
   const [note, setNote] = useState('');
   const [done, setDone] = useState(false);
+  const [errorMsg, setErrorMsg] = useState(null);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+
+  const isAdminUser = role === 'admin' || user?.email?.toLowerCase() === ADMIN_EMAIL;
 
   const registeredDays = useMemo(() =>
     new Set((signups || [])
@@ -60,37 +63,41 @@ function PlayerRegistration({ players, user, signups, role }) {
       queryClient.invalidateQueries({ queryKey: ['signups'] });
       const dayLabel = DAYS.find(d => d.key === vars.day)?.label || '';
       sendAdminPush(vars.player_name, dayLabel);
+      setErrorMsg(null);
       setDone(true);
     },
     onError: (e) => {
       console.error('[signup]', e);
+      setErrorMsg(e?.message || 'שגיאה לא ידועה');
       toast.error('שגיאה ברישום — נסה שוב');
     },
   });
 
   const handleSubmit = () => {
-    if (!selectedDay || !selectedPlayerId) return;
+    setErrorMsg(null);
+    if (!selectedDay) { setErrorMsg('יש לבחור יום'); return; }
+    if (!selectedPlayerId) { setErrorMsg('יש לבחור שם שחקן'); return; }
     const player = players.find(p => p.id === selectedPlayerId);
-    if (!player) return;
+    if (!player) { setErrorMsg('שחקן לא נמצא'); return; }
 
-    // Validate: logged-in user must match selected player (skip for admin role)
-    if (role !== 'admin') {
+    // Validate: logged-in user must match selected player (skip for admin)
+    if (!isAdminUser) {
       const emailMatch = player.email?.toLowerCase() === user?.email?.toLowerCase();
       const idMatch = player.user_id && player.user_id === user?.id;
       if (!emailMatch && !idMatch) {
-        toast.error('לא ניתן להירשם בשם שחקן אחר', { description: 'בחר את שמך מהרשימה' });
+        setErrorMsg('לא ניתן להירשם בשם שחקן אחר — בחר את שמך מהרשימה');
         return;
       }
     }
     if (registeredDays.has(selectedDay)) {
-      toast.error('כבר נרשמת ליום זה');
+      setErrorMsg('כבר נרשמת ליום זה');
       return;
     }
 
     createMutation.mutate({
       player_id: player.id,
       player_name: player.name,
-      user_email: user.email.toLowerCase(),
+      user_email: user?.email?.toLowerCase() || 'unknown',
       day: selectedDay,
       note: note.trim(),
       status: 'waiting',
@@ -179,6 +186,18 @@ function PlayerRegistration({ players, user, signups, role }) {
                 : <CheckCircle2 className="w-5 h-5" />}
               {createMutation.isPending ? 'שולח...' : 'אני בפנים!'}
             </button>
+
+            {/* Inline error */}
+            {errorMsg && (
+              <motion.div
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="rounded-xl bg-rose-900/40 ring-1 ring-rose-500/40 px-4 py-3 flex items-start gap-2"
+              >
+                <X className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                <p className="text-rose-200 text-xs font-bold leading-snug">{errorMsg}</p>
+              </motion.div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
