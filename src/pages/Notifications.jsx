@@ -12,6 +12,9 @@ function isIOS() {
 function isAndroid() {
   return /Android/.test(navigator.userAgent);
 }
+function isPWA() {
+  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+}
 function readPermission() {
   return typeof Notification !== 'undefined' ? Notification.permission : 'denied';
 }
@@ -68,6 +71,7 @@ export default function Notifications() {
 
   const ios = isIOS();
   const android = isAndroid();
+  const pwa = isPWA();
 
   return (
     <div className="pb-10" dir="rtl">
@@ -210,10 +214,34 @@ export default function Notifications() {
               </div>
               <ol className="space-y-2.5">
                 {(ios
-                  ? ['פתח את אפליקציית ״הגדרות״', 'גלול מטה ובחר ״Safari״', 'לחץ על ״הגדרות לאתרים״ ← ״התראות״', 'מצא את sintetiko.vercel.app ושנה ל-״אפשר״', 'חזור לאפליקציה ולחץ ״בדוק שוב״']
+                  ? [
+                      'פתח את אפליקציית ״הגדרות״',
+                      'גלול מטה ובחר ״Safari״',
+                      'לחץ על ״הגדרות לאתרים״ ← ״התראות״',
+                      'מצא את sintetiko.vercel.app ושנה ל-״אפשר״',
+                      'חזור לאפליקציה ולחץ ״בדוק שוב״',
+                    ]
+                  : android && pwa
+                    ? [
+                        'פתח את Chrome (הדפדפן הרגיל, לא האפליקציה)',
+                        'הקלד בסרגל הכתובת: sintetiko.vercel.app',
+                        'לחץ על סמל המנעול ← ״הרשאות״ ← ״התראות״',
+                        'שנה ל-״אפשר״',
+                        'חזור לאפליקציה ולחץ ״בדוק שוב״',
+                      ]
                   : android
-                    ? ['לחץ על סמל המנעול בסרגל הכתובת', 'בחר ״הרשאות אתר״', 'לחץ על ״התראות״ ושנה ל-״אפשר״', 'חזור ולחץ ״בדוק שוב״']
-                    : ['לחץ על סמל המנעול בשורת הכתובת', 'בחר ״הגדרות אתר״ ← ״התראות״', 'שנה ל-״אפשר״', 'חזור ולחץ ״בדוק שוב״']
+                    ? [
+                        'לחץ על סמל המנעול בסרגל הכתובת',
+                        'בחר ״הרשאות אתר״',
+                        'לחץ על ״התראות״ ושנה ל-״אפשר״',
+                        'חזור ולחץ ״בדוק שוב״',
+                      ]
+                    : [
+                        'לחץ על סמל המנעול בשורת הכתובת',
+                        'בחר ״הגדרות אתר״ ← ״התראות״',
+                        'שנה ל-״אפשר״',
+                        'חזור ולחץ ״בדוק שוב״',
+                      ]
                 ).map((step, i) => (
                   <li key={i} className="flex items-start gap-2.5 text-sm">
                     <span className="grid place-items-center w-5 h-5 rounded-full bg-amber-500/20 ring-1 ring-amber-400/30 text-amber-300 font-black text-[0.62rem] shrink-0 mt-0.5">
