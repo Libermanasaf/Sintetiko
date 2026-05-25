@@ -451,8 +451,8 @@ export default function GameHistory() {
                   </div>
                 )}
 
-                {/* Computed results summary — appears after saving */}
-                <AnimatePresence>
+                {/* Computed results summary — admin only */}
+                {isAdmin && <AnimatePresence>
                   {resultsSummary && (
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
@@ -480,7 +480,7 @@ export default function GameHistory() {
                       </p>
                     </motion.div>
                   )}
-                </AnimatePresence>
+                </AnimatePresence>}
 
                 {/* Teams */}
                 <SectionTitle icon={Trophy}>הרכבי הקבוצות</SectionTitle>
