@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Round, Player, uploadFile } from '@/api/entities';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { History, Trophy, User, Star, Shield, Plus, Minus, Save, ArrowLeftRight, Camera, Upload, X, CalendarDays, Target, Sparkles } from 'lucide-react';
+import { History, Trophy, User, Star, Shield, Plus, Minus, Save, ArrowLeftRight, Camera, Upload, X, CalendarDays, Target } from 'lucide-react';
 import { isSameDay } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { Calendar } from '@/components/ui/calendar';
@@ -125,9 +125,7 @@ export default function GameHistory() {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState(null); // { player, teamIndex }
   const [savingGoals, setSavingGoals] = useState(false);
-  const [aiSummary, setAiSummary] = useState(null);
-  const [generatingSummary, setGeneratingSummary] = useState(false);
-  const [summaryError, setSummaryError] = useState(null);
+  const [resultsSummary, setResultsSummary] = useState(null);
   const queryClient = useQueryClient();
 
   const { data: rounds = [], isLoading } = useQuery({
@@ -170,51 +168,11 @@ export default function GameHistory() {
     ? rounds.find(round => isSameDay(new Date(round.date), selectedDate))
     : null;
 
-  // Load persisted summary when round changes
-  useEffect(() => {
-    setAiSummary(selectedRound?.ai_summary || null);
-  }, [selectedRound?.id]);
-
   const handleDateSelect = (date) => {
     setSelectedDate(date);
     setEditingPlayer(null);
     setEditingRound(null);
-    setAiSummary(null);
-  };
-
-  const handleGenerateSummary = async () => {
-    if (!selectedRound) return;
-    setSummaryError(null);
-    setGeneratingSummary(true);
-    try {
-      const playerNames = {};
-      players.forEach(p => { playerNames[p.id] = p.name; });
-      const res = await fetch('/api/summarize-game', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          roundId: selectedRound.id,
-          date: selectedRound.date,
-          teams: selectedRound.teams,
-          teamWins: selectedRound.teamWins,
-          winningTeam: selectedRound.winningTeam,
-          playerGoals: selectedRound.player_goals,
-          playerNames,
-        }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || `שגיאת שרת ${res.status}`);
-      if (!data.summary) throw new Error('לא התקבל סיכום מה-AI');
-      setAiSummary(data.summary);
-      queryClient.invalidateQueries({ queryKey: ['rounds'] });
-      toast.success('הסיכום נוצר בהצלחה!');
-    } catch (e) {
-      console.error('[AI summary]', e.message);
-      setSummaryError(e.message);
-      toast.error('שגיאה ביצירת הסיכום', { description: e.message });
-    } finally {
-      setGeneratingSummary(false);
-    }
+    setResultsSummary(null);
   };
 
   const handlePhotoUpload = async (e) => {
@@ -282,6 +240,24 @@ export default function GameHistory() {
     if (playerUpdates.length) {
       await updatePlayersMutation.mutateAsync(playerUpdates);
     }
+
+    // Build computed summary
+    const teamsInfo = (selectedRound.teams || []).map((_, i) => ({
+      name: TEAM[i % 3].name,
+      text: TEAM[i % 3].text,
+      wins: tempWins[i] || 0,
+    }));
+    const topScorers = Object.entries(selectedRound.player_goals || {})
+      .filter(([, g]) => g > 0)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 5)
+      .map(([pid, goals]) => ({ name: players.find(p => p.id === pid)?.name || 'שחקן', goals }));
+    setResultsSummary({
+      winnerName: winningTeam !== null ? TEAM[winningTeam % 3].name : 'תיקו',
+      isDraw: winningTeam === null,
+      teamsInfo,
+      topScorers,
+    });
   };
 
   const handleGoalChange = async (newCount) => {
@@ -395,28 +371,6 @@ export default function GameHistory() {
                       לחץ על שחקן לעריכת גולים
                     </p>
 
-                    {/* AI Summary button — only when no summary yet */}
-                    {!aiSummary && (
-                      <div className="space-y-2">
-                        <button
-                          onClick={handleGenerateSummary}
-                          disabled={generatingSummary}
-                          className="w-full flex items-center justify-center gap-2 min-h-[48px] rounded-xl bg-gradient-to-l from-violet-900/40 to-indigo-900/40 ring-1 ring-violet-400/30 text-violet-200 font-black text-sm active:scale-[0.98] hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed transition-all touch-manipulation"
-                        >
-                          {generatingSummary
-                            ? <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                            : <Sparkles className="w-4 h-4 text-violet-300" />
-                          }
-                          {generatingSummary ? 'מייצר סיכום...' : '✨ צור סיכום AI'}
-                        </button>
-                        {summaryError && (
-                          <div className="rounded-xl bg-rose-900/30 ring-1 ring-rose-500/30 px-3 py-2.5 text-rose-300 text-xs font-bold" dir="ltr">
-                            ❌ {summaryError}
-                          </div>
-                        )}
-                      </div>
-                    )}
-
                     <div className="rounded-2xl bg-slate-900/60 ring-1 ring-white/8 overflow-hidden">
                       <div className="flex items-center gap-2 px-4 py-3 border-b border-white/8">
                         <Camera className="w-4 h-4 text-amber-400" strokeWidth={2.4} />
@@ -463,35 +417,71 @@ export default function GameHistory() {
                   </div>
                 )}
 
-                {/* AI Summary card — visible to all */}
-                {aiSummary && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="rounded-2xl bg-gradient-to-br from-violet-900/35 to-indigo-900/20 ring-1 ring-violet-400/25 p-4"
-                  >
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="grid place-items-center w-7 h-7 rounded-lg bg-violet-500/20 ring-1 ring-violet-400/30 shrink-0">
-                        <Sparkles className="w-3.5 h-3.5 text-violet-300" />
-                      </div>
-                      <span className="font-black text-white text-sm">סיכום המשחק</span>
-                      {isAdmin && (
+                {/* Computed results summary — appears after saving */}
+                <AnimatePresence>
+                  {resultsSummary && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
+                      className="rounded-2xl bg-gradient-to-br from-emerald-900/35 to-slate-900/60 ring-1 ring-emerald-400/30 p-4"
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <div className="grid place-items-center w-7 h-7 rounded-lg bg-emerald-500/20 ring-1 ring-emerald-400/30 shrink-0">
+                            <Trophy className="w-3.5 h-3.5 text-emerald-300" />
+                          </div>
+                          <span className="font-black text-white text-sm">סיכום עדכון תוצאות</span>
+                        </div>
                         <button
-                          onClick={handleGenerateSummary}
-                          disabled={generatingSummary}
-                          title="יצור סיכום מחדש"
-                          className="mr-auto grid place-items-center w-7 h-7 rounded-lg bg-slate-700/60 ring-1 ring-white/8 text-slate-400 active:scale-95 transition-transform"
+                          onClick={() => setResultsSummary(null)}
+                          aria-label="סגור סיכום"
+                          className="grid place-items-center w-7 h-7 rounded-lg bg-slate-700/60 ring-1 ring-white/8 text-slate-400 active:scale-95 transition-transform"
                         >
-                          {generatingSummary
-                            ? <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                            : <Sparkles className="w-3.5 h-3.5" />
-                          }
+                          <X className="w-3.5 h-3.5" />
                         </button>
+                      </div>
+
+                      {/* Winner */}
+                      <div className={`flex items-center gap-2 mb-3 px-3 py-2 rounded-xl ${resultsSummary.isDraw ? 'bg-slate-700/50' : 'bg-amber-500/15 ring-1 ring-amber-400/25'}`}>
+                        <Trophy className={`w-4 h-4 shrink-0 ${resultsSummary.isDraw ? 'text-slate-400' : 'text-amber-400'}`} />
+                        <span className={`font-black text-sm ${resultsSummary.isDraw ? 'text-slate-300' : 'text-amber-200'}`}>
+                          {resultsSummary.isDraw ? 'תיקו — אין מנצחת' : `מנצחת: ${resultsSummary.winnerName}`}
+                        </span>
+                      </div>
+
+                      {/* Wins per team */}
+                      <div className="flex gap-2 mb-3">
+                        {resultsSummary.teamsInfo.map((t, i) => (
+                          <div key={i} className="flex-1 flex flex-col items-center gap-0.5 bg-slate-800/60 rounded-xl py-2">
+                            <span className={`text-[0.68rem] font-black ${t.text}`}>{t.name}</span>
+                            <span className="text-white font-black text-xl tnum">{t.wins}</span>
+                            <span className="text-ink-3 text-[0.6rem] font-bold">ניצחונות</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Top scorers */}
+                      {resultsSummary.topScorers.length > 0 && (
+                        <div className="space-y-1.5">
+                          <p className="text-ink-3 text-[0.65rem] font-black flex items-center gap-1">
+                            <Target className="w-3 h-3 text-amber-400" />
+                            כובשים
+                          </p>
+                          {resultsSummary.topScorers.map((s, i) => (
+                            <div key={i} className="flex items-center justify-between px-2 py-1 rounded-lg bg-slate-800/50">
+                              <span className="text-slate-200 text-xs font-bold">{s.name}</span>
+                              <div className="flex items-center gap-1">
+                                <Target className="w-3 h-3 text-amber-400" strokeWidth={2.4} />
+                                <span className="text-amber-300 font-black text-xs tnum">{s.goals}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       )}
-                    </div>
-                    <p className="text-slate-200 text-sm font-medium leading-relaxed whitespace-pre-wrap">{aiSummary}</p>
-                  </motion.div>
-                )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
                 {/* Teams */}
                 <SectionTitle icon={Trophy}>הרכבי הקבוצות</SectionTitle>
