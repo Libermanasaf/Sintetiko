@@ -6,10 +6,9 @@ import {
 import { useAuth } from '@/lib/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { pushSupported } from '@/lib/push';
+import { VAPID_PUBLIC_KEY } from '@/lib/vapidPublic';
 import { PageHeader } from '@/components/ui/lux';
 import { toast } from 'sonner';
-
-const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY;
 
 function urlBase64ToUint8Array(base64String) {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
@@ -77,8 +76,8 @@ export default function PushDiagnostics() {
     );
     setPermission(typeof Notification !== 'undefined' ? Notification.permission : 'unsupported');
 
-    // VAPID public key check
-    setVapidConfigured(!!import.meta.env.VITE_VAPID_PUBLIC_KEY);
+    // VAPID public key check (always true now — it's hardcoded in the source)
+    setVapidConfigured(!!VAPID_PUBLIC_KEY);
 
     // Browser-level subscription
     if (pushSupported()) {
