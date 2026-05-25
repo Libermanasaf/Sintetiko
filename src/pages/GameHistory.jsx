@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Round, Player, uploadFile } from '@/api/entities';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { History, Trophy, User, Star, Shield, Plus, Minus, Save, ArrowLeftRight, Camera, Upload, X, CalendarDays, Target } from 'lucide-react';
+import { History, Trophy, User, Star, Shield, Plus, Minus, Save, ArrowLeftRight, Camera, Upload, X, CalendarDays, Target, Sparkles } from 'lucide-react';
 import { isSameDay } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { Calendar } from '@/components/ui/calendar';
@@ -125,6 +125,8 @@ export default function GameHistory() {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState(null); // { player, teamIndex }
   const [savingGoals, setSavingGoals] = useState(false);
+  const [aiSummary, setAiSummary] = useState(null);
+  const [generatingSummary, setGeneratingSummary] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: rounds = [], isLoading } = useQuery({
@@ -167,10 +169,47 @@ export default function GameHistory() {
     ? rounds.find(round => isSameDay(new Date(round.date), selectedDate))
     : null;
 
+  // Load persisted summary when round changes
+  useEffect(() => {
+    setAiSummary(selectedRound?.ai_summary || null);
+  }, [selectedRound?.id]);
+
   const handleDateSelect = (date) => {
     setSelectedDate(date);
     setEditingPlayer(null);
     setEditingRound(null);
+    setAiSummary(null);
+  };
+
+  const handleGenerateSummary = async () => {
+    if (!selectedRound) return;
+    setGeneratingSummary(true);
+    try {
+      const playerNames = {};
+      players.forEach(p => { playerNames[p.id] = p.name; });
+      const res = await fetch('/api/summarize-game', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          roundId: selectedRound.id,
+          date: selectedRound.date,
+          teams: selectedRound.teams,
+          teamWins: selectedRound.teamWins,
+          winningTeam: selectedRound.winningTeam,
+          playerGoals: selectedRound.player_goals,
+          playerNames,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || `שגיאת שרת ${res.status}`);
+      setAiSummary(data.summary);
+      queryClient.invalidateQueries({ queryKey: ['rounds'] });
+      toast.success('הסיכום נוצר בהצלחה!');
+    } catch (e) {
+      toast.error('שגיאה ביצירת הסיכום', { description: e.message });
+    } finally {
+      setGeneratingSummary(false);
+    }
   };
 
   const handlePhotoUpload = async (e) => {
@@ -351,6 +390,21 @@ export default function GameHistory() {
                       לחץ על שחקן לעריכת גולים
                     </p>
 
+                    {/* AI Summary button — only when no summary yet */}
+                    {!aiSummary && (
+                      <button
+                        onClick={handleGenerateSummary}
+                        disabled={generatingSummary}
+                        className="w-full flex items-center justify-center gap-2 min-h-[48px] rounded-xl bg-gradient-to-l from-violet-900/40 to-indigo-900/40 ring-1 ring-violet-400/30 text-violet-200 font-black text-sm active:scale-[0.98] hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed transition-all touch-manipulation"
+                      >
+                        {generatingSummary
+                          ? <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                          : <Sparkles className="w-4 h-4 text-violet-300" />
+                        }
+                        {generatingSummary ? 'מייצר סיכום...' : '✨ צור סיכום AI'}
+                      </button>
+                    )}
+
                     <div className="rounded-2xl bg-slate-900/60 ring-1 ring-white/8 overflow-hidden">
                       <div className="flex items-center gap-2 px-4 py-3 border-b border-white/8">
                         <Camera className="w-4 h-4 text-amber-400" strokeWidth={2.4} />
@@ -395,6 +449,36 @@ export default function GameHistory() {
                     </div>
                     <img src={selectedRound.victoryPhoto} alt="תמונת ניצחון" loading="lazy" className="w-full object-contain bg-black max-h-72" />
                   </div>
+                )}
+
+                {/* AI Summary card — visible to all */}
+                {aiSummary && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="rounded-2xl bg-gradient-to-br from-violet-900/35 to-indigo-900/20 ring-1 ring-violet-400/25 p-4"
+                  >
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="grid place-items-center w-7 h-7 rounded-lg bg-violet-500/20 ring-1 ring-violet-400/30 shrink-0">
+                        <Sparkles className="w-3.5 h-3.5 text-violet-300" />
+                      </div>
+                      <span className="font-black text-white text-sm">סיכום המשחק</span>
+                      {isAdmin && (
+                        <button
+                          onClick={handleGenerateSummary}
+                          disabled={generatingSummary}
+                          title="יצור סיכום מחדש"
+                          className="mr-auto grid place-items-center w-7 h-7 rounded-lg bg-slate-700/60 ring-1 ring-white/8 text-slate-400 active:scale-95 transition-transform"
+                        >
+                          {generatingSummary
+                            ? <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                            : <Sparkles className="w-3.5 h-3.5" />
+                          }
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-slate-200 text-sm font-medium leading-relaxed whitespace-pre-wrap">{aiSummary}</p>
+                  </motion.div>
                 )}
 
                 {/* Teams */}
