@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, ArrowRight, Trophy, Vote, Target, Plus, Minus, X } from 'lucide-react';
+import { User, ArrowRight, Trophy, Vote, Target, Plus, Minus, X, Swords } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
@@ -47,13 +47,13 @@ function TeamCard({ teamIndex, playerIds, allPlayers, isOpening, isAdmin, onTapP
               }`}
             >
               {p.image ? (
-                <img src={p.image} alt={p.name} loading="lazy" className="w-6 h-6 rounded-full object-cover shrink-0 ring-1 ring-white/10" />
+                <img src={p.image} alt={p.name} loading="lazy" className="w-5 h-5 sm:w-6 sm:h-6 rounded-full object-cover shrink-0 ring-1 ring-white/10" />
               ) : (
-                <div className="grid place-items-center w-6 h-6 rounded-full bg-slate-700 shrink-0">
-                  <User className="w-3 h-3 text-slate-400" />
+                <div className="grid place-items-center w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-slate-700 shrink-0">
+                  <User className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-slate-400" />
                 </div>
               )}
-              <p className="flex-1 text-white text-[0.72rem] font-bold truncate leading-tight">{p.name}</p>
+              <p className="flex-1 text-white text-[0.65rem] sm:text-[0.72rem] font-bold truncate leading-tight">{p.name}</p>
             </RowTag>
           );
         })}
@@ -166,6 +166,66 @@ function GoalEditorSheet({ open, player, teamIndex, currentGoals, onClose, onCha
       )}
     </AnimatePresence>,
     document.body,
+  );
+}
+
+// ─── Live wins tracker (admin only) ──────────────────────────────────────
+function WinsTracker({ teams, teamWins, onWinChange, saving }) {
+  return (
+    <LuxCard accent="emerald" glow>
+      <div className="px-4 pt-3.5 pb-1 text-center">
+        <div className="flex items-center justify-center gap-2">
+          <Swords className="w-4 h-4 text-emerald-400" />
+          <p className="text-white font-black text-sm">ניצחונות</p>
+          <span className="text-[0.6rem] text-emerald-300/70 font-bold">(עדכון חי)</span>
+        </div>
+        <div className="st-rule mt-2.5" />
+      </div>
+      <div className="p-3 pt-2 grid gap-2" style={{ gridTemplateColumns: `repeat(${teams.length}, 1fr)` }}>
+        {teams.map((_, idx) => {
+          const t = teamOf(idx);
+          const wins = teamWins?.[idx] ?? 0;
+          return (
+            <div key={idx} className="flex flex-col items-center gap-1.5">
+              <div className="flex items-center gap-1">
+                <span className={`w-2 h-2 rounded-full shrink-0 ${t.dot}`} />
+                <span className={`text-[0.62rem] font-black ${t.text} truncate`}>{t.name}</span>
+              </div>
+              <motion.span
+                key={wins}
+                initial={{ scale: 0.6, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: 'spring', damping: 16, stiffness: 300 }}
+                className="tnum font-black text-3xl text-white leading-none"
+              >
+                {wins}
+              </motion.span>
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => onWinChange(idx, Math.max(0, wins - 1))}
+                  disabled={saving || wins === 0}
+                  aria-label={`הפחת ניצחון ${t.name}`}
+                  className="grid place-items-center w-10 h-10 rounded-xl bg-rose-500/15 ring-1 ring-rose-500/30 text-rose-300 hover:bg-rose-500/25 active:scale-95 disabled:opacity-40 transition-all cursor-pointer touch-manipulation"
+                >
+                  <Minus className="w-4 h-4" strokeWidth={3} />
+                </button>
+                <button
+                  onClick={() => onWinChange(idx, wins + 1)}
+                  disabled={saving}
+                  aria-label={`הוסף ניצחון ${t.name}`}
+                  className="grid place-items-center w-10 h-10 rounded-xl bg-emerald-500/15 ring-1 ring-emerald-500/30 text-emerald-300 hover:bg-emerald-500/25 active:scale-95 disabled:opacity-50 transition-all cursor-pointer touch-manipulation"
+                >
+                  <Plus className="w-4 h-4" strokeWidth={3} />
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <p className="text-center text-ink-3 text-[0.6rem] font-bold pb-3">
+        {saving ? 'שומר...' : 'הניצחונות נשמרים אוטומטית'}
+      </p>
+    </LuxCard>
   );
 }
 
@@ -296,6 +356,7 @@ export default function MatchDay() {
   const [localVotedIndex, setLocalVotedIndex] = useState(null);
   const [editingPlayer, setEditingPlayer] = useState(null);    // { player, teamIndex }
   const [savingGoals, setSavingGoals] = useState(false);
+  const [savingWins, setSavingWins] = useState(false);
 
   const { data: currentPlayer } = useQuery({
     queryKey: ['my-player', user?.id, user?.email],
@@ -377,6 +438,23 @@ export default function MatchDay() {
   };
 
   const goals = round?.player_goals || {};
+
+  const handleWinsChange = async (teamIndex, newCount) => {
+    const cached = queryClient.getQueryData(['latest-round']);
+    if (!cached) return;
+    const nextWins = { ...(cached.teamWins || {}), [teamIndex]: newCount };
+    queryClient.setQueryData(['latest-round'], { ...cached, teamWins: nextWins });
+    setSavingWins(true);
+    try {
+      await Round.update(cached.id, { teamWins: nextWins });
+      queryClient.invalidateQueries({ queryKey: ['latest-round'] });
+    } catch (e) {
+      toast.error('שגיאה בשמירת הניצחון', { description: e.message });
+      queryClient.setQueryData(['latest-round'], cached);
+    } finally {
+      setSavingWins(false);
+    }
+  };
 
   const handleGoalChange = async (newCount) => {
     const cached = queryClient.getQueryData(['latest-round']);
@@ -484,6 +562,18 @@ export default function MatchDay() {
           </motion.div>
         )}
 
+        {/* Live wins tracker — admin only */}
+        {isAdmin && (
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
+            <WinsTracker
+              teams={round.teams}
+              teamWins={round.teamWins}
+              onWinChange={handleWinsChange}
+              saving={savingWins}
+            />
+          </motion.div>
+        )}
+
         {/* Teams */}
         <div>
           <SectionTitle icon={User} className="mb-3">ההרכבים</SectionTitle>
@@ -491,7 +581,7 @@ export default function MatchDay() {
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="grid grid-cols-3 gap-2"
+            className={`grid gap-2 ${round.teams.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}
           >
             {round.teams.map((playerIds, idx) => (
               <TeamCard
