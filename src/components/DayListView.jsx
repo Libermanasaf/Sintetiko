@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { ClipboardList, Clock, User } from 'lucide-react';
 import { PageHeader, EmptyState, Skeleton } from '@/components/ui/lux';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/lib/AuthContext';
 
 const STORAGE_KEY = 'sintetiko_lists_v3';
 
@@ -36,6 +37,8 @@ function loadDay(day) {
 
 export default function DayListView({ day }) {
   const cfg = DAY_CONFIG[day];
+  const { role, loginMode } = useAuth();
+  const isAdmin = role === 'admin' && loginMode !== 'player';
   const [waitingSignups, setWaitingSignups] = useState([]);
   const [loadingSignups, setLoadingSignups] = useState(true);
 
@@ -69,6 +72,8 @@ export default function DayListView({ day }) {
   const listData = cloudList || localList;
 
   useEffect(() => {
+    // Players don't see the waiting list, so skip the fetch for them.
+    if (!isAdmin) { setLoadingSignups(false); return; }
     if (!supabase) { setLoadingSignups(false); return; }
     supabase
       .from('signups')
@@ -80,7 +85,7 @@ export default function DayListView({ day }) {
         setWaitingSignups(data || []);
         setLoadingSignups(false);
       });
-  }, [day]);
+  }, [day, isAdmin]);
 
   const filledRows = listData.rows.filter(n => n.trim());
   const emptyCount = listData.rows.filter(n => !n.trim()).length;
@@ -129,7 +134,8 @@ export default function DayListView({ day }) {
           </div>
         </div>
 
-        {/* Waiting list */}
+        {/* Waiting list — admin only (players don't see this section) */}
+        {isAdmin && (
         <div className="rounded-2xl ring-1 ring-white/8 overflow-hidden bg-slate-900/50">
           <div className="px-4 py-3 flex items-center gap-2 border-b border-white/5">
             <Clock className="w-4 h-4 text-slate-400" />
@@ -158,6 +164,7 @@ export default function DayListView({ day }) {
             </div>
           )}
         </div>
+        )}
       </div>
     </div>
   );
