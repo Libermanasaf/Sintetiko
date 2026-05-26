@@ -123,6 +123,9 @@ export default function Lists() {
   const [diag, setDiag] = useState({ status: 'checking', error: null, count: null });
   const [hydrated, setHydrated] = useState(false);
   const queryClient = useQueryClient();
+  // Throttle "save failed" toast so rapid edits don't spam, and remember
+  // whether we ever observed a successful cloud save in this session.
+  const lastSaveErrorAtRef = useRef(0);
 
   // Probe Supabase signups table directly so we can show exactly what's wrong
   const probe = useCallback(async () => {
@@ -158,25 +161,9 @@ export default function Lists() {
     refetchOnWindowFocus: true,
   });
 
-  // Hydrate state from cloud once per mount; merge so we don't clobber unrelated keys.
-  // Mark hydrated even when cloud has no data so the auto-reset can safely start saving.
-  useEffect(() => {
-    if (hydrated) return;
-    if (cloudState === undefined) return; // query still loading
-    if (cloudState && (cloudState.rows || cloudState.waiting || cloudState.headers)) {
-      setData(prev => ({
-        ...prev,
-        headers:   cloudState.headers   || prev.headers,
-        rows:      cloudState.rows      || prev.rows,
-        waiting:   cloudState.waiting   || prev.waiting,
-        lastReset: cloudState.lastReset || prev.lastReset,
-      }));
-    }
-    setHydrated(true);
-  }, [cloudState, hydrated]);
-
   // Save state to BOTH localStorage and Supabase. Fire-and-forget for the cloud
   // write so the UI stays instant; localStorage is the offline fallback.
+  // Surfaces save failures as a throttled toast — no more silent data loss.
   const persistAll = useCallback((state) => {
     persist(state);
     if (!supabase) return;
@@ -187,9 +174,49 @@ export default function Lists() {
         { onConflict: 'id' }
       )
       .then(({ error }) => {
-        if (error) console.warn('[lists_state] save failed', error.message);
+        if (!error) { lastSaveErrorAtRef.current = 0; return; }
+        console.warn('[lists_state] save failed', error.code, error.message);
+        const now = Date.now();
+        if (now - lastSaveErrorAtRef.current < 30_000) return;
+        lastSaveErrorAtRef.current = now;
+        const isRls = error.code === '42501' || /row.level security/i.test(error.message || '');
+        toast.error('הרשימה לא נשמרה בענן', {
+          description: isRls
+            ? 'RLS חוסם — צריך להריץ SQL תיקון ב-Supabase'
+            : (error.message || 'נסה לרענן'),
+          duration: 7000,
+        });
       });
   }, []);
+
+  // Hydrate state from cloud once per mount; merge so we don't clobber unrelated keys.
+  // Mark hydrated even when cloud has no data so the auto-reset can safely start saving.
+  // If cloud is empty but localStorage has names, push them up (backfill recovery).
+  useEffect(() => {
+    if (hydrated) return;
+    if (cloudState === undefined) return; // query still loading
+
+    const cloudHasData = cloudState && (cloudState.rows || cloudState.waiting || cloudState.headers);
+    if (cloudHasData) {
+      setData(prev => ({
+        ...prev,
+        headers:   cloudState.headers   || prev.headers,
+        rows:      cloudState.rows      || prev.rows,
+        waiting:   cloudState.waiting   || prev.waiting,
+        lastReset: cloudState.lastReset || prev.lastReset,
+      }));
+    } else {
+      // Cloud empty — if local has names, push them up so we don't lose them.
+      setData(prev => {
+        const hasLocalNames =
+          Object.values(prev.rows || {}).some(arr => arr.some(n => n && n.trim())) ||
+          Object.values(prev.waiting || {}).some(arr => arr.some(n => n && n.trim()));
+        if (hasLocalNames) persistAll(prev);
+        return prev;
+      });
+    }
+    setHydrated(true);
+  }, [cloudState, hydrated, persistAll]);
 
   // Auto-reset rosters: trigger only when we cross a reset day.
   // Missing lastReset for a day means "treat now as just-reset" so
