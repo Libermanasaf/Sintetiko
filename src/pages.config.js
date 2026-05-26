@@ -66,6 +66,9 @@ import SendNotification from './pages/SendNotification';
 import Notifications from './pages/Notifications';
 import Lists from './pages/Lists';
 import SignupPage from './pages/SignupPage';
+import DayListSunday from './pages/DayListSunday';
+import DayListWednesday from './pages/DayListWednesday';
+import DayListThursday from './pages/DayListThursday';
 import __Layout from './Layout.jsx';
 
 export const PAGES = {
@@ -88,6 +91,9 @@ export const PAGES = {
     "Notifications": Notifications,
     "Lists": Lists,
     "SignupPage": SignupPage,
+    "DayListSunday": DayListSunday,
+    "DayListWednesday": DayListWednesday,
+    "DayListThursday": DayListThursday,
 }
 
 export const pagesConfig = {
