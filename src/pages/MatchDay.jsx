@@ -619,8 +619,26 @@ export default function MatchDay() {
           </motion.div>
         </div>
 
+        {/* Betting */}
+        <motion.div
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.18 }}
+        >
+          <SectionTitle icon={Vote} className="mb-3">ההימור של הערב</SectionTitle>
+          <BettingSection
+            round={round}
+            bets={optimisticBets}
+            onVote={handleVote}
+            voting={voting}
+            hasVoted={hasVoted}
+            myVotedIndex={myVotedIndex}
+            myPlayerId={currentPlayer?.id}
+          />
+        </motion.div>
+
         {/* MVP Picker */}
-        <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }}>
+        <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
           <SectionTitle icon={Star} className="mb-3">השחקן המצטיין של הערב</SectionTitle>
           <div className="rounded-2xl bg-slate-900/70 ring-1 ring-white/8 p-4">
             {round.starPlayer ? (
@@ -682,24 +700,6 @@ export default function MatchDay() {
               </div>
             )}
           </div>
-        </motion.div>
-
-        {/* Betting */}
-        <motion.div
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          <SectionTitle icon={Vote} className="mb-3">ההימור של הערב</SectionTitle>
-          <BettingSection
-            round={round}
-            bets={optimisticBets}
-            onVote={handleVote}
-            voting={voting}
-            hasVoted={hasVoted}
-            myVotedIndex={myVotedIndex}
-            myPlayerId={currentPlayer?.id}
-          />
         </motion.div>
       </div>
 
