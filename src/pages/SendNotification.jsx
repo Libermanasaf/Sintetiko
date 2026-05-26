@@ -1,24 +1,71 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Bell, CheckCircle2, AlertCircle, Users, ShieldCheck } from 'lucide-react';
+import { Send, Bell, CheckCircle2, AlertCircle, Users, ShieldCheck, MessageCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/ui/lux';
+import { supabase } from '@/lib/supabase';
 
 const ADMIN_EMAIL = 'libermanasaf@gmail.com';
+
+// Map a SendNotification URL to a lists_state day key (only DayList URLs)
+const DAY_FROM_URL = {
+  '/DayListSunday':    'sunday',
+  '/DayListWednesday': 'wednesday',
+  '/DayListThursday':  'thursday',
+};
+const DAY_LABELS = { sunday: 'יום ראשון', wednesday: 'יום רביעי', thursday: 'יום חמישי' };
+
+// Build the WhatsApp message body for a given day from the cloud-synced list.
+// Matches the Lists page 'copy' format: header, main names, ממתינים (if any), footer.
+async function buildWhatsAppText(day) {
+  if (!supabase) return null;
+  const { data, error } = await supabase
+    .from('lists_state')
+    .select('data')
+    .eq('id', 'main')
+    .maybeSingle();
+  if (error) return null;
+  const all = data?.data || {};
+  const header     = all.headers?.[day] || DAY_LABELS[day] || '';
+  const mainNames  = (all.rows?.[day] || []).map(n => (n || '').trim()).filter(Boolean);
+  const waitNames  = (all.waiting?.[day] || []).map(n => (n || '').trim()).filter(Boolean);
+  const lines = [];
+  if (header) lines.push(header, '');
+  if (mainNames.length) lines.push(...mainNames);
+  if (waitNames.length) {
+    if (mainNames.length) lines.push('');
+    lines.push('ממתינים:', ...waitNames);
+  }
+  lines.push('', 'ביטול אחרי 12:00 יחויב בתשלום');
+  return lines.join('\n');
+}
 
 export default function SendNotification() {
   const [title, setTitle] = useState('סינתטיקו חולון');
   const [body, setBody] = useState('');
   const [url, setUrl] = useState('/MatchDay');
+  const [shareToWhatsApp, setShareToWhatsApp] = useState(false);
   const [sending, setSending] = useState(false);
   const [sendingAdmin, setSendingAdmin] = useState(false);
   const [result, setResult] = useState(null); // { sent, failed }
+
+  const dayForWhatsApp = DAY_FROM_URL[url] || null;
+  const canShareToWhatsApp = !!dayForWhatsApp;
 
   const sendNotification = async (targetEmail = null) => {
     if (!body.trim()) {
       toast.error('יש להזין טקסט להודעה');
       return;
     }
+
+    // Open the WhatsApp tab synchronously, before the await — so the popup
+    // blocker treats it as a direct user gesture. We update its URL after
+    // we've fetched the list text (or close it on failure).
+    let waWin = null;
+    if (shareToWhatsApp && canShareToWhatsApp) {
+      waWin = window.open('about:blank', '_blank');
+    }
+
     if (targetEmail) setSendingAdmin(true); else setSending(true);
     setResult(null);
     try {
@@ -45,7 +92,19 @@ export default function SendNotification() {
       } else {
         toast.warning(targetEmail ? 'לא נמצא מנוי פעיל לאדמין' : 'לא נמצאו מנויים פעילים');
       }
+
+      // Push succeeded → now navigate the pre-opened tab to WhatsApp share URL
+      if (waWin && dayForWhatsApp) {
+        const text = await buildWhatsAppText(dayForWhatsApp);
+        if (text) {
+          waWin.location.href = `https://wa.me/?text=${encodeURIComponent(text)}`;
+        } else {
+          waWin.close();
+          toast.error('לא ניתן לטעון את הרשימה ל-WhatsApp');
+        }
+      }
     } catch (e) {
+      if (waWin) waWin.close();
       toast.error('שגיאה בשליחה', { description: e.message });
     }
     if (targetEmail) setSendingAdmin(false); else setSending(false);
@@ -118,6 +177,27 @@ export default function SendNotification() {
             <option value="/">עמוד הבית</option>
           </select>
         </div>
+
+        {/* WhatsApp share toggle — only meaningful when sharing a day list */}
+        {canShareToWhatsApp && (
+          <label className="flex items-start gap-3 rounded-xl bg-emerald-500/8 ring-1 ring-emerald-500/25 px-3.5 py-3 cursor-pointer active:scale-[0.99] transition-transform">
+            <input
+              type="checkbox"
+              checked={shareToWhatsApp}
+              onChange={e => setShareToWhatsApp(e.target.checked)}
+              className="mt-0.5 w-4 h-4 rounded accent-emerald-500 shrink-0 cursor-pointer"
+            />
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5">
+                <MessageCircle className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                <span className="text-emerald-300 font-black text-sm">שלח גם ל-WhatsApp שלי</span>
+              </div>
+              <p className="text-emerald-400/70 text-[0.7rem] font-bold mt-1 leading-snug">
+                אחרי שליחת הפוש — WhatsApp ייפתח בטאב חדש עם הרשימה המלאה כתובה. תבחר את הקבוצה שלך ותלחץ "שלח".
+              </p>
+            </div>
+          </label>
+        )}
 
         {/* Preview */}
         {(title.trim() || body.trim()) && (
