@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, ArrowRight, Trophy, Vote, Target, Plus, Minus, X, Swords } from 'lucide-react';
+import { User, ArrowRight, Trophy, Vote, Target, Plus, Minus, X, Swords, Star } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
@@ -357,6 +357,7 @@ export default function MatchDay() {
   const [editingPlayer, setEditingPlayer] = useState(null);    // { player, teamIndex }
   const [savingGoals, setSavingGoals] = useState(false);
   const [savingWins, setSavingWins] = useState(false);
+  const [savingMvp, setSavingMvp] = useState(false);
 
   const { data: currentPlayer } = useQuery({
     queryKey: ['my-player', user?.id, user?.email],
@@ -455,6 +456,24 @@ export default function MatchDay() {
       queryClient.setQueryData(['latest-round'], cached);
     } finally {
       setSavingWins(false);
+    }
+  };
+
+  const roundQueryKey = isAdmin ? ['latest-round-admin'] : ['latest-round'];
+
+  const handleMvpChange = async (playerId) => {
+    const cached = queryClient.getQueryData(roundQueryKey);
+    if (!cached) return;
+    const next = cached.starPlayer === playerId ? null : playerId;
+    queryClient.setQueryData(roundQueryKey, { ...cached, starPlayer: next });
+    setSavingMvp(true);
+    try {
+      await Round.update(cached.id, { starPlayer: next });
+    } catch (e) {
+      toast.error('שגיאה בשמירת השחקן המצטיין');
+      queryClient.setQueryData(roundQueryKey, cached);
+    } finally {
+      setSavingMvp(false);
     }
   };
 
@@ -599,6 +618,71 @@ export default function MatchDay() {
             ))}
           </motion.div>
         </div>
+
+        {/* MVP Picker */}
+        <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }}>
+          <SectionTitle icon={Star} className="mb-3">השחקן המצטיין של הערב</SectionTitle>
+          <div className="rounded-2xl bg-slate-900/70 ring-1 ring-white/8 p-4">
+            {round.starPlayer ? (
+              (() => {
+                const mvp = allPlayers.find(p => p.id === round.starPlayer);
+                return mvp ? (
+                  <div className="flex items-center gap-3 mb-3 p-3 rounded-xl bg-amber-500/15 ring-1 ring-amber-400/40">
+                    <div className="grid place-items-center w-10 h-10 rounded-xl st-foil text-base font-black shrink-0">
+                      {(mvp.name?.[0] || '?').toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-amber-300 font-black text-sm">{mvp.name}</p>
+                      <p className="text-amber-400/60 text-[0.65rem] font-bold">שחקן מצטיין ⭐</p>
+                    </div>
+                    {isAdmin && (
+                      <button onClick={() => handleMvpChange(round.starPlayer)} className="text-slate-500 active:scale-95 transition-transform">
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                ) : null;
+              })()
+            ) : (
+              <p className="text-slate-500 text-xs font-medium text-center mb-3">
+                {isAdmin ? 'בחר שחקן מצטיין' : 'טרם נבחר שחקן מצטיין'}
+              </p>
+            )}
+            {isAdmin && (
+              <div className="grid grid-cols-2 gap-2">
+                {round.teams.flatMap((playerIds, tIdx) =>
+                  playerIds.map(pid => {
+                    const p = allPlayers.find(pl => pl.id === pid);
+                    if (!p) return null;
+                    const t = teamOf(tIdx);
+                    const selected = round.starPlayer === pid;
+                    return (
+                      <button
+                        key={pid}
+                        onClick={() => handleMvpChange(pid)}
+                        disabled={savingMvp}
+                        className={`flex items-center gap-2.5 p-2.5 rounded-xl ring-1 text-right transition-all active:scale-[0.98] touch-manipulation ${
+                          selected
+                            ? 'bg-amber-500/20 ring-amber-400/50'
+                            : 'bg-slate-800/60 ring-white/8 hover:bg-slate-800'
+                        }`}
+                      >
+                        <div className={`grid place-items-center w-8 h-8 rounded-lg shrink-0 ${selected ? 'st-foil' : 'bg-slate-700'}`}>
+                          <span className="text-xs font-black text-white">{(p.name?.[0] || '?').toUpperCase()}</span>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className={`text-xs font-black truncate ${selected ? 'text-amber-300' : 'text-slate-300'}`}>{p.name}</p>
+                          <p className={`text-[0.6rem] font-bold ${t.text} opacity-70`}>{t.name}</p>
+                        </div>
+                        {selected && <Star className="w-3.5 h-3.5 text-amber-400 shrink-0 fill-amber-400" />}
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+            )}
+          </div>
+        </motion.div>
 
         {/* Betting */}
         <motion.div
