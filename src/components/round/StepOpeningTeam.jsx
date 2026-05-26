@@ -43,7 +43,8 @@ export default function StepOpeningTeam({ numTeams, openingTeams, setOpeningTeam
         teams,
         goalkeepers,
         openingTeams,
-        teamWins: {}
+        teamWins: {},
+        is_published: false,
       });
       
       // עדכון מספר ההופעות לכל שחקן

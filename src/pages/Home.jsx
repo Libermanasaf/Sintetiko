@@ -6,7 +6,7 @@ import { Trophy, Users, Shuffle, History, Sun, Moon, Send, ChevronLeft, Plus, Ch
 import InstallBanner from '@/components/InstallBanner';
 import { useTheme } from '@/lib/ThemeContext';
 import { useAuth } from '@/lib/AuthContext';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Round } from '@/api/entities';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
@@ -129,6 +129,7 @@ export default function Home() {
   const { isDark, setIsDark } = useTheme();
   const { role } = useAuth();
   const isAdmin = role === 'admin';
+  const queryClient = useQueryClient();
   const [publishing, setPublishing] = useState(false);
   const [published, setPublished] = useState(false);
 
@@ -151,7 +152,7 @@ export default function Home() {
     refetchInterval: 30000,
   });
 
-  // Player-facing query — only unfinished rounds. Shares cache with MatchDay/PlayerHome.
+  // Player-facing query — only published, unfinished rounds. Shares cache with MatchDay/PlayerHome.
   const { data: playerActiveRound } = useQuery({
     queryKey: ['latest-round'],
     queryFn: async () => {
@@ -163,7 +164,8 @@ export default function Home() {
         Array.isArray(r.openingTeams) && r.openingTeams.length >= 2 &&
         r.winningTeam == null &&
         !r.victoryPhoto &&
-        new Date(r.date) >= cutoff
+        new Date(r.date) >= cutoff &&
+        r.is_published === true
       ) || null;
     },
     enabled: !isAdmin,
@@ -175,8 +177,12 @@ export default function Home() {
 
   const handlePublish = async () => {
     if (publishing || published) return;
+    if (!activeRound) return;
     setPublishing(true);
     try {
+      await Round.update(activeRound.id, { is_published: true });
+      queryClient.invalidateQueries({ queryKey: ['latest-round'] });
+      queryClient.invalidateQueries({ queryKey: ['latest-round-admin'] });
       await fetch('/api/send-notification', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -187,9 +193,9 @@ export default function Home() {
         }),
       });
       setPublished(true);
-      toast.success('ההודעה נשלחה לכל השחקנים!');
+      toast.success('ההרכבים פורסמו ונשלחה הודעה לכל השחקנים!');
     } catch {
-      toast.error('שגיאה בשליחת ההודעה');
+      toast.error('שגיאה בפרסום');
     }
     setPublishing(false);
   };

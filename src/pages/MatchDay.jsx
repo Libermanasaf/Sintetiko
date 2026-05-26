@@ -383,7 +383,8 @@ export default function MatchDay() {
         Array.isArray(r.openingTeams) && r.openingTeams.length >= 2 &&
         r.winningTeam == null &&
         !r.victoryPhoto &&
-        new Date(r.date) >= cutoff
+        new Date(r.date) >= cutoff &&
+        r.is_published === true
       ) || null;
     },
     refetchInterval: 15000,           // live goal sync
