@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 import { motion } from 'framer-motion';
-import { UsersRound, Mail, Clock, Search, User, ShieldCheck, Bell, BellOff } from 'lucide-react';
+import { UsersRound, Mail, Clock, Search, User, ShieldCheck, Bell, BellOff, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageHeader, EmptyState, Skeleton } from '@/components/ui/lux';
 
@@ -10,6 +10,7 @@ export default function RegisteredUsers() {
   const [subscriptions, setSubscriptions] = useState(new Set()); // Set of subscribed emails (lowercase)
   const [isLoading, setIsLoading] = useState(true);
   const [query, setQuery] = useState('');
+  const [pushFilter, setPushFilter] = useState('all'); // 'all' | 'subscribed' | 'unsubscribed'
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -46,12 +47,14 @@ export default function RegisteredUsers() {
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return users;
-    return users.filter((u) =>
-      (u.name || '').toLowerCase().includes(q) ||
-      (u.email || '').toLowerCase().includes(q)
-    );
-  }, [users, query]);
+    return users.filter((u) => {
+      const isSub = subscriptions.has((u.email || '').toLowerCase());
+      if (pushFilter === 'subscribed' && !isSub) return false;
+      if (pushFilter === 'unsubscribed' && isSub) return false;
+      if (q && !((u.name || '').toLowerCase().includes(q) || (u.email || '').toLowerCase().includes(q))) return false;
+      return true;
+    });
+  }, [users, query, subscriptions, pushFilter]);
 
   const approvedCount = users.filter((u) => u.is_approved).length;
   const subscribedCount = users.filter((u) => subscriptions.has((u.email || '').toLowerCase())).length;
@@ -66,28 +69,55 @@ export default function RegisteredUsers() {
       />
 
       <div className="p-4 space-y-4">
-        {/* Push summary */}
+        {/* Push summary — tappable filters */}
         {!isLoading && users.length > 0 && (
           <div className="flex gap-2.5">
-            <div className="flex-1 rounded-2xl bg-emerald-900/30 ring-1 ring-emerald-500/25 p-3.5 flex items-center gap-2.5">
+            <button
+              onClick={() => setPushFilter(pushFilter === 'subscribed' ? 'all' : 'subscribed')}
+              aria-pressed={pushFilter === 'subscribed'}
+              className={`flex-1 rounded-2xl p-3.5 flex items-center gap-2.5 ring-1 active:scale-[0.98] transition-all touch-manipulation ${
+                pushFilter === 'subscribed'
+                  ? 'bg-emerald-900/50 ring-emerald-400/60 shadow-[0_0_0_2px_rgba(16,185,129,0.25)]'
+                  : 'bg-emerald-900/30 ring-emerald-500/25 hover:bg-emerald-900/40'
+              }`}
+            >
               <div className="grid place-items-center w-9 h-9 rounded-xl bg-emerald-500/20 shrink-0">
                 <Bell className="w-4 h-4 text-emerald-400" />
               </div>
-              <div>
+              <div className="text-right">
                 <p className="text-emerald-300 font-black text-lg tnum leading-none">{subscribedCount}</p>
                 <p className="text-emerald-300/60 text-[0.65rem] font-bold mt-0.5">מקבלים התראות</p>
               </div>
-            </div>
-            <div className="flex-1 rounded-2xl bg-slate-800/60 ring-1 ring-white/8 p-3.5 flex items-center gap-2.5">
+            </button>
+            <button
+              onClick={() => setPushFilter(pushFilter === 'unsubscribed' ? 'all' : 'unsubscribed')}
+              aria-pressed={pushFilter === 'unsubscribed'}
+              className={`flex-1 rounded-2xl p-3.5 flex items-center gap-2.5 ring-1 active:scale-[0.98] transition-all touch-manipulation ${
+                pushFilter === 'unsubscribed'
+                  ? 'bg-slate-700/80 ring-amber-400/60 shadow-[0_0_0_2px_rgba(251,191,36,0.25)]'
+                  : 'bg-slate-800/60 ring-white/8 hover:bg-slate-800/80'
+              }`}
+            >
               <div className="grid place-items-center w-9 h-9 rounded-xl bg-slate-700/50 shrink-0">
                 <BellOff className="w-4 h-4 text-slate-400" />
               </div>
-              <div>
+              <div className="text-right">
                 <p className="text-slate-300 font-black text-lg tnum leading-none">{users.length - subscribedCount}</p>
                 <p className="text-slate-400/70 text-[0.65rem] font-bold mt-0.5">לא מנויים</p>
               </div>
-            </div>
+            </button>
           </div>
+        )}
+
+        {/* Active filter pill */}
+        {pushFilter !== 'all' && (
+          <button
+            onClick={() => setPushFilter('all')}
+            className="w-full flex items-center justify-center gap-2 min-h-[40px] rounded-xl bg-amber-500/10 ring-1 ring-amber-400/30 text-amber-300 text-xs font-black active:scale-[0.99] transition-all touch-manipulation"
+          >
+            <X className="w-3.5 h-3.5" />
+            {pushFilter === 'subscribed' ? 'מציג רק מנויים' : 'מציג רק לא מנויים'} — לחץ להצגת כולם
+          </button>
         )}
 
         {/* Search */}
