@@ -183,11 +183,13 @@ export default function GameHistory() {
       const all = await Round.list('-created_date');
       if (isAdmin) return all;
       return all.filter(r => {
-        // Completed rounds (have results) are always visible
-        const hasResults = r.winningTeam != null ||
-          (r.teamWins && Object.values(r.teamWins).some(v => v > 0));
-        if (hasResults) return true;
-        // Active rounds only visible after admin publishes
+        // Round with a declared winner → always visible
+        if (r.winningTeam != null) return true;
+        // Old round (>3 days) → backward compatible, always visible
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - 3);
+        if (new Date(r.date) < cutoff) return true;
+        // Recent active round → only after admin publishes
         return r.is_published === true;
       });
     },
