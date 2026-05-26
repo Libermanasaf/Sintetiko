@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Player, PlayerRating } from '@/api/entities';
 import { supabase } from '@/lib/supabase';
@@ -35,7 +35,7 @@ function RatingChips({ value, onChange }) {
   );
 }
 
-function PlayerRatingRow({ player, myRating, onRate, savedId }) {
+function PlayerRatingRow({ player, myRating, onRate, savedId, isAdmin, stats }) {
   const isSaved = savedId === player.id;
   return (
     <motion.div
@@ -61,21 +61,33 @@ function PlayerRatingRow({ player, myRating, onRate, savedId }) {
         </div>
 
         <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between mb-1.5">
-            <p className="font-black text-white text-base truncate">{player.name}</p>
-            <AnimatePresence>
-              {isSaved && (
-                <motion.span
-                  initial={{ opacity: 0, scale: 0.6 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.6 }}
-                  className="flex items-center gap-1 shrink-0 text-emerald-300 text-[0.68rem] font-black"
+          <div className="flex items-center justify-between mb-1.5 gap-2">
+            <p className="font-black text-white text-base truncate min-w-0">{player.name}</p>
+            <div className="flex items-center gap-2 shrink-0">
+              {isAdmin && stats && stats.count > 0 && (
+                <div
+                  className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-500/15 ring-1 ring-amber-500/30"
+                  title={`ממוצע מתוך ${stats.count} דירוגים`}
                 >
-                  <Check className="w-3.5 h-3.5" strokeWidth={3} />
-                  נשמר
-                </motion.span>
+                  <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
+                  <span className="font-black text-amber-300 text-xs tnum">{stats.avg}</span>
+                  <span className="text-amber-400/60 text-[0.6rem] font-bold tnum">({stats.count})</span>
+                </div>
               )}
-            </AnimatePresence>
+              <AnimatePresence>
+                {isSaved && (
+                  <motion.span
+                    initial={{ opacity: 0, scale: 0.6 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.6 }}
+                    className="flex items-center gap-1 text-emerald-300 text-[0.68rem] font-black"
+                  >
+                    <Check className="w-3.5 h-3.5" strokeWidth={3} />
+                    נשמר
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
           <RatingChips value={myRating} onChange={(rating) => onRate(player.id, rating)} />
         </div>
@@ -85,7 +97,8 @@ function PlayerRatingRow({ player, myRating, onRate, savedId }) {
 }
 
 export default function RatePlayers() {
-  const { user } = useAuth();
+  const { user, role, loginMode } = useAuth();
+  const isAdmin = role === 'admin' && loginMode !== 'player';
   const queryClient = useQueryClient();
   const [savedId, setSavedId] = useState(null);
   // Optimistic local ratings — merged over server data for immediate UI feedback
@@ -116,6 +129,30 @@ export default function RatePlayers() {
     enabled: !!myPlayer?.id,
   });
 
+  // Admin-only: pull every rating so we can show per-player averages.
+  const { data: allRatings = [] } = useQuery({
+    queryKey: ['all-player-ratings'],
+    queryFn: () => PlayerRating.list(),
+    enabled: isAdmin,
+    staleTime: 30_000,
+  });
+
+  const ratingStatsByPlayer = useMemo(() => {
+    if (!isAdmin) return {};
+    const buckets = {};
+    for (const r of allRatings) {
+      const pid = r.rated_player_id;
+      if (!buckets[pid]) buckets[pid] = { sum: 0, count: 0 };
+      buckets[pid].sum += Number(r.rating) || 0;
+      buckets[pid].count += 1;
+    }
+    const result = {};
+    for (const [pid, { sum, count }] of Object.entries(buckets)) {
+      result[pid] = { avg: (sum / count).toFixed(1), count };
+    }
+    return result;
+  }, [allRatings, isAdmin]);
+
   const myRatingsMap = Object.fromEntries(myRatings.map(r => [r.rated_player_id, r.rating]));
   // Merge server ratings with optimistic local ones
   const displayRatings = { ...myRatingsMap, ...localRatings };
@@ -130,6 +167,8 @@ export default function RatePlayers() {
       queryClient.invalidateQueries({ queryKey: ['my-ratings', myPlayer?.id] });
       // Invalidate the rated player's received-ratings so PlayerHome updates on next visit
       queryClient.invalidateQueries({ queryKey: ['ratings-received', ratedPlayerId] });
+      // Admin's all-player-ratings list also stale after a new rating
+      queryClient.invalidateQueries({ queryKey: ['all-player-ratings'] });
       setSavedId(ratedPlayerId);
       setTimeout(() => setSavedId(null), 1800);
     },
@@ -191,6 +230,8 @@ export default function RatePlayers() {
                   myRating={displayRatings[player.id] ?? 0}
                   onRate={handleRate}
                   savedId={savedId}
+                  isAdmin={isAdmin}
+                  stats={ratingStatsByPlayer[player.id]}
                 />
               ))}
             </div>
