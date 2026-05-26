@@ -20,7 +20,16 @@ const SIGNUPS_TABLE_SQL = `CREATE TABLE IF NOT EXISTS signups (
 );
 ALTER TABLE signups DISABLE ROW LEVEL SECURITY;
 -- If the table already existed with player_id as UUID, run also:
-ALTER TABLE signups ALTER COLUMN player_id TYPE TEXT;`;
+ALTER TABLE signups ALTER COLUMN player_id TYPE TEXT;
+
+-- Cloud-synced lists state (so names persist across devices and browser clears)
+CREATE TABLE IF NOT EXISTS lists_state (
+  id TEXT PRIMARY KEY,
+  data JSONB DEFAULT '{}'::jsonb,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+ALTER TABLE lists_state DISABLE ROW LEVEL SECURITY;
+INSERT INTO lists_state (id, data) VALUES ('main', '{}'::jsonb) ON CONFLICT (id) DO NOTHING;`;
 
 const WAITING_ROWS = 6;
 
@@ -112,6 +121,7 @@ export default function Lists() {
   const [data, setData] = useState(load);
   const [busyId, setBusyId] = useState(null);
   const [diag, setDiag] = useState({ status: 'checking', error: null, count: null });
+  const [hydrated, setHydrated] = useState(false);
   const queryClient = useQueryClient();
 
   // Probe Supabase signups table directly so we can show exactly what's wrong
@@ -128,10 +138,65 @@ export default function Lists() {
 
   useEffect(() => { probe(); }, [probe]);
 
+  // Cloud-synced state: fetch lists_state row so names survive new devices / cache clears.
+  const { data: cloudState } = useQuery({
+    queryKey: ['lists-state'],
+    queryFn: async () => {
+      if (!supabase) return null;
+      const { data: row, error } = await supabase
+        .from('lists_state')
+        .select('data')
+        .eq('id', 'main')
+        .maybeSingle();
+      if (error) {
+        console.warn('[lists_state] fetch failed', error.message);
+        return null;
+      }
+      return row?.data || null;
+    },
+    staleTime: 5_000,
+    refetchOnWindowFocus: true,
+  });
+
+  // Hydrate state from cloud once per mount; merge so we don't clobber unrelated keys.
+  // Mark hydrated even when cloud has no data so the auto-reset can safely start saving.
+  useEffect(() => {
+    if (hydrated) return;
+    if (cloudState === undefined) return; // query still loading
+    if (cloudState && (cloudState.rows || cloudState.waiting || cloudState.headers)) {
+      setData(prev => ({
+        ...prev,
+        headers:   cloudState.headers   || prev.headers,
+        rows:      cloudState.rows      || prev.rows,
+        waiting:   cloudState.waiting   || prev.waiting,
+        lastReset: cloudState.lastReset || prev.lastReset,
+      }));
+    }
+    setHydrated(true);
+  }, [cloudState, hydrated]);
+
+  // Save state to BOTH localStorage and Supabase. Fire-and-forget for the cloud
+  // write so the UI stays instant; localStorage is the offline fallback.
+  const persistAll = useCallback((state) => {
+    persist(state);
+    if (!supabase) return;
+    supabase
+      .from('lists_state')
+      .upsert(
+        { id: 'main', data: state, updated_at: new Date().toISOString() },
+        { onConflict: 'id' }
+      )
+      .then(({ error }) => {
+        if (error) console.warn('[lists_state] save failed', error.message);
+      });
+  }, []);
+
   // Auto-reset rosters: trigger only when we cross a reset day.
   // Missing lastReset for a day means "treat now as just-reset" so
   // existing customizations are NOT wiped on first run.
+  // Gated on `hydrated` so we never write empty state over fresh cloud data.
   useEffect(() => {
+    if (!hydrated) return;
     const tick = async () => {
       const now = new Date();
       let resetDays = [];
@@ -164,7 +229,7 @@ export default function Lists() {
 
         if (!changed) return prev;
         const next = { ...prev, rows, waiting, lastReset };
-        persist(next);
+        persistAll(next);
         return next;
       });
 
@@ -184,7 +249,7 @@ export default function Lists() {
     tick();
     const id = setInterval(tick, 30 * 60 * 1000); // every 30 min
     return () => clearInterval(id);
-  }, [queryClient]);
+  }, [queryClient, hydrated]);
 
   // Live signups from the SignupPage flow
   const { data: signups = [], refetch: refetchSignups } = useQuery({
@@ -223,28 +288,28 @@ export default function Lists() {
   const handleRowChange = useCallback((day, idx, value) => {
     setData(prev => {
       const next = { ...prev, rows: { ...prev.rows, [day]: prev.rows[day].map((v, i) => i === idx ? value : v) } };
-      persist(next); return next;
+      persistAll(next); return next;
     });
   }, []);
 
   const handleWaitingChange = useCallback((day, idx, value) => {
     setData(prev => {
       const next = { ...prev, waiting: { ...prev.waiting, [day]: prev.waiting[day].map((v, i) => i === idx ? value : v) } };
-      persist(next); return next;
+      persistAll(next); return next;
     });
   }, []);
 
   const handleHeaderChange = useCallback((day, value) => {
     setData(prev => {
       const next = { ...prev, headers: { ...prev.headers, [day]: value } };
-      persist(next); return next;
+      persistAll(next); return next;
     });
   }, []);
 
   const resetDay = useCallback((day) => {
     setData(prev => {
       const next = { ...prev, rows: { ...prev.rows, [day]: [...DEFAULTS.rows[day]] }, waiting: { ...prev.waiting, [day]: Array(WAITING_ROWS).fill('') } };
-      persist(next); return next;
+      persistAll(next); return next;
     });
   }, []);
 
@@ -262,7 +327,7 @@ export default function Lists() {
           rows.push(signup.player_name);
         }
         const next = { ...prev, rows: { ...prev.rows, [signup.day]: rows } };
-        persist(next);
+        persistAll(next);
         return next;
       });
 
