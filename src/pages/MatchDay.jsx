@@ -465,15 +465,16 @@ export default function MatchDay() {
 
   const mvpVotes = round?.mvpVotes || {};
   const mvpVoters = round?.mvpVoters || [];
-  const hasVotedMvp = !!(currentPlayer?.id && mvpVoters.includes(currentPlayer.id));
+  const voterId = currentPlayer?.id || user?.id;
+  const hasVotedMvp = !!(voterId && mvpVoters.includes(voterId));
   const totalMvpVotes = Object.values(mvpVotes).reduce((s, v) => s + v, 0);
 
   const handleMvpVote = async (candidateId) => {
-    if (!currentPlayer || hasVotedMvp || votingMvp) return;
+    if (!voterId || hasVotedMvp || votingMvp) return;
     const cached = queryClient.getQueryData(roundQueryKey);
     if (!cached) return;
     const nextVotes = { ...(cached.mvpVotes || {}), [candidateId]: ((cached.mvpVotes || {})[candidateId] || 0) + 1 };
-    const nextVoters = [...(cached.mvpVoters || []), currentPlayer.id];
+    const nextVoters = [...(cached.mvpVoters || []), voterId];
     queryClient.setQueryData(roundQueryKey, { ...cached, mvpVotes: nextVotes, mvpVoters: nextVoters });
     setMyMvpVote(candidateId);
     setVotingMvp(true);
@@ -655,7 +656,7 @@ export default function MatchDay() {
             {/* Header */}
             <div className="px-4 py-3 border-b border-white/5 flex items-center justify-between">
               <span className="text-slate-400 text-xs font-bold">
-                {hasVotedMvp ? 'הצבעתך נרשמה ✓' : currentPlayer ? 'הצבע לשחקן המצטיין' : 'ההצבעה אנונימית'}
+                {hasVotedMvp ? 'הצבעתך נרשמה ✓' : voterId ? 'הצבע לשחקן המצטיין' : 'ההצבעה אנונימית'}
               </span>
               <span className="text-slate-500 text-xs font-bold tnum">{totalMvpVotes} הצבעות</span>
             </div>
@@ -670,7 +671,7 @@ export default function MatchDay() {
                   const pct = totalMvpVotes > 0 ? Math.round((votes / totalMvpVotes) * 100) : 0;
                   const isTopVoted = totalMvpVotes > 0 && votes === Math.max(...Object.values(mvpVotes));
                   const isMyVote = myMvpVote === pid;
-                  const canVote = !hasVotedMvp && !!currentPlayer && !votingMvp;
+                  const canVote = !hasVotedMvp && !!voterId && !votingMvp;
 
                   return (
                     <button
