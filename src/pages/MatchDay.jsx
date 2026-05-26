@@ -373,7 +373,7 @@ export default function MatchDay() {
   });
 
   const { data: round, isLoading } = useQuery({
-    queryKey: ['latest-round'],
+    queryKey: isAdmin ? ['latest-round-admin'] : ['latest-round'],
     queryFn: async () => {
       const rounds = await Round.list('-created_date');
       const cutoff = new Date();
@@ -384,13 +384,13 @@ export default function MatchDay() {
         r.winningTeam == null &&
         !r.victoryPhoto &&
         new Date(r.date) >= cutoff &&
-        r.is_published === true
+        (isAdmin || r.is_published === true)
       ) || null;
     },
-    refetchInterval: 15000,           // live goal sync
-    refetchOnWindowFocus: true,       // re-check when user comes back to the app
-    refetchOnMount: 'always',         // never trust stale cache when entering the page
-    staleTime: 0,                     // round publish is time-sensitive — always validate
+    refetchInterval: 15000,
+    refetchOnWindowFocus: true,
+    refetchOnMount: 'always',
+    staleTime: 0,
   });
 
   const { data: allPlayers = [] } = useQuery({
