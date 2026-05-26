@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { ClipboardList, Clock, User } from 'lucide-react';
 import { PageHeader, EmptyState, Skeleton } from '@/components/ui/lux';
@@ -35,13 +36,37 @@ function loadDay(day) {
 
 export default function DayListView({ day }) {
   const cfg = DAY_CONFIG[day];
-  const [listData, setListData] = useState(() => loadDay(day));
   const [waitingSignups, setWaitingSignups] = useState([]);
   const [loadingSignups, setLoadingSignups] = useState(true);
 
-  useEffect(() => {
-    setListData(loadDay(day));
-  }, [day]);
+  // Cloud-first: fetch the cross-device synced list from Supabase.
+  // localStorage stays a fallback for offline / first paint before cloud arrives.
+  const { data: cloudList } = useQuery({
+    queryKey: ['lists-state', day],
+    queryFn: async () => {
+      if (!supabase) return null;
+      const { data, error } = await supabase
+        .from('lists_state')
+        .select('data')
+        .eq('id', 'main')
+        .maybeSingle();
+      if (error || !data?.data) return null;
+      const all = data.data;
+      const rows = all.rows?.[day];
+      const header = all.headers?.[day];
+      if (!rows && !header) return null;
+      return {
+        header: header || DAY_CONFIG[day].label,
+        rows: rows || EMPTY_ROWS,
+      };
+    },
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
+    staleTime: 10_000,
+  });
+
+  const localList = loadDay(day);
+  const listData = cloudList || localList;
 
   useEffect(() => {
     if (!supabase) { setLoadingSignups(false); return; }

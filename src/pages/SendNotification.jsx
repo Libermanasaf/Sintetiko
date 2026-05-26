@@ -96,6 +96,9 @@ export default function SendNotification() {
             onChange={e => setUrl(e.target.value)}
             className="w-full rounded-xl bg-slate-800/80 ring-1 ring-white/10 px-4 py-3 text-white text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-400/50 transition-shadow cursor-pointer"
           >
+            <option value="/DayListSunday">רשימה — יום ראשון</option>
+            <option value="/DayListWednesday">רשימה — יום רביעי</option>
+            <option value="/DayListThursday">רשימה — יום חמישי</option>
             <option value="/MatchDay">סביבת המשחק</option>
             <option value="/PlayerHome">אזור אישי</option>
             <option value="/Podium">פודיום</option>
