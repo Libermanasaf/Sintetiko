@@ -619,6 +619,7 @@ export default function MatchDay() {
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.18 }}
+          className="max-w-sm mx-auto w-full"
         >
           <BettingSection
             round={round}
