@@ -182,7 +182,14 @@ export default function GameHistory() {
     queryFn: async () => {
       const all = await Round.list('-created_date');
       if (isAdmin) return all;
-      return all.filter(r => r.is_published === true);
+      return all.filter(r => {
+        // Completed rounds (have results) are always visible
+        const hasResults = r.winningTeam != null ||
+          (r.teamWins && Object.values(r.teamWins).some(v => v > 0));
+        if (hasResults) return true;
+        // Active rounds only visible after admin publishes
+        return r.is_published === true;
+      });
     },
   });
   const { data: players = [] } = useQuery({
