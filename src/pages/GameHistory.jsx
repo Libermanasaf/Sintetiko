@@ -178,8 +178,12 @@ export default function GameHistory() {
   const queryClient = useQueryClient();
 
   const { data: rounds = [], isLoading } = useQuery({
-    queryKey: ['rounds'],
-    queryFn: () => Round.list('-created_date'),
+    queryKey: ['rounds', isAdmin],
+    queryFn: async () => {
+      const all = await Round.list('-created_date');
+      if (isAdmin) return all;
+      return all.filter(r => r.is_published === true);
+    },
   });
   const { data: players = [] } = useQuery({
     queryKey: ['players'],
