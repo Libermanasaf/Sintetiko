@@ -4,7 +4,7 @@ import { ClipboardList, Clock, User } from 'lucide-react';
 import { PageHeader, EmptyState, Skeleton } from '@/components/ui/lux';
 import { supabase } from '@/lib/supabase';
 
-const STORAGE_KEY = 'sintetiko_lists_v2';
+const STORAGE_KEY = 'sintetiko_lists_v3';
 
 const DAY_CONFIG = {
   sunday:    { label: 'יום ראשון',  color: 'text-amber-300',   ring: 'ring-amber-400/30',   bg: 'bg-amber-500/10',   dot: 'bg-amber-400' },

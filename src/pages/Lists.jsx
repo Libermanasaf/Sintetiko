@@ -26,29 +26,14 @@ const WAITING_ROWS = 6;
 
 const DAY_LABELS = { sunday: 'יום ראשון', wednesday: 'יום רביעי', thursday: 'יום חמישי' };
 
+const EMPTY_18 = Array(18).fill('');
+
 const DEFAULTS = {
   headers: { sunday: 'יום ראשון', wednesday: 'יום רביעי', thursday: 'יום חמישי' },
   rows: {
-    sunday: [
-      'גלעד עוזיאל', 'אריאל רביבו', 'יוסף משומר', 'אופיר אוחיון',
-      'מאור חימי', 'אביחי שרה קאן', 'מתן גינאדי', 'יניב אזולאי',
-      'תמיר אברהם', 'אלכס מור', 'ניב מזרחי', 'גל לוי',
-      'גל דניאל', 'חן נצר', 'לירן לוי', 'מאור קאקולי',
-      'בר ממן', 'דוד דסלין',
-    ],
-    wednesday: [
-      'רחמים רזמן', 'אוהד סנדיק', 'ניק ירושנקו', 'מאור חימי',
-      'חן נצר', 'דניאל יוסיפוב', 'דניאל רוטרו', 'זיז איסרס',
-      'אסף אמרטלי', 'מידד חליבה', 'אלי יוחנן', 'אוראל יוחנן',
-      'גל בן חמו', 'אביתר שם טוב', 'יניב אזולאי', 'אייל קלאוס',
-      '', '',
-    ],
-    thursday: [
-      'אסף ליברמן', 'תמיר אברהם', 'אור נחמיאס', 'ארז דיין',
-      'גל דניאל', 'דור ביטון', 'דוד דסלין', 'גלעד עוזיאל',
-      'סטיו אבן', 'בר ממן', 'לירן לוי', 'מאור קאקולי',
-      'ראם כהן', 'עידן טל', 'בן חנאי', '', '', '',
-    ],
+    sunday:    [...EMPTY_18],
+    wednesday: [...EMPTY_18],
+    thursday:  [...EMPTY_18],
   },
 };
 
@@ -58,7 +43,7 @@ const DAYS = [
   { key: 'thursday',  color: 'text-emerald-300',  ring: 'ring-emerald-400/30', bg: 'from-emerald-500/15 to-emerald-600/5' },
 ];
 
-const STORAGE_KEY = 'sintetiko_lists_v2';
+const STORAGE_KEY = 'sintetiko_lists_v3';
 
 // Day-of-week (0=Sun..6=Sat) when each list auto-resets (day AFTER the game).
 const RESET_RULES = {
