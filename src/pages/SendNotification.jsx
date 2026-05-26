@@ -1,22 +1,25 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Bell, CheckCircle2, AlertCircle, Users } from 'lucide-react';
+import { Send, Bell, CheckCircle2, AlertCircle, Users, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/ui/lux';
+
+const ADMIN_EMAIL = 'libermanasaf@gmail.com';
 
 export default function SendNotification() {
   const [title, setTitle] = useState('סינתטיקו חולון');
   const [body, setBody] = useState('');
   const [url, setUrl] = useState('/MatchDay');
   const [sending, setSending] = useState(false);
+  const [sendingAdmin, setSendingAdmin] = useState(false);
   const [result, setResult] = useState(null); // { sent, failed }
 
-  const handleSend = async () => {
+  const sendNotification = async (targetEmail = null) => {
     if (!body.trim()) {
       toast.error('יש להזין טקסט להודעה');
       return;
     }
-    setSending(true);
+    if (targetEmail) setSendingAdmin(true); else setSending(true);
     setResult(null);
     try {
       const res = await fetch('/api/send-notification', {
@@ -26,22 +29,30 @@ export default function SendNotification() {
           title: title.trim() || 'סינתטיקו חולון',
           body: body.trim(),
           url: url.trim() || '/',
+          ...(targetEmail ? { targetEmail } : {}),
         }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || `שגיאת שרת ${res.status}`);
-      setResult(data);
+      setResult({ ...data, targetEmail });
       if (data.sent > 0) {
-        toast.success(`ההודעה נשלחה ל-${data.sent} מכשיר/ים`);
-        setBody('');
+        toast.success(
+          targetEmail
+            ? `נשלח לאדמין (${data.sent} מכשיר/ים)`
+            : `ההודעה נשלחה ל-${data.sent} מכשיר/ים`
+        );
+        if (!targetEmail) setBody('');
       } else {
-        toast.warning('לא נמצאו מנויים פעילים');
+        toast.warning(targetEmail ? 'לא נמצא מנוי פעיל לאדמין' : 'לא נמצאו מנויים פעילים');
       }
     } catch (e) {
       toast.error('שגיאה בשליחה', { description: e.message });
     }
-    setSending(false);
+    if (targetEmail) setSendingAdmin(false); else setSending(false);
   };
+
+  const handleSend       = () => sendNotification();
+  const handleSendAdmin  = () => sendNotification(ADMIN_EMAIL);
 
   return (
     <div className="pb-10" dir="rtl">
@@ -132,10 +143,10 @@ export default function SendNotification() {
           </motion.div>
         )}
 
-        {/* Send button */}
+        {/* Send button — to everyone */}
         <button
           onClick={handleSend}
-          disabled={sending || !body.trim()}
+          disabled={sending || sendingAdmin || !body.trim()}
           className="w-full flex items-center justify-center gap-2 min-h-[56px] rounded-xl st-foil font-black text-base shadow-[0_8px_22px_-8px_rgba(212,160,40,0.6)] active:scale-[0.98] hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all touch-manipulation"
         >
           {sending ? (
@@ -144,6 +155,20 @@ export default function SendNotification() {
             <Send className="w-5 h-5" />
           )}
           {sending ? 'שולח...' : 'שלח פוש לכולם'}
+        </button>
+
+        {/* Admin-only send button — for testing */}
+        <button
+          onClick={handleSendAdmin}
+          disabled={sending || sendingAdmin || !body.trim()}
+          className="w-full flex items-center justify-center gap-2 min-h-[48px] rounded-xl bg-slate-800/80 ring-1 ring-amber-500/30 text-amber-300 font-black text-sm active:scale-[0.98] hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all touch-manipulation"
+        >
+          {sendingAdmin ? (
+            <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+          ) : (
+            <ShieldCheck className="w-4 h-4" />
+          )}
+          {sendingAdmin ? 'שולח לאדמין...' : 'שלח פוש לאדמין בלבד (בדיקה)'}
         </button>
 
         {/* Result */}
