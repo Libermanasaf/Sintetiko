@@ -83,8 +83,8 @@ export function SectionTitle({ children, icon: Icon, className = '' }) {
   return (
     <div className={`flex items-center gap-2.5 ${className}`}>
       <div className="h-px flex-1 bg-gradient-to-l from-amber-400/40 to-transparent" />
-      {Icon && <Icon className="w-3.5 h-3.5 text-amber-400 shrink-0" strokeWidth={2.4} />}
-      <span className="text-amber-300/90 font-black text-[0.7rem] tracking-[0.2em] uppercase shrink-0">
+      {Icon && <Icon className="w-5 h-5 text-amber-400 shrink-0" strokeWidth={2.4} />}
+      <span className="text-amber-300/90 font-black text-base tracking-wider shrink-0">
         {children}
       </span>
       <div className="h-px flex-1 bg-gradient-to-r from-amber-400/40 to-transparent" />

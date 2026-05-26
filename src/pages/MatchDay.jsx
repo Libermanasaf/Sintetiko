@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, ArrowRight, Trophy, Vote, Target, Plus, Minus, X, Swords, Star } from 'lucide-react';
+import { User, ArrowRight, Trophy, Target, Plus, Minus, X, Star, Lock, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
@@ -19,48 +19,6 @@ const TEAM = [
 ];
 const teamOf = (i) => TEAM[i % 3];
 
-// ─── Compact team card ────────────────────────────────────────────────────
-function TeamCard({ teamIndex, playerIds, allPlayers, isOpening, isAdmin, onTapPlayer }) {
-  const t = teamOf(teamIndex);
-  return (
-    <div className={`rounded-2xl overflow-hidden flex flex-col bg-slate-900/70 ring-1 ${t.tint.split(' ')[1]}`}>
-      <div className={`px-2 py-2.5 text-center bg-gradient-to-b ${t.hdr} min-h-[54px] flex flex-col items-center justify-center`}>
-        <div className="flex items-center gap-1.5">
-          <span className={`w-2 h-2 rounded-full ${t.dot}`} />
-          <p className={`font-black text-sm leading-tight ${t.text}`}>{t.name}</p>
-        </div>
-        <span className={`text-[0.6rem] font-bold mt-0.5 ${isOpening ? 'text-emerald-300' : 'invisible'}`}>
-          פותחת
-        </span>
-      </div>
-      <div className="divide-y divide-white/5 flex-1">
-        {playerIds.map(pid => {
-          const p = allPlayers.find(x => x.id === pid);
-          if (!p) return null;
-          const RowTag = isAdmin ? 'button' : 'div';
-          return (
-            <RowTag
-              key={pid}
-              onClick={isAdmin ? () => onTapPlayer({ player: p, teamIndex }) : undefined}
-              className={`w-full flex items-center gap-1.5 px-2 py-2 text-right ${
-                isAdmin ? 'cursor-pointer hover:bg-white/8 active:bg-white/5 transition-colors touch-manipulation' : ''
-              }`}
-            >
-              {p.image ? (
-                <img src={p.image} alt={p.name} loading="lazy" className="w-5 h-5 sm:w-6 sm:h-6 rounded-full object-cover shrink-0 ring-1 ring-white/10" />
-              ) : (
-                <div className="grid place-items-center w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-slate-700 shrink-0">
-                  <User className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-slate-400" />
-                </div>
-              )}
-              <p className="flex-1 text-white text-[0.65rem] sm:text-[0.72rem] font-bold truncate leading-tight">{p.name}</p>
-            </RowTag>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
 
 // ─── Goal editor bottom-sheet (admin only) ────────────────────────────────
 function GoalEditorSheet({ open, player, teamIndex, currentGoals, onClose, onChange, saving }) {
@@ -169,65 +127,6 @@ function GoalEditorSheet({ open, player, teamIndex, currentGoals, onClose, onCha
   );
 }
 
-// ─── Live wins tracker (admin only) ──────────────────────────────────────
-function WinsTracker({ teams, teamWins, onWinChange, saving }) {
-  return (
-    <LuxCard accent="emerald" glow>
-      <div className="px-4 pt-3.5 pb-1 text-center">
-        <div className="flex items-center justify-center gap-2">
-          <Swords className="w-4 h-4 text-emerald-400" />
-          <p className="text-white font-black text-sm">ניצחונות</p>
-          <span className="text-[0.6rem] text-emerald-300/70 font-bold">(עדכון חי)</span>
-        </div>
-        <div className="st-rule mt-2.5" />
-      </div>
-      <div className="p-3 pt-2 grid gap-2" style={{ gridTemplateColumns: `repeat(${teams.length}, 1fr)` }}>
-        {teams.map((_, idx) => {
-          const t = teamOf(idx);
-          const wins = teamWins?.[idx] ?? 0;
-          return (
-            <div key={idx} className="flex flex-col items-center gap-1.5">
-              <div className="flex items-center gap-1">
-                <span className={`w-2 h-2 rounded-full shrink-0 ${t.dot}`} />
-                <span className={`text-[0.62rem] font-black ${t.text} truncate`}>{t.name}</span>
-              </div>
-              <motion.span
-                key={wins}
-                initial={{ scale: 0.6, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ type: 'spring', damping: 16, stiffness: 300 }}
-                className="tnum font-black text-3xl text-white leading-none"
-              >
-                {wins}
-              </motion.span>
-              <div className="flex items-center gap-1.5">
-                <button
-                  onClick={() => onWinChange(idx, Math.max(0, wins - 1))}
-                  disabled={saving || wins === 0}
-                  aria-label={`הפחת ניצחון ${t.name}`}
-                  className="grid place-items-center w-10 h-10 rounded-xl bg-rose-500/15 ring-1 ring-rose-500/30 text-rose-300 hover:bg-rose-500/25 active:scale-95 disabled:opacity-40 transition-all cursor-pointer touch-manipulation"
-                >
-                  <Minus className="w-4 h-4" strokeWidth={3} />
-                </button>
-                <button
-                  onClick={() => onWinChange(idx, wins + 1)}
-                  disabled={saving}
-                  aria-label={`הוסף ניצחון ${t.name}`}
-                  className="grid place-items-center w-10 h-10 rounded-xl bg-emerald-500/15 ring-1 ring-emerald-500/30 text-emerald-300 hover:bg-emerald-500/25 active:scale-95 disabled:opacity-50 transition-all cursor-pointer touch-manipulation"
-                >
-                  <Plus className="w-4 h-4" strokeWidth={3} />
-                </button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-      <p className="text-center text-ink-3 text-[0.6rem] font-bold pb-3">
-        {saving ? 'שומר...' : 'הניצחונות נשמרים אוטומטית'}
-      </p>
-    </LuxCard>
-  );
-}
 
 // ─── Vote chart ───────────────────────────────────────────────────────────
 function VoteChart({ round, bets, myVotedIndex, myPlayerId }) {
@@ -297,7 +196,7 @@ function BettingSection({ round, bets, onVote, voting, hasVoted, myVotedIndex, m
       <div className="px-4 pt-3.5 pb-2 text-center">
         <div className="flex items-center justify-center gap-2">
           <Trophy className="w-4 h-4 text-amber-400" />
-          <p className="st-gold-text font-black text-sm">מי תנצח הערב?</p>
+          <p className="st-gold-text font-black text-sm">ההימור שלכם להערב</p>
         </div>
         <div className="st-rule mt-2.5" />
       </div>
@@ -357,9 +256,10 @@ export default function MatchDay() {
   const [editingPlayer, setEditingPlayer] = useState(null);    // { player, teamIndex }
   const [savingGoals, setSavingGoals] = useState(false);
   const [savingWins, setSavingWins] = useState(false);
-  const [savingMvp, setSavingMvp] = useState(false);
-  const [votingMvp, setVotingMvp] = useState(false);
-  const [myMvpVote, setMyMvpVote] = useState(null);
+  const [confirmClose, setConfirmClose] = useState(false);
+  const [closingRound, setClosingRound] = useState(false);
+  const [, setMvpVersion] = useState(0);
+  const mvpRef = useRef({ roundId: null, vote: null });
 
   const { data: currentPlayer } = useQuery({
     queryKey: ['my-player', user?.id, user?.email],
@@ -444,68 +344,78 @@ export default function MatchDay() {
   const goals = round?.player_goals || {};
 
   const handleWinsChange = async (teamIndex, newCount) => {
-    const cached = queryClient.getQueryData(['latest-round']);
-    if (!cached) return;
-    const nextWins = { ...(cached.teamWins || {}), [teamIndex]: newCount };
-    queryClient.setQueryData(['latest-round'], { ...cached, teamWins: nextWins });
+    if (!round) return;
+    const qKey = isAdmin ? ['latest-round-admin'] : ['latest-round'];
+    const nextWins = { ...(round.teamWins || {}), [teamIndex]: newCount };
+    queryClient.setQueryData(qKey, { ...round, teamWins: nextWins });
     setSavingWins(true);
     try {
-      await Round.update(cached.id, { teamWins: nextWins });
-      queryClient.invalidateQueries({ queryKey: ['latest-round'] });
+      await Round.update(round.id, { teamWins: nextWins });
+      queryClient.invalidateQueries({ queryKey: qKey });
       queryClient.invalidateQueries({ queryKey: ['rounds'] });
     } catch (e) {
       toast.error('שגיאה בשמירת הניצחון', { description: e.message });
-      queryClient.setQueryData(['latest-round'], cached);
+      queryClient.setQueryData(qKey, round);
     } finally {
       setSavingWins(false);
     }
   };
 
-  const roundQueryKey = isAdmin ? ['latest-round-admin'] : ['latest-round'];
+  // Sync ref when round changes — ref never resets between renders
+  if (round?.id !== mvpRef.current.roundId) {
+    mvpRef.current = {
+      roundId: round?.id || null,
+      vote: round?.id ? (localStorage.getItem(`mvp_vote_${round.id}`) || null) : null,
+    };
+  }
+  const myMvpVote = mvpRef.current.vote;
+  const hasVotedMvp = !!myMvpVote;
+  const serverMvpVotes = round?.mvpVotes || {};
+  const displayMvpVotes = (myMvpVote && !serverMvpVotes[myMvpVote])
+    ? { ...serverMvpVotes, [myMvpVote]: 1 }
+    : serverMvpVotes;
+  const totalMvpVotes = Object.values(displayMvpVotes).reduce((s, v) => s + v, 0);
 
-  const mvpVotes = round?.mvpVotes || {};
-  const mvpVoters = round?.mvpVoters || [];
-  const voterId = currentPlayer?.id || user?.id;
-  const hasVotedMvp = !!(voterId && mvpVoters.includes(voterId));
-  const totalMvpVotes = Object.values(mvpVotes).reduce((s, v) => s + v, 0);
+  const handleMvpVote = (candidateId) => {
+    if (mvpRef.current.vote || !round?.id) return;
+    mvpRef.current = { roundId: round.id, vote: candidateId };
+    localStorage.setItem(`mvp_vote_${round.id}`, candidateId);
+    setMvpVersion(v => v + 1);
+    const nextVotes = { ...serverMvpVotes, [candidateId]: (serverMvpVotes[candidateId] || 0) + 1 };
+    Round.update(round.id, { mvpVotes: nextVotes }).catch(() => {});
+  };
 
-  const handleMvpVote = async (candidateId) => {
-    if (!voterId || hasVotedMvp || votingMvp) return;
-    const cached = queryClient.getQueryData(roundQueryKey);
-    if (!cached) return;
-    const nextVotes = { ...(cached.mvpVotes || {}), [candidateId]: ((cached.mvpVotes || {})[candidateId] || 0) + 1 };
-    const nextVoters = [...(cached.mvpVoters || []), voterId];
-    queryClient.setQueryData(roundQueryKey, { ...cached, mvpVotes: nextVotes, mvpVoters: nextVoters });
-    setMyMvpVote(candidateId);
-    setVotingMvp(true);
+  const handleCloseRound = async () => {
+    if (!round) return;
+    setClosingRound(true);
     try {
-      await Round.update(cached.id, { mvpVotes: nextVotes, mvpVoters: nextVoters });
+      await Round.update(round.id, { is_published: false });
+      queryClient.invalidateQueries({ queryKey: ['latest-round'] });
+      queryClient.invalidateQueries({ queryKey: ['latest-round-admin'] });
+      queryClient.invalidateQueries({ queryKey: ['rounds'] });
+      toast.success('המחזור נסגר בהצלחה');
+      navigate('/PlayerHome');
     } catch (e) {
-      toast.error('שגיאה בשמירת ההצבעה');
-      queryClient.setQueryData(roundQueryKey, cached);
-      setMyMvpVote(null);
-    } finally {
-      setVotingMvp(false);
+      toast.error('שגיאה בסגירת המחזור', { description: e.message });
+      setClosingRound(false);
+      setConfirmClose(false);
     }
   };
 
   const handleGoalChange = async (newCount) => {
-    const cached = queryClient.getQueryData(['latest-round']);
-    if (!cached || !editingPlayer) return;
+    if (!editingPlayer || !round) return;
+    const qKey = isAdmin ? ['latest-round-admin'] : ['latest-round'];
     const pid = editingPlayer.player.id;
-    const nextGoals = { ...(cached.player_goals || {}), [pid]: newCount };
-
-    // Optimistic cache update — UI reflects the change immediately
-    queryClient.setQueryData(['latest-round'], { ...cached, player_goals: nextGoals });
+    const nextGoals = { ...(round.player_goals || {}), [pid]: newCount };
+    queryClient.setQueryData(qKey, { ...round, player_goals: nextGoals });
     setSavingGoals(true);
     try {
-      await Round.update(cached.id, { player_goals: nextGoals });
-      queryClient.invalidateQueries({ queryKey: ['latest-round'] });
+      await Round.update(round.id, { player_goals: nextGoals });
+      queryClient.invalidateQueries({ queryKey: qKey });
       queryClient.invalidateQueries({ queryKey: ['rounds'] });
     } catch (e) {
-      console.error('goal save failed', e);
       toast.error('שגיאה בשמירת הגול', { description: e.message });
-      queryClient.setQueryData(['latest-round'], cached); // revert
+      queryClient.setQueryData(qKey, round);
     } finally {
       setSavingGoals(false);
     }
@@ -543,7 +453,7 @@ export default function MatchDay() {
   const openingIdx = round.openingTeams || [];
 
   return (
-    <div className="pb-10" dir="rtl">
+    <div className="pb-28" dir="rtl">
       {/* Sticky header */}
       <div className="sticky top-16 z-20 bg-stadium/95 backdrop-blur-xl px-4 py-3.5">
         <div className="st-rule absolute bottom-0 inset-x-0" />
@@ -561,13 +471,49 @@ export default function MatchDay() {
               </p>
             </div>
           </div>
-          <button
-            onClick={() => navigate('/PlayerHome')}
-            className="flex items-center gap-1 text-slate-400 hover:text-white transition-colors text-sm font-bold shrink-0"
-          >
-            <ArrowRight className="w-4 h-4" />
-            חזרה
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            {isAdmin && (
+              confirmClose ? (
+                <div className="flex items-center gap-1.5">
+                  <span className="text-slate-300 text-[0.7rem] font-black">בטוח?</span>
+                  <button
+                    type="button"
+                    onClick={handleCloseRound}
+                    disabled={closingRound}
+                    className="grid place-items-center w-8 h-8 rounded-lg bg-rose-500/25 text-rose-300 ring-1 ring-rose-500/40 active:scale-95 disabled:opacity-50 transition-transform touch-manipulation"
+                    aria-label="אישור סגירת מחזור"
+                  >
+                    <Check className="w-4 h-4" strokeWidth={3} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmClose(false)}
+                    disabled={closingRound}
+                    className="grid place-items-center w-8 h-8 rounded-lg bg-slate-700/80 text-slate-300 ring-1 ring-white/10 active:scale-95 transition-transform touch-manipulation"
+                    aria-label="ביטול"
+                  >
+                    <X className="w-4 h-4" strokeWidth={2.5} />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setConfirmClose(true)}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-rose-500/15 ring-1 ring-rose-500/30 text-rose-300 text-[0.7rem] font-black active:scale-95 transition-transform touch-manipulation"
+                >
+                  <Lock className="w-3 h-3" strokeWidth={2.5} />
+                  סגור מחזור
+                </button>
+              )
+            )}
+            <button
+              onClick={() => navigate('/PlayerHome')}
+              className="flex items-center gap-1 text-slate-400 active:text-white transition-colors text-sm font-bold"
+            >
+              <ArrowRight className="w-4 h-4" />
+              חזרה
+            </button>
+          </div>
         </div>
       </div>
 
@@ -596,38 +542,76 @@ export default function MatchDay() {
           </motion.div>
         )}
 
-        {/* Live wins tracker — admin only */}
-        {isAdmin && (
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
-            <WinsTracker
-              teams={round.teams}
-              teamWins={round.teamWins}
-              onWinChange={handleWinsChange}
-              saving={savingWins}
-            />
-          </motion.div>
-        )}
-
-        {/* Teams */}
+        {/* Teams — single flat grid so every row aligns across all columns */}
         <div>
           <SectionTitle icon={User} className="mb-3">ההרכבים</SectionTitle>
           <motion.div
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className={`grid gap-2 ${round.teams.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}
+            transition={{ delay: 0.05 }}
+            className={`grid gap-x-2 gap-y-0 ${round.teams.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}
           >
-            {round.teams.map((playerIds, idx) => (
-              <TeamCard
-                key={idx}
-                teamIndex={idx}
-                playerIds={playerIds}
-                allPlayers={allPlayers}
-                isOpening={openingIdx.includes(idx)}
-                isAdmin={isAdmin}
-                onTapPlayer={setEditingPlayer}
-              />
-            ))}
+            {/* Headers row — stacked layout avoids overflow in narrow 3-col cells */}
+            {round.teams.map((_, teamIdx) => {
+              const t = teamOf(teamIdx);
+              const isOpening = openingIdx.includes(teamIdx);
+              const wins = round.teamWins?.[teamIdx] ?? 0;
+              return (
+                <div key={`h-${teamIdx}`} className={`rounded-t-2xl px-1.5 py-2 bg-gradient-to-b ${t.hdr} flex flex-col items-center gap-0.5 ring-1 ${t.tint.split(' ')[1]}`}>
+                  <div className="flex items-center gap-1 justify-center min-w-0 w-full">
+                    <span className={`w-2 h-2 rounded-full shrink-0 ${t.dot}`} />
+                    <p className={`font-black text-sm leading-tight truncate ${t.text}`}>{t.name}</p>
+                  </div>
+                  <span className={`text-[0.5rem] font-bold leading-none ${isOpening ? 'text-emerald-300' : 'invisible'}`}>פותחת</span>
+                  {isAdmin ? (
+                    <div className="flex items-center gap-1 mt-0.5">
+                      <button type="button" onClick={() => handleWinsChange(teamIdx, Math.max(0, wins - 1))} disabled={savingWins || !wins} className="grid place-items-center w-6 h-6 rounded bg-rose-500/20 text-rose-300 active:scale-95 disabled:opacity-30 transition-transform touch-manipulation">
+                        <Minus className="w-2.5 h-2.5" strokeWidth={3} />
+                      </button>
+                      <span className={`font-black text-base tnum w-6 text-center leading-none ${t.text}`}>{wins}</span>
+                      <button type="button" onClick={() => handleWinsChange(teamIdx, wins + 1)} disabled={savingWins} className="grid place-items-center w-6 h-6 rounded bg-emerald-500/20 text-emerald-300 active:scale-95 disabled:opacity-30 transition-transform touch-manipulation">
+                        <Plus className="w-2.5 h-2.5" strokeWidth={3} />
+                      </button>
+                    </div>
+                  ) : (
+                    <span className={`text-sm font-black tnum leading-none mt-0.5 ${wins > 0 ? t.text : 'invisible'}`}>{wins || 0}</span>
+                  )}
+                </div>
+              );
+            })}
+
+            {/* Player rows — each rowIdx is one CSS grid row, perfectly aligned */}
+            {(() => {
+              const maxLen = Math.max(...round.teams.map(t => t.length));
+              return Array.from({ length: maxLen }).flatMap((_, rowIdx) =>
+                round.teams.map((playerIds, teamIdx) => {
+                  const t = teamOf(teamIdx);
+                  const pid = playerIds[rowIdx];
+                  const p = pid ? allPlayers.find(x => x.id === pid) : null;
+                  const isLast = rowIdx === maxLen - 1;
+                  const RowTag = isAdmin && p ? 'button' : 'div';
+                  return (
+                    <RowTag
+                      key={`${teamIdx}-${rowIdx}`}
+                      type={isAdmin && p ? 'button' : undefined}
+                      onClick={isAdmin && p ? () => setEditingPlayer({ player: p, teamIndex: teamIdx }) : undefined}
+                      className={`h-11 flex items-center px-2 bg-slate-900/70 border-t border-white/5 ring-1 ${t.tint.split(' ')[1]} ${isLast ? 'rounded-b-2xl' : ''} ${isAdmin && p ? 'cursor-pointer hover:bg-white/8 active:bg-white/5 transition-colors touch-manipulation' : ''}`}
+                    >
+                      {/* spacer on right (RTL), circle at center, name adjacent on left */}
+                      <div className="flex-1" />
+                      {p && (p.image ? (
+                        <img src={p.image} alt={p.name} loading="lazy" className="w-7 h-7 rounded-full object-cover shrink-0 ring-1 ring-white/10" />
+                      ) : (
+                        <div className="grid place-items-center w-7 h-7 rounded-full bg-slate-700 shrink-0">
+                          <User className="w-3.5 h-3.5 text-slate-400" />
+                        </div>
+                      ))}
+                      <p className="flex-1 min-w-0 text-white text-sm font-bold truncate leading-tight text-right ms-1.5">{p?.name ?? ''}</p>
+                    </RowTag>
+                  );
+                })
+              );
+            })()}
           </motion.div>
         </div>
 
@@ -637,7 +621,6 @@ export default function MatchDay() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.18 }}
         >
-          <SectionTitle icon={Vote} className="mb-3">ההימור של הערב</SectionTitle>
           <BettingSection
             round={round}
             bets={optimisticBets}
@@ -656,7 +639,7 @@ export default function MatchDay() {
             {/* Header */}
             <div className="px-4 py-3 border-b border-white/5 flex items-center justify-between">
               <span className="text-slate-400 text-xs font-bold">
-                {hasVotedMvp ? 'הצבעתך נרשמה ✓' : voterId ? 'הצבע לשחקן המצטיין' : 'ההצבעה אנונימית'}
+                {hasVotedMvp ? 'הצבעתך נרשמה ✓' : 'הצבע לשחקן המצטיין'}
               </span>
               <span className="text-slate-500 text-xs font-bold tnum">{totalMvpVotes} הצבעות</span>
             </div>
@@ -667,27 +650,33 @@ export default function MatchDay() {
                   const p = allPlayers.find(pl => pl.id === pid);
                   if (!p) return null;
                   const t = teamOf(tIdx);
-                  const votes = mvpVotes[pid] || 0;
+                  const votes = displayMvpVotes[pid] || 0;
                   const pct = totalMvpVotes > 0 ? Math.round((votes / totalMvpVotes) * 100) : 0;
-                  const isTopVoted = totalMvpVotes > 0 && votes === Math.max(...Object.values(mvpVotes));
+                  const maxVotes = totalMvpVotes > 0 ? Math.max(...Object.values(displayMvpVotes)) : 0;
+                  const isTopVoted = maxVotes > 0 && votes === maxVotes;
                   const isMyVote = myMvpVote === pid;
-                  const canVote = !hasVotedMvp && !!voterId && !votingMvp;
 
                   return (
                     <button
+                      type="button"
                       key={pid}
-                      onClick={() => canVote && handleMvpVote(pid)}
-                      disabled={!canVote}
+                      onClick={() => handleMvpVote(pid)}
                       className={`relative w-full flex items-center gap-3 p-3 rounded-xl ring-1 text-right overflow-hidden transition-all touch-manipulation
-                        ${canVote ? 'active:scale-[0.99] cursor-pointer' : 'cursor-default'}
-                        ${isMyVote ? 'ring-amber-400/60 bg-amber-500/15 shadow-[0_0_0_2px_rgba(251,191,36,0.15)]' : isTopVoted && hasVotedMvp ? 'ring-amber-400/30 bg-amber-500/8' : 'ring-white/6 bg-slate-800/50'}
+                        ${!hasVotedMvp ? 'active:scale-[0.99] cursor-pointer hover:bg-white/5' : 'cursor-default'}
+                        ${isMyVote
+                          ? 'ring-amber-400/60 bg-amber-500/15'
+                          : isTopVoted && hasVotedMvp
+                            ? 'ring-amber-400/30 bg-amber-500/8'
+                            : 'ring-white/6 bg-slate-800/50'}
                       `}
                     >
-                      {/* Progress bar */}
+                      {/* Progress bar (shown after voting) */}
                       {hasVotedMvp && pct > 0 && (
-                        <div
-                          className={`absolute inset-y-0 right-0 transition-all duration-700 ${isMyVote ? 'bg-amber-500/15' : 'bg-white/4'}`}
-                          style={{ width: `${pct}%` }}
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${pct}%` }}
+                          transition={{ duration: 0.6, ease: 'easeOut' }}
+                          className={`absolute inset-y-0 right-0 ${isMyVote ? 'bg-amber-500/20' : 'bg-white/5'}`}
                         />
                       )}
 
@@ -704,9 +693,9 @@ export default function MatchDay() {
                         <p className={`text-[0.6rem] font-bold ${t.text} opacity-70`}>{t.name}</p>
                       </div>
 
-                      {/* Vote count — after voting */}
+                      {/* Vote count (shown after voting) */}
                       {hasVotedMvp && (
-                        <div className="relative shrink-0 text-left">
+                        <div className="relative shrink-0 text-left min-w-[32px]">
                           <p className={`font-black text-sm tnum ${isMyVote || isTopVoted ? 'text-amber-300' : 'text-slate-400'}`}>{votes}</p>
                           <p className="text-slate-500 text-[0.6rem] font-bold tnum">{pct}%</p>
                         </div>
