@@ -31,10 +31,12 @@ async function buildWhatsAppText(day) {
   const waitNames  = (all.waiting?.[day] || []).map(n => (n || '').trim()).filter(Boolean);
   const lines = [];
   if (header) lines.push(header, '');
-  if (mainNames.length) lines.push(...mainNames);
+  if (mainNames.length) {
+    lines.push(...mainNames.map((name, i) => `${i + 1}. ${name}`));
+  }
   if (waitNames.length) {
     if (mainNames.length) lines.push('');
-    lines.push('ממתינים:', ...waitNames);
+    lines.push('ממתינים:', ...waitNames.map((name, i) => `${i + 1}. ${name}`));
   }
   lines.push('', 'ביטול אחרי 12:00 יחויב בתשלום');
   return lines.join('\n');
