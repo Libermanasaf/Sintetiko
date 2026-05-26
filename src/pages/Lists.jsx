@@ -275,8 +275,21 @@ export default function Lists() {
 
   const copyDayList = async (day) => {
     const header = data.headers[day] || '';
-    const lines = data.rows[day].map((name, i) => `${i + 1}. ${name || ''}`.replace(/\s+$/, ''));
-    const text = [header, '', ...lines, '', 'ביטול אחרי 12:00 יחויב בתשלום'].join('\n');
+    const mainNames    = data.rows[day].map(n => (n || '').trim()).filter(Boolean);
+    const manualWait   = (data.waiting?.[day] || []).map(n => (n || '').trim()).filter(Boolean);
+    const liveSignups  = signups.filter(s => s.day === day).map(s => (s.player_name || '').trim()).filter(Boolean);
+    const allWaiting   = [...liveSignups, ...manualWait];
+
+    const lines = [];
+    if (header) lines.push(header, '');
+    if (mainNames.length) lines.push(...mainNames);
+    if (allWaiting.length) {
+      if (mainNames.length) lines.push('');
+      lines.push('ממתינים:', ...allWaiting);
+    }
+    lines.push('', 'ביטול אחרי 12:00 יחויב בתשלום');
+
+    const text = lines.join('\n');
     try {
       await navigator.clipboard.writeText(text);
       toast.success('הרשימה הועתקה ללוח!');
