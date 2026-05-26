@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -81,7 +81,7 @@ function GoalEditorSheet({ open, player, teamIndex, currentGoals, onClose, onCha
                 <div className="flex items-center justify-between gap-3">
                   <button
                     onClick={() => onChange(Math.max(0, currentGoals - 1))}
-                    disabled={saving || currentGoals === 0}
+                    disabled={currentGoals === 0}
                     aria-label="הפחת גול"
                     className="grid place-items-center w-16 h-16 rounded-2xl bg-rose-500/15 ring-1 ring-rose-500/30 text-rose-300 active:scale-95 disabled:opacity-40 transition-transform touch-manipulation"
                   >
@@ -106,9 +106,8 @@ function GoalEditorSheet({ open, player, teamIndex, currentGoals, onClose, onCha
 
                   <button
                     onClick={() => onChange(currentGoals + 1)}
-                    disabled={saving}
                     aria-label="הוסף גול"
-                    className="grid place-items-center w-16 h-16 rounded-2xl bg-emerald-500/15 ring-1 ring-emerald-500/30 text-emerald-300 active:scale-95 disabled:opacity-50 transition-transform touch-manipulation"
+                    className="grid place-items-center w-16 h-16 rounded-2xl bg-emerald-500/15 ring-1 ring-emerald-500/30 text-emerald-300 active:scale-95 transition-transform touch-manipulation"
                   >
                     <Plus className="w-7 h-7" strokeWidth={3} />
                   </button>
@@ -255,11 +254,13 @@ export default function MatchDay() {
   const [localVotedIndex, setLocalVotedIndex] = useState(null);
   const [editingPlayer, setEditingPlayer] = useState(null);    // { player, teamIndex }
   const [savingGoals, setSavingGoals] = useState(false);
-  const [savingWins, setSavingWins] = useState(false);
   const [confirmClose, setConfirmClose] = useState(false);
   const [closingRound, setClosingRound] = useState(false);
   const [, setMvpVersion] = useState(0);
   const mvpRef = useRef({ roundId: null, vote: null });
+  // Latest-write-wins sequence numbers so rapid clicks don't race
+  const winsSaveSeq = useRef(0);
+  const goalsSaveSeq = useRef(0);
 
   const { data: currentPlayer } = useQuery({
     queryKey: ['my-player', user?.id, user?.email],
@@ -279,6 +280,8 @@ export default function MatchDay() {
     queryKey: isAdmin ? ['latest-round-admin'] : ['latest-round'],
     queryFn: async () => {
       const rounds = await Round.list('-created_date');
+      // Admin: any active (uncompleted) round — no date/publish filter so editing remains possible until they explicitly close it.
+      // Player: limited to last 3 days + published.
       const cutoff = new Date();
       cutoff.setDate(cutoff.getDate() - 3);
       cutoff.setHours(0, 0, 0, 0);
@@ -286,15 +289,28 @@ export default function MatchDay() {
         Array.isArray(r.openingTeams) && r.openingTeams.length >= 2 &&
         r.winningTeam == null &&
         !r.victoryPhoto &&
-        new Date(r.date) >= cutoff &&
-        (isAdmin || r.is_published === true)
+        (isAdmin || (new Date(r.date) >= cutoff && r.is_published === true))
       ) || null;
     },
     refetchInterval: 15000,
     refetchOnWindowFocus: true,
     refetchOnMount: 'always',
     staleTime: 0,
+    placeholderData: (prev) => prev,
   });
+
+  // Force Supabase session refresh whenever the tab regains visibility,
+  // so saves don't hang on an expired token after a long absence.
+  useEffect(() => {
+    if (!supabase) return;
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        supabase.auth.getSession().catch(() => {});
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => document.removeEventListener('visibilitychange', onVisibility);
+  }, []);
 
   const { data: allPlayers = [] } = useQuery({
     queryKey: ['players'],
@@ -346,18 +362,23 @@ export default function MatchDay() {
   const handleWinsChange = async (teamIndex, newCount) => {
     if (!round) return;
     const qKey = isAdmin ? ['latest-round-admin'] : ['latest-round'];
-    const nextWins = { ...(round.teamWins || {}), [teamIndex]: newCount };
+    const roundId = round.id;
+    const currentWins = round.teamWins || {};
+    const nextWins = { ...currentWins, [teamIndex]: newCount };
+    // Optimistic update — UI reflects the click instantly, regardless of network
     queryClient.setQueryData(qKey, { ...round, teamWins: nextWins });
-    setSavingWins(true);
+    const mySeq = ++winsSaveSeq.current;
     try {
-      await Round.update(round.id, { teamWins: nextWins });
-      queryClient.invalidateQueries({ queryKey: qKey });
-      queryClient.invalidateQueries({ queryKey: ['rounds'] });
+      await Round.update(roundId, { teamWins: nextWins });
+      // Only re-sync from server if no newer click is in flight
+      if (mySeq === winsSaveSeq.current) {
+        queryClient.invalidateQueries({ queryKey: qKey });
+        queryClient.invalidateQueries({ queryKey: ['rounds'] });
+      }
     } catch (e) {
-      toast.error('שגיאה בשמירת הניצחון', { description: e.message });
-      queryClient.setQueryData(qKey, round);
-    } finally {
-      setSavingWins(false);
+      if (mySeq === winsSaveSeq.current) {
+        toast.error('שגיאה בשמירת הניצחון', { description: e?.message || 'נסה שוב' });
+      }
     }
   };
 
@@ -405,19 +426,24 @@ export default function MatchDay() {
   const handleGoalChange = async (newCount) => {
     if (!editingPlayer || !round) return;
     const qKey = isAdmin ? ['latest-round-admin'] : ['latest-round'];
+    const roundId = round.id;
     const pid = editingPlayer.player.id;
     const nextGoals = { ...(round.player_goals || {}), [pid]: newCount };
     queryClient.setQueryData(qKey, { ...round, player_goals: nextGoals });
+    const mySeq = ++goalsSaveSeq.current;
     setSavingGoals(true);
     try {
-      await Round.update(round.id, { player_goals: nextGoals });
-      queryClient.invalidateQueries({ queryKey: qKey });
-      queryClient.invalidateQueries({ queryKey: ['rounds'] });
+      await Round.update(roundId, { player_goals: nextGoals });
+      if (mySeq === goalsSaveSeq.current) {
+        queryClient.invalidateQueries({ queryKey: qKey });
+        queryClient.invalidateQueries({ queryKey: ['rounds'] });
+      }
     } catch (e) {
-      toast.error('שגיאה בשמירת הגול', { description: e.message });
-      queryClient.setQueryData(qKey, round);
+      if (mySeq === goalsSaveSeq.current) {
+        toast.error('שגיאה בשמירת הגול', { description: e?.message || 'נסה שוב' });
+      }
     } finally {
-      setSavingGoals(false);
+      if (mySeq === goalsSaveSeq.current) setSavingGoals(false);
     }
   };
 
@@ -565,11 +591,11 @@ export default function MatchDay() {
                   <span className={`text-[0.5rem] font-bold leading-none ${isOpening ? 'text-emerald-300' : 'invisible'}`}>פותחת</span>
                   {isAdmin ? (
                     <div className="flex items-center gap-1 mt-0.5">
-                      <button type="button" onClick={() => handleWinsChange(teamIdx, Math.max(0, wins - 1))} disabled={savingWins || !wins} className="grid place-items-center w-6 h-6 rounded bg-rose-500/20 text-rose-300 active:scale-95 disabled:opacity-30 transition-transform touch-manipulation">
+                      <button type="button" onClick={() => handleWinsChange(teamIdx, Math.max(0, wins - 1))} disabled={!wins} className="grid place-items-center w-6 h-6 rounded bg-rose-500/20 text-rose-300 active:scale-95 disabled:opacity-30 transition-transform touch-manipulation">
                         <Minus className="w-2.5 h-2.5" strokeWidth={3} />
                       </button>
                       <span className={`font-black text-base tnum w-6 text-center leading-none ${t.text}`}>{wins}</span>
-                      <button type="button" onClick={() => handleWinsChange(teamIdx, wins + 1)} disabled={savingWins} className="grid place-items-center w-6 h-6 rounded bg-emerald-500/20 text-emerald-300 active:scale-95 disabled:opacity-30 transition-transform touch-manipulation">
+                      <button type="button" onClick={() => handleWinsChange(teamIdx, wins + 1)} className="grid place-items-center w-6 h-6 rounded bg-emerald-500/20 text-emerald-300 active:scale-95 transition-transform touch-manipulation">
                         <Plus className="w-2.5 h-2.5" strokeWidth={3} />
                       </button>
                     </div>
