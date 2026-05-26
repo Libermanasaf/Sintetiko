@@ -595,10 +595,9 @@ export default function MatchDay() {
                       key={`${teamIdx}-${rowIdx}`}
                       type={isAdmin && p ? 'button' : undefined}
                       onClick={isAdmin && p ? () => setEditingPlayer({ player: p, teamIndex: teamIdx }) : undefined}
-                      className={`h-11 flex items-center px-2 bg-slate-900/70 border-t border-white/5 ring-1 ${t.tint.split(' ')[1]} ${isLast ? 'rounded-b-2xl' : ''} ${isAdmin && p ? 'cursor-pointer hover:bg-white/8 active:bg-white/5 transition-colors touch-manipulation' : ''}`}
+                      className={`h-11 flex items-center justify-center gap-1.5 px-2 bg-slate-900/70 border-t border-white/5 ring-1 ${t.tint.split(' ')[1]} ${isLast ? 'rounded-b-2xl' : ''} ${isAdmin && p ? 'cursor-pointer hover:bg-white/8 active:bg-white/5 transition-colors touch-manipulation' : ''}`}
                     >
-                      {/* spacer on right (RTL), circle at center, name adjacent on left */}
-                      <div className="flex-1" />
+                      {/* circle + name centered as one group, aligned with team title above */}
                       {p && (p.image ? (
                         <img src={p.image} alt={p.name} loading="lazy" className="w-7 h-7 rounded-full object-cover shrink-0 ring-1 ring-white/10" />
                       ) : (
@@ -606,7 +605,7 @@ export default function MatchDay() {
                           <User className="w-3.5 h-3.5 text-slate-400" />
                         </div>
                       ))}
-                      <p className="flex-1 min-w-0 text-white text-sm font-bold truncate leading-tight text-right ms-1.5">{p?.name ?? ''}</p>
+                      <p className="min-w-0 text-white text-sm font-bold truncate leading-tight">{p?.name ?? ''}</p>
                     </RowTag>
                   );
                 })
