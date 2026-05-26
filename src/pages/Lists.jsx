@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ClipboardList, RotateCcw, Pencil, Check, CheckCircle2, X as XIcon, Clock, AlertTriangle, Copy } from 'lucide-react';
+import { ClipboardList, ClipboardPaste, RotateCcw, Pencil, Check, CheckCircle2, X as XIcon, Clock, AlertTriangle, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/ui/lux';
 import { Signup, Player } from '@/api/entities';
@@ -298,6 +298,64 @@ export default function Lists() {
     }
   };
 
+  // Parse a multi-line string into clean names: strips "1. ", "2)", etc.
+  // Empty lines are dropped. Returns up to `limit` names.
+  const parsePastedNames = (text, limit) =>
+    text
+      .split(/\r?\n/)
+      .map(line => line.replace(/^\s*\d+\s*[.\)\-:]?\s*/, '').trim())
+      .filter(Boolean)
+      .slice(0, limit);
+
+  // Button-triggered: reads the clipboard and fills the main 18 rows.
+  const pasteDayList = async (day) => {
+    if (!navigator.clipboard?.readText) {
+      toast.error('הדפדפן לא תומך בקריאה מהלוח');
+      return;
+    }
+    try {
+      const text = await navigator.clipboard.readText();
+      if (!text?.trim()) {
+        toast.error('הלוח ריק');
+        return;
+      }
+      const names = parsePastedNames(text, 18);
+      if (names.length === 0) {
+        toast.error('לא נמצאו שמות בלוח');
+        return;
+      }
+      setData(prev => {
+        const newRows = [...EMPTY_18];
+        names.forEach((name, i) => { newRows[i] = name; });
+        const next = { ...prev, rows: { ...prev.rows, [day]: newRows } };
+        persistAll(next);
+        return next;
+      });
+      toast.success(`הודבקו ${names.length} שמות לרשימה`);
+    } catch (e) {
+      toast.error('לא ניתן לקרוא מהלוח', { description: e?.message });
+    }
+  };
+
+  // Inline paste-into-input: only intercepts multi-line pastes so single-name
+  // pastes still work normally. Distributes from row 1 regardless of where pasted.
+  const handleInputPaste = useCallback((day, kind, e) => {
+    const text = e.clipboardData?.getData('text');
+    if (!text || !text.includes('\n')) return;
+    e.preventDefault();
+    const limit = kind === 'rows' ? 18 : WAITING_ROWS;
+    const names = parsePastedNames(text, limit);
+    if (names.length === 0) return;
+    setData(prev => {
+      const newArr = Array(limit).fill('');
+      names.forEach((name, i) => { newArr[i] = name; });
+      const next = { ...prev, [kind]: { ...prev[kind], [day]: newArr } };
+      persistAll(next);
+      return next;
+    });
+    toast.success(`הודבקו ${names.length} שמות`);
+  }, []);
+
   const handleRowChange = useCallback((day, idx, value) => {
     setData(prev => {
       const next = { ...prev, rows: { ...prev.rows, [day]: prev.rows[day].map((v, i) => i === idx ? value : v) } };
@@ -434,6 +492,10 @@ export default function Lists() {
                 <div className={`bg-gradient-to-l ${bg} px-4 py-3 flex items-center justify-between border-b border-white/8 gap-2`}>
                   <EditableHeader value={data.headers[key]} color={color} onChange={val => handleHeaderChange(key, val)} />
                   <div className="flex items-center gap-1.5 shrink-0">
+                    <button onClick={() => pasteDayList(key)} title="הדבק רשימה מ-WhatsApp"
+                      className="grid place-items-center w-8 h-8 rounded-lg bg-slate-800/60 text-slate-500 hover:text-blue-400 active:scale-95 transition-all">
+                      <ClipboardPaste className="w-3.5 h-3.5" />
+                    </button>
                     <button onClick={() => copyDayList(key)} title="העתק רשימה ל-WhatsApp"
                       className="grid place-items-center w-8 h-8 rounded-lg bg-slate-800/60 text-slate-500 hover:text-emerald-400 active:scale-95 transition-all">
                       <Copy className="w-3.5 h-3.5" />
@@ -451,6 +513,7 @@ export default function Lists() {
                     <div key={i} className="flex items-center gap-3 px-3 py-1.5">
                       <span className="text-ink-3 text-xs font-black tnum w-5 shrink-0 text-center">{i + 1}</span>
                       <input type="text" value={name} onChange={e => handleRowChange(key, i, e.target.value)}
+                        onPaste={e => handleInputPaste(key, 'rows', e)}
                         placeholder="—"
                         className="flex-1 bg-transparent text-white text-sm font-bold placeholder:text-white/15 outline-none py-1 min-w-0" dir="rtl" />
                     </div>
@@ -512,6 +575,7 @@ export default function Lists() {
                       <div key={i} className="flex items-center gap-3 px-3 py-1.5">
                         <span className="w-5 shrink-0" />
                         <input type="text" value={name} onChange={e => handleWaitingChange(key, i, e.target.value)}
+                          onPaste={e => handleInputPaste(key, 'waiting', e)}
                           placeholder="—"
                           className="flex-1 bg-transparent text-slate-300 text-sm font-bold placeholder:text-white/10 outline-none py-1 min-w-0" dir="rtl" />
                       </div>
