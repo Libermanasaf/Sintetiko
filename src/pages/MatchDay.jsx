@@ -358,6 +358,7 @@ export default function MatchDay() {
   const [savingGoals, setSavingGoals] = useState(false);
   const [savingWins, setSavingWins] = useState(false);
   const [savingMvp, setSavingMvp] = useState(false);
+  const [votingMvp, setVotingMvp] = useState(false);
 
   const { data: currentPlayer } = useQuery({
     queryKey: ['my-player', user?.id, user?.email],
@@ -461,19 +462,26 @@ export default function MatchDay() {
 
   const roundQueryKey = isAdmin ? ['latest-round-admin'] : ['latest-round'];
 
-  const handleMvpChange = async (playerId) => {
+  const mvpVotes = round?.mvpVotes || {};
+  const mvpVoters = round?.mvpVoters || [];
+  const hasVotedMvp = !!(currentPlayer?.id && mvpVoters.includes(currentPlayer.id));
+  const totalMvpVotes = Object.values(mvpVotes).reduce((s, v) => s + v, 0);
+
+  const handleMvpVote = async (candidateId) => {
+    if (!currentPlayer || hasVotedMvp || votingMvp) return;
     const cached = queryClient.getQueryData(roundQueryKey);
     if (!cached) return;
-    const next = cached.starPlayer === playerId ? null : playerId;
-    queryClient.setQueryData(roundQueryKey, { ...cached, starPlayer: next });
-    setSavingMvp(true);
+    const nextVotes = { ...(cached.mvpVotes || {}), [candidateId]: ((cached.mvpVotes || {})[candidateId] || 0) + 1 };
+    const nextVoters = [...(cached.mvpVoters || []), currentPlayer.id];
+    queryClient.setQueryData(roundQueryKey, { ...cached, mvpVotes: nextVotes, mvpVoters: nextVoters });
+    setVotingMvp(true);
     try {
-      await Round.update(cached.id, { starPlayer: next });
+      await Round.update(cached.id, { mvpVotes: nextVotes, mvpVoters: nextVoters });
     } catch (e) {
-      toast.error('שגיאה בשמירת השחקן המצטיין');
+      toast.error('שגיאה בשמירת ההצבעה');
       queryClient.setQueryData(roundQueryKey, cached);
     } finally {
-      setSavingMvp(false);
+      setVotingMvp(false);
     }
   };
 
@@ -637,68 +645,72 @@ export default function MatchDay() {
           />
         </motion.div>
 
-        {/* MVP Picker */}
+        {/* MVP Vote */}
         <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
           <SectionTitle icon={Star} className="mb-3">השחקן המצטיין של הערב</SectionTitle>
-          <div className="rounded-2xl bg-slate-900/70 ring-1 ring-white/8 p-4">
-            {round.starPlayer ? (
-              (() => {
-                const mvp = allPlayers.find(p => p.id === round.starPlayer);
-                return mvp ? (
-                  <div className="flex items-center gap-3 mb-3 p-3 rounded-xl bg-amber-500/15 ring-1 ring-amber-400/40">
-                    <div className="grid place-items-center w-10 h-10 rounded-xl st-foil text-base font-black shrink-0">
-                      {(mvp.name?.[0] || '?').toUpperCase()}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-amber-300 font-black text-sm">{mvp.name}</p>
-                      <p className="text-amber-400/60 text-[0.65rem] font-bold">שחקן מצטיין ⭐</p>
-                    </div>
-                    {isAdmin && (
-                      <button onClick={() => handleMvpChange(round.starPlayer)} className="text-slate-500 active:scale-95 transition-transform">
-                        <X className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-                ) : null;
-              })()
-            ) : (
-              <p className="text-slate-500 text-xs font-medium text-center mb-3">
-                {isAdmin ? 'בחר שחקן מצטיין' : 'טרם נבחר שחקן מצטיין'}
-              </p>
-            )}
-            {isAdmin && (
-              <div className="grid grid-cols-2 gap-2">
-                {round.teams.flatMap((playerIds, tIdx) =>
-                  playerIds.map(pid => {
-                    const p = allPlayers.find(pl => pl.id === pid);
-                    if (!p) return null;
-                    const t = teamOf(tIdx);
-                    const selected = round.starPlayer === pid;
-                    return (
-                      <button
-                        key={pid}
-                        onClick={() => handleMvpChange(pid)}
-                        disabled={savingMvp}
-                        className={`flex items-center gap-2.5 p-2.5 rounded-xl ring-1 text-right transition-all active:scale-[0.98] touch-manipulation ${
-                          selected
-                            ? 'bg-amber-500/20 ring-amber-400/50'
-                            : 'bg-slate-800/60 ring-white/8 hover:bg-slate-800'
-                        }`}
-                      >
-                        <div className={`grid place-items-center w-8 h-8 rounded-lg shrink-0 ${selected ? 'st-foil' : 'bg-slate-700'}`}>
-                          <span className="text-xs font-black text-white">{(p.name?.[0] || '?').toUpperCase()}</span>
+          <div className="rounded-2xl bg-slate-900/70 ring-1 ring-white/8 overflow-hidden">
+            {/* Header */}
+            <div className="px-4 py-3 border-b border-white/5 flex items-center justify-between">
+              <span className="text-slate-400 text-xs font-bold">
+                {hasVotedMvp ? 'הצבעתך נרשמה ✓' : currentPlayer ? 'הצבע לשחקן המצטיין' : 'ההצבעה אנונימית'}
+              </span>
+              <span className="text-slate-500 text-xs font-bold tnum">{totalMvpVotes} הצבעות</span>
+            </div>
+
+            <div className="p-3 space-y-2">
+              {round.teams.flatMap((playerIds, tIdx) =>
+                playerIds.map(pid => {
+                  const p = allPlayers.find(pl => pl.id === pid);
+                  if (!p) return null;
+                  const t = teamOf(tIdx);
+                  const votes = mvpVotes[pid] || 0;
+                  const pct = totalMvpVotes > 0 ? Math.round((votes / totalMvpVotes) * 100) : 0;
+                  const isTopVoted = totalMvpVotes > 0 && votes === Math.max(...Object.values(mvpVotes));
+                  const canVote = !hasVotedMvp && !!currentPlayer && !votingMvp;
+
+                  return (
+                    <button
+                      key={pid}
+                      onClick={() => canVote && handleMvpVote(pid)}
+                      disabled={!canVote}
+                      className={`relative w-full flex items-center gap-3 p-3 rounded-xl ring-1 text-right overflow-hidden transition-all touch-manipulation
+                        ${canVote ? 'active:scale-[0.99] cursor-pointer' : 'cursor-default'}
+                        ${isTopVoted && hasVotedMvp ? 'ring-amber-400/40 bg-amber-500/10' : 'ring-white/6 bg-slate-800/50'}
+                      `}
+                    >
+                      {/* Progress bar background */}
+                      {hasVotedMvp && pct > 0 && (
+                        <div
+                          className="absolute inset-y-0 right-0 bg-amber-500/10 transition-all duration-700"
+                          style={{ width: `${pct}%` }}
+                        />
+                      )}
+
+                      {/* Avatar */}
+                      <div className={`relative grid place-items-center w-9 h-9 rounded-lg shrink-0 font-black text-sm
+                        ${isTopVoted && hasVotedMvp ? 'st-foil' : 'bg-slate-700 text-slate-300'}`}>
+                        {(p.name?.[0] || '?').toUpperCase()}
+                        {isTopVoted && hasVotedMvp && <Star className="absolute -top-1 -right-1 w-3 h-3 text-amber-400 fill-amber-400" />}
+                      </div>
+
+                      {/* Name + team */}
+                      <div className="relative min-w-0 flex-1">
+                        <p className={`font-black text-sm truncate ${isTopVoted && hasVotedMvp ? 'text-amber-300' : 'text-slate-200'}`}>{p.name}</p>
+                        <p className={`text-[0.6rem] font-bold ${t.text} opacity-70`}>{t.name}</p>
+                      </div>
+
+                      {/* Vote count — only after voting */}
+                      {hasVotedMvp && (
+                        <div className="relative shrink-0 text-left">
+                          <p className={`font-black text-sm tnum ${isTopVoted ? 'text-amber-300' : 'text-slate-400'}`}>{votes}</p>
+                          <p className="text-slate-500 text-[0.6rem] font-bold tnum">{pct}%</p>
                         </div>
-                        <div className="min-w-0 flex-1">
-                          <p className={`text-xs font-black truncate ${selected ? 'text-amber-300' : 'text-slate-300'}`}>{p.name}</p>
-                          <p className={`text-[0.6rem] font-bold ${t.text} opacity-70`}>{t.name}</p>
-                        </div>
-                        {selected && <Star className="w-3.5 h-3.5 text-amber-400 shrink-0 fill-amber-400" />}
-                      </button>
-                    );
-                  })
-                )}
-              </div>
-            )}
+                      )}
+                    </button>
+                  );
+                })
+              )}
+            </div>
           </div>
         </motion.div>
       </div>
