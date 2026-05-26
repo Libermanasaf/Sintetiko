@@ -359,6 +359,7 @@ export default function MatchDay() {
   const [savingWins, setSavingWins] = useState(false);
   const [savingMvp, setSavingMvp] = useState(false);
   const [votingMvp, setVotingMvp] = useState(false);
+  const [myMvpVote, setMyMvpVote] = useState(null);
 
   const { data: currentPlayer } = useQuery({
     queryKey: ['my-player', user?.id, user?.email],
@@ -474,12 +475,14 @@ export default function MatchDay() {
     const nextVotes = { ...(cached.mvpVotes || {}), [candidateId]: ((cached.mvpVotes || {})[candidateId] || 0) + 1 };
     const nextVoters = [...(cached.mvpVoters || []), currentPlayer.id];
     queryClient.setQueryData(roundQueryKey, { ...cached, mvpVotes: nextVotes, mvpVoters: nextVoters });
+    setMyMvpVote(candidateId);
     setVotingMvp(true);
     try {
       await Round.update(cached.id, { mvpVotes: nextVotes, mvpVoters: nextVoters });
     } catch (e) {
       toast.error('שגיאה בשמירת ההצבעה');
       queryClient.setQueryData(roundQueryKey, cached);
+      setMyMvpVote(null);
     } finally {
       setVotingMvp(false);
     }
@@ -666,6 +669,7 @@ export default function MatchDay() {
                   const votes = mvpVotes[pid] || 0;
                   const pct = totalMvpVotes > 0 ? Math.round((votes / totalMvpVotes) * 100) : 0;
                   const isTopVoted = totalMvpVotes > 0 && votes === Math.max(...Object.values(mvpVotes));
+                  const isMyVote = myMvpVote === pid;
                   const canVote = !hasVotedMvp && !!currentPlayer && !votingMvp;
 
                   return (
@@ -675,34 +679,34 @@ export default function MatchDay() {
                       disabled={!canVote}
                       className={`relative w-full flex items-center gap-3 p-3 rounded-xl ring-1 text-right overflow-hidden transition-all touch-manipulation
                         ${canVote ? 'active:scale-[0.99] cursor-pointer' : 'cursor-default'}
-                        ${isTopVoted && hasVotedMvp ? 'ring-amber-400/40 bg-amber-500/10' : 'ring-white/6 bg-slate-800/50'}
+                        ${isMyVote ? 'ring-amber-400/60 bg-amber-500/15 shadow-[0_0_0_2px_rgba(251,191,36,0.15)]' : isTopVoted && hasVotedMvp ? 'ring-amber-400/30 bg-amber-500/8' : 'ring-white/6 bg-slate-800/50'}
                       `}
                     >
-                      {/* Progress bar background */}
+                      {/* Progress bar */}
                       {hasVotedMvp && pct > 0 && (
                         <div
-                          className="absolute inset-y-0 right-0 bg-amber-500/10 transition-all duration-700"
+                          className={`absolute inset-y-0 right-0 transition-all duration-700 ${isMyVote ? 'bg-amber-500/15' : 'bg-white/4'}`}
                           style={{ width: `${pct}%` }}
                         />
                       )}
 
                       {/* Avatar */}
                       <div className={`relative grid place-items-center w-9 h-9 rounded-lg shrink-0 font-black text-sm
-                        ${isTopVoted && hasVotedMvp ? 'st-foil' : 'bg-slate-700 text-slate-300'}`}>
+                        ${isMyVote || (isTopVoted && hasVotedMvp) ? 'st-foil' : 'bg-slate-700 text-slate-300'}`}>
                         {(p.name?.[0] || '?').toUpperCase()}
-                        {isTopVoted && hasVotedMvp && <Star className="absolute -top-1 -right-1 w-3 h-3 text-amber-400 fill-amber-400" />}
+                        {isMyVote && <Star className="absolute -top-1 -right-1 w-3 h-3 text-amber-400 fill-amber-400" />}
                       </div>
 
                       {/* Name + team */}
                       <div className="relative min-w-0 flex-1">
-                        <p className={`font-black text-sm truncate ${isTopVoted && hasVotedMvp ? 'text-amber-300' : 'text-slate-200'}`}>{p.name}</p>
+                        <p className={`font-black text-sm truncate ${isMyVote ? 'text-amber-300' : isTopVoted && hasVotedMvp ? 'text-amber-200' : 'text-slate-200'}`}>{p.name}</p>
                         <p className={`text-[0.6rem] font-bold ${t.text} opacity-70`}>{t.name}</p>
                       </div>
 
-                      {/* Vote count — only after voting */}
+                      {/* Vote count — after voting */}
                       {hasVotedMvp && (
                         <div className="relative shrink-0 text-left">
-                          <p className={`font-black text-sm tnum ${isTopVoted ? 'text-amber-300' : 'text-slate-400'}`}>{votes}</p>
+                          <p className={`font-black text-sm tnum ${isMyVote || isTopVoted ? 'text-amber-300' : 'text-slate-400'}`}>{votes}</p>
                           <p className="text-slate-500 text-[0.6rem] font-bold tnum">{pct}%</p>
                         </div>
                       )}
