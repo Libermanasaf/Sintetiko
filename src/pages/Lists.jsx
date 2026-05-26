@@ -309,10 +309,12 @@ export default function Lists() {
 
     const lines = [];
     if (header) lines.push(header, '');
-    if (mainNames.length) lines.push(...mainNames);
+    if (mainNames.length) {
+      lines.push(...mainNames.map((name, i) => `${i + 1}. ${name}`));
+    }
     if (allWaiting.length) {
       if (mainNames.length) lines.push('');
-      lines.push('ממתינים:', ...allWaiting);
+      lines.push('ממתינים:', ...allWaiting.map((name, i) => `${i + 1}. ${name}`));
     }
     lines.push('', 'ביטול אחרי 12:00 יחויב בתשלום');
 
