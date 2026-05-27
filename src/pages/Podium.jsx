@@ -144,40 +144,12 @@ function Pedestal({ place, tier }) {
   const isOne = place === 1;
   return (
     <div className={`${tier.cardWidth} ${tier.pedHeight} relative -mt-0.5`}>
-      {/* === STAGE LIGHTING FOR #1 (outer diffuse cone) === */}
-      {isOne && (
-        <div
-          aria-hidden
-          className="pointer-events-none absolute left-1/2 -translate-x-1/2 -top-60 w-[230px] h-60 opacity-55"
-          style={{
-            background:
-              'linear-gradient(to bottom, rgba(251,191,36,0) 0%, rgba(251,191,36,0.18) 55%, rgba(251,191,36,0.32) 100%)',
-            clipPath: 'polygon(26% 0%, 74% 0%, 100% 100%, 0% 100%)',
-            filter: 'blur(14px)',
-          }}
-        />
-      )}
-
-      {/* === STAGE LIGHTING FOR #1 (inner focused beam, brighter core) === */}
-      {isOne && (
-        <div
-          aria-hidden
-          className="pointer-events-none absolute left-1/2 -translate-x-1/2 -top-60 w-[140px] h-60 opacity-85"
-          style={{
-            background:
-              'linear-gradient(to bottom, rgba(255,237,179,0) 0%, rgba(255,237,179,0.22) 50%, rgba(255,237,179,0.45) 100%)',
-            clipPath: 'polygon(38% 0%, 62% 0%, 100% 100%, 0% 100%)',
-            filter: 'blur(8px)',
-          }}
-        />
-      )}
-
-      {/* === Pulsing breathing halo behind the pedestal === */}
+      {/* Pulsing breathing halo behind the pedestal — kept for #1 ambient glow */}
       {isOne && (
         <div
           aria-hidden
           className="pointer-events-none absolute -inset-8 rounded-3xl blur-3xl st-breathe"
-          style={{ background: 'radial-gradient(60% 60% at 50% 50%, rgba(251,191,36,0.65), transparent 65%)' }}
+          style={{ background: 'radial-gradient(60% 60% at 50% 50%, rgba(251,191,36,0.6), transparent 65%)' }}
         />
       )}
 
@@ -295,6 +267,51 @@ function PodiumColumn({ player, place }) {
       <TopCard player={player} tier={tier} />
       <Pedestal place={place} tier={tier} />
     </motion.div>
+  );
+}
+
+/* ─── Stage light fixture — visible housing + glowing lens + tilted beam ── */
+function StageLight({ side }) {
+  const tilt = side === 'left' ? 26 : -26;
+  const sideClass = side === 'left' ? 'left-2 sm:left-6' : 'right-2 sm:right-6';
+  return (
+    <div
+      aria-hidden
+      className={`absolute top-2 ${sideClass} z-30 pointer-events-none`}
+      style={{ transform: `rotate(${tilt}deg)`, transformOrigin: '50% 0%' }}
+    >
+      <div className="relative flex flex-col items-center">
+        {/* Suspension wire (small line going up — sells the 'mounted from ceiling' feel) */}
+        <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-px h-3 bg-slate-500/60" />
+
+        {/* Housing (the fixture body) */}
+        <div className="relative w-14 h-4 rounded-md bg-gradient-to-b from-slate-600 via-slate-800 to-slate-950 shadow-[0_4px_12px_rgba(0,0,0,0.55)] ring-1 ring-amber-700/30 z-20">
+          <div className="absolute top-0.5 inset-x-2 h-px bg-amber-200/40 rounded-full" />
+        </div>
+
+        {/* Lens (glowing bulb) — protrudes from bottom of housing */}
+        <div
+          className="-mt-1.5 w-6 h-6 rounded-full z-10"
+          style={{
+            background:
+              'radial-gradient(circle at 36% 30%, rgba(255,255,255,1) 0%, rgba(254,215,170,1) 24%, rgba(251,191,36,1) 58%, rgba(146,64,14,0.9) 100%)',
+            boxShadow:
+              '0 0 28px 6px rgba(251,191,36,0.85), 0 0 12px 2px rgba(255,237,179,1), inset -1.5px -1.5px 3px rgba(146,64,14,0.5)',
+          }}
+        />
+
+        {/* Light beam — trapezoidal cone extending from the lens downward */}
+        <div
+          className="-mt-2 w-36 h-72 opacity-70"
+          style={{
+            background:
+              'linear-gradient(to bottom, rgba(251,191,36,0.5) 0%, rgba(251,191,36,0.28) 35%, rgba(251,191,36,0.12) 70%, rgba(251,191,36,0) 100%)',
+            clipPath: 'polygon(40% 0%, 60% 0%, 100% 100%, 0% 100%)',
+            filter: 'blur(10px)',
+          }}
+        />
+      </div>
+    </div>
   );
 }
 
@@ -459,11 +476,18 @@ export default function Podium() {
               <div className="relative z-10 px-4 pt-3 pb-9">
                 <Eyebrow icon={Crown}>המנצחים הגדולים</Eyebrow>
 
-                {/* Podium stage — order in RTL flex: first child appears on RIGHT */}
-                <div className="flex items-end justify-center gap-3 min-h-[420px]">
-                  {second && <PodiumColumn player={second} place={2} />}
-                  {first  && <PodiumColumn player={first}  place={1} />}
-                  {third  && <PodiumColumn player={third}  place={3} />}
+                {/* Podium stage — relative wrapper so stage lights can be absolutely positioned */}
+                <div className="relative">
+                  {/* Two visible stage light fixtures shining gold onto #1 */}
+                  <StageLight side="left" />
+                  <StageLight side="right" />
+
+                  {/* Podium columns — order in RTL flex: first child appears on RIGHT */}
+                  <div className="flex items-end justify-center gap-3 min-h-[420px]">
+                    {second && <PodiumColumn player={second} place={2} />}
+                    {first  && <PodiumColumn player={first}  place={1} />}
+                    {third  && <PodiumColumn player={third}  place={3} />}
+                  </div>
                 </div>
 
                 {/* Floor lines — two-step gradient gives stage depth */}
