@@ -12,14 +12,14 @@ import { PageHeader, EmptyState, Skeleton } from '@/components/ui/lux';
 const TIERS = {
   1: {
     label: 'אלוף',
-    cardWidth: 'w-[128px]',
-    pedHeight: 'h-52',                       // taller — dramatic hierarchy
+    cardWidth: 'w-[180px]',
+    pedHeight: 'h-72',                       // 288px — dominant
     pedClass: 'st-foil',                     // st-sweep would override position:absolute — use st-foil-shine via overlay
     pedRing: 'ring-1 ring-amber-300/55',
     pedNumColor: 'text-stadium',
-    pedNumSize: 'text-[3.75rem]',
-    avatarSize: 'w-[88px] h-[88px]',
-    avatarText: 'text-2xl',
+    pedNumSize: 'text-[5rem]',               // 80px
+    avatarSize: 'w-28 h-28',                 // 112px
+    avatarText: 'text-3xl',
     avatarRing: 'ring-amber-300',
     avatarGlow: 'shadow-[0_10px_30px_-8px_rgba(251,191,36,0.55)]',
     nameColor: 'text-amber-100',
@@ -36,14 +36,14 @@ const TIERS = {
   },
   2: {
     label: 'סגן',
-    cardWidth: 'w-[110px]',
-    pedHeight: 'h-36',
+    cardWidth: 'w-[140px]',
+    pedHeight: 'h-48',                       // 192px
     pedClass: 'bg-gradient-to-b from-slate-200 via-slate-400 to-slate-700',
     pedRing: 'ring-1 ring-slate-300/45',
     pedNumColor: 'text-stadium',
-    pedNumSize: 'text-[2.75rem]',
-    avatarSize: 'w-[68px] h-[68px]',
-    avatarText: 'text-xl',
+    pedNumSize: 'text-[3.5rem]',             // 56px
+    avatarSize: 'w-[84px] h-[84px]',         // 84px
+    avatarText: 'text-2xl',
     avatarRing: 'ring-slate-300',
     avatarGlow: 'shadow-[0_6px_22px_-8px_rgba(203,213,225,0.42)]',
     nameColor: 'text-slate-100',
@@ -59,14 +59,14 @@ const TIERS = {
   },
   3: {
     label: 'ארד',
-    cardWidth: 'w-[110px]',
-    pedHeight: 'h-28',
+    cardWidth: 'w-[140px]',
+    pedHeight: 'h-36',                       // 144px
     pedClass: 'bg-gradient-to-b from-orange-300 via-orange-600 to-orange-900',
     pedRing: 'ring-1 ring-orange-400/45',
     pedNumColor: 'text-orange-50',
-    pedNumSize: 'text-[2.5rem]',
-    avatarSize: 'w-[68px] h-[68px]',
-    avatarText: 'text-xl',
+    pedNumSize: 'text-[3.25rem]',            // 52px
+    avatarSize: 'w-[84px] h-[84px]',
+    avatarText: 'text-2xl',
     avatarRing: 'ring-orange-400',
     avatarGlow: 'shadow-[0_6px_22px_-8px_rgba(251,146,60,0.45)]',
     nameColor: 'text-orange-100',
@@ -118,17 +118,17 @@ function TopCard({ player, tier }) {
           ring={tier.avatarRing}
           glow={tier.avatarGlow}
         />
-        <p className={`mt-2 font-black text-[0.8rem] text-center leading-tight truncate max-w-[108px] ${tier.nameColor}`}>
+        <p className={`mt-2.5 font-black text-sm text-center leading-tight truncate max-w-full px-1 ${tier.nameColor}`}>
           {player.name}
         </p>
-        <div className="mt-1 flex items-center gap-1">
-          <Trophy className={`w-3.5 h-3.5 ${tier.winTone}`} strokeWidth={2.6} fill="currentColor" />
-          <span className={`tnum font-black text-base leading-none ${tier.winTone}`}>
+        <div className="mt-1.5 flex items-center gap-1.5">
+          <Trophy className={`w-4 h-4 ${tier.winTone}`} strokeWidth={2.5} fill="currentColor" />
+          <span className={`tnum font-black text-lg leading-none ${tier.winTone}`}>
             {player.wins || 0}
           </span>
         </div>
         {winRate != null && (
-          <span className="mt-0.5 text-[0.6rem] font-black tnum text-ink-3 tracking-wide">
+          <span className="mt-1 text-[0.65rem] font-black tnum text-ink-3 tracking-wide">
             {winRate}%
             <span className="opacity-60 mx-1">·</span>
             {player.appearances} משחקים
@@ -256,12 +256,12 @@ function PodiumColumn({ player, place }) {
     >
       {tier.crown && (
         <motion.div
-          initial={{ y: -10, opacity: 0 }}
+          initial={{ y: -12, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: tier.delay + 0.3, type: 'spring', stiffness: 240 }}
-          className="mb-2 st-float drop-shadow-[0_0_18px_rgba(251,191,36,0.6)]"
+          className="mb-2.5 st-float drop-shadow-[0_0_22px_rgba(251,191,36,0.7)]"
         >
-          <Crown className="w-10 h-10 text-amber-300" strokeWidth={1.8} fill="currentColor" />
+          <Crown className="w-14 h-14 text-amber-300" strokeWidth={1.7} fill="currentColor" />
         </motion.div>
       )}
       <TopCard player={player} tier={tier} />
@@ -272,42 +272,42 @@ function PodiumColumn({ player, place }) {
 
 /* ─── Stage light fixture — visible housing + glowing lens + tilted beam ── */
 function StageLight({ side }) {
-  const tilt = side === 'left' ? 26 : -26;
-  const sideClass = side === 'left' ? 'left-2 sm:left-6' : 'right-2 sm:right-6';
+  const tilt = side === 'left' ? 28 : -28;
+  const sideClass = side === 'left' ? 'left-2 sm:left-8' : 'right-2 sm:right-8';
   return (
     <div
       aria-hidden
-      className={`absolute top-2 ${sideClass} z-30 pointer-events-none`}
+      className={`absolute top-3 ${sideClass} z-30 pointer-events-none`}
       style={{ transform: `rotate(${tilt}deg)`, transformOrigin: '50% 0%' }}
     >
       <div className="relative flex flex-col items-center">
         {/* Suspension wire (small line going up — sells the 'mounted from ceiling' feel) */}
-        <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-px h-3 bg-slate-500/60" />
+        <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-px h-4 bg-slate-500/60" />
 
         {/* Housing (the fixture body) */}
-        <div className="relative w-14 h-4 rounded-md bg-gradient-to-b from-slate-600 via-slate-800 to-slate-950 shadow-[0_4px_12px_rgba(0,0,0,0.55)] ring-1 ring-amber-700/30 z-20">
-          <div className="absolute top-0.5 inset-x-2 h-px bg-amber-200/40 rounded-full" />
+        <div className="relative w-20 h-5 rounded-md bg-gradient-to-b from-slate-600 via-slate-800 to-slate-950 shadow-[0_6px_16px_rgba(0,0,0,0.6)] ring-1 ring-amber-700/30 z-20">
+          <div className="absolute top-1 inset-x-3 h-px bg-amber-200/40 rounded-full" />
         </div>
 
         {/* Lens (glowing bulb) — protrudes from bottom of housing */}
         <div
-          className="-mt-1.5 w-6 h-6 rounded-full z-10"
+          className="-mt-2 w-8 h-8 rounded-full z-10"
           style={{
             background:
               'radial-gradient(circle at 36% 30%, rgba(255,255,255,1) 0%, rgba(254,215,170,1) 24%, rgba(251,191,36,1) 58%, rgba(146,64,14,0.9) 100%)',
             boxShadow:
-              '0 0 28px 6px rgba(251,191,36,0.85), 0 0 12px 2px rgba(255,237,179,1), inset -1.5px -1.5px 3px rgba(146,64,14,0.5)',
+              '0 0 36px 8px rgba(251,191,36,0.9), 0 0 16px 3px rgba(255,237,179,1), inset -2px -2px 4px rgba(146,64,14,0.55)',
           }}
         />
 
         {/* Light beam — trapezoidal cone extending from the lens downward */}
         <div
-          className="-mt-2 w-36 h-72 opacity-70"
+          className="-mt-2.5 w-52 h-96 opacity-75"
           style={{
             background:
-              'linear-gradient(to bottom, rgba(251,191,36,0.5) 0%, rgba(251,191,36,0.28) 35%, rgba(251,191,36,0.12) 70%, rgba(251,191,36,0) 100%)',
+              'linear-gradient(to bottom, rgba(251,191,36,0.55) 0%, rgba(251,191,36,0.3) 35%, rgba(251,191,36,0.12) 70%, rgba(251,191,36,0) 100%)',
             clipPath: 'polygon(40% 0%, 60% 0%, 100% 100%, 0% 100%)',
-            filter: 'blur(10px)',
+            filter: 'blur(12px)',
           }}
         />
       </div>
@@ -443,7 +443,7 @@ export default function Podium() {
   const [first, second, third] = ranked;
 
   return (
-    <div className="pb-10 max-w-lg mx-auto">
+    <div className="pb-10 max-w-xl mx-auto">
       <PageHeader
         icon={Trophy}
         title="הפודיום"
@@ -483,7 +483,7 @@ export default function Podium() {
                   <StageLight side="right" />
 
                   {/* Podium columns — order in RTL flex: first child appears on RIGHT */}
-                  <div className="flex items-end justify-center gap-3 min-h-[420px]">
+                  <div className="flex items-end justify-center gap-3 min-h-[540px]">
                     {second && <PodiumColumn player={second} place={2} />}
                     {first  && <PodiumColumn player={first}  place={1} />}
                     {third  && <PodiumColumn player={third}  place={3} />}
