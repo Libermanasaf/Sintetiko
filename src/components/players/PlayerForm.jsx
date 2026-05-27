@@ -95,7 +95,7 @@ export default function PlayerForm({ isOpen, onClose, onSubmit, player }) {
             {/* Gold hairline at the top */}
             <div className="h-px bg-gradient-to-r from-transparent via-amber-400/70 to-transparent" />
 
-            <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+            <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
               {/* Header */}
               <div className="flex items-center justify-between px-5 py-4 border-b border-white/8 shrink-0">
                 <h2 className="text-lg font-black st-gold-text">
@@ -112,7 +112,7 @@ export default function PlayerForm({ isOpen, onClose, onSubmit, player }) {
               </div>
 
               {/* Scrollable content */}
-              <div className="flex-1 overflow-y-auto px-5 py-5 space-y-5">
+              <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4 space-y-4">
                 {/* Image Upload */}
                 <div className="flex justify-center">
                   <label className="cursor-pointer group">
@@ -127,10 +127,10 @@ export default function PlayerForm({ isOpen, onClose, onSubmit, player }) {
                         <img
                           src={image}
                           alt="Player"
-                          className="w-28 h-28 rounded-full object-cover ring-4 ring-amber-500/35 group-hover:ring-amber-400/55 transition-all shadow-[0_8px_24px_-8px_rgba(251,191,36,0.4)]"
+                          className="w-24 h-24 rounded-full object-cover ring-4 ring-amber-500/35 group-hover:ring-amber-400/55 transition-all shadow-[0_8px_24px_-8px_rgba(251,191,36,0.4)]"
                         />
                       ) : (
-                        <div className="w-28 h-28 rounded-full bg-gradient-to-br from-slate-700 to-slate-900 grid place-items-center ring-4 ring-amber-500/25 group-hover:ring-amber-400/45 transition-all shadow-[0_8px_24px_-8px_rgba(251,191,36,0.25)]">
+                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-slate-700 to-slate-900 grid place-items-center ring-4 ring-amber-500/25 group-hover:ring-amber-400/45 transition-all shadow-[0_8px_24px_-8px_rgba(251,191,36,0.25)]">
                           {isUploading ? (
                             <div className="w-7 h-7 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
                           ) : (
