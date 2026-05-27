@@ -369,6 +369,17 @@ html, body, #root {
   88%,100% { transform: translateX(120%); }
 }
 
+/* Pedestal-safe shimmer — applies the sweep animation WITHOUT
+   forcing position:relative on the host (which would break absolutely
+   positioned pedestals). Use on a child overlay div with its own bg. */
+.st-foil-shine {
+  animation: st-sweep 3.4s ease-in-out infinite;
+  transform: translateX(-120%);
+}
+@media (prefers-reduced-motion: reduce) {
+  .st-foil-shine { animation: none !important; transform: translateX(-120%); }
+}
+
 /* skeleton shimmer */
 .st-skeleton {
   background: linear-gradient(

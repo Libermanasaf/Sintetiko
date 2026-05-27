@@ -14,7 +14,7 @@ const TIERS = {
     label: 'אלוף',
     cardWidth: 'w-[128px]',
     pedHeight: 'h-52',                       // taller — dramatic hierarchy
-    pedClass: 'st-foil st-sweep',
+    pedClass: 'st-foil',                     // st-sweep would override position:absolute — use st-foil-shine via overlay
     pedRing: 'ring-1 ring-amber-300/55',
     pedNumColor: 'text-stadium',
     pedNumSize: 'text-[3.75rem]',
@@ -144,6 +144,15 @@ function Pedestal({ place, tier }) {
   const isOne = place === 1;
   return (
     <div className={`${tier.cardWidth} ${tier.pedHeight} relative -mt-0.5`}>
+      {/* Gold halo glow behind #1 — diffuse soft light, sits behind the block */}
+      {isOne && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -inset-4 rounded-2xl blur-2xl opacity-60"
+          style={{ background: 'radial-gradient(60% 60% at 50% 40%, rgba(251,191,36,0.55), transparent 70%)' }}
+        />
+      )}
+
       {/* Main pedestal block */}
       <div
         className={`absolute inset-0 rounded-t-2xl ${tier.pedRing} ${tier.pedClass} overflow-hidden`}
@@ -151,7 +160,7 @@ function Pedestal({ place, tier }) {
           boxShadow: `${tier.bevelShadow}, 0 24px 48px -16px rgba(0,0,0,0.75)`,
         }}
       >
-        {/* Top bright lip — 5px highlight at the top edge */}
+        {/* Top bright lip — 6px highlight at the top edge */}
         <div
           aria-hidden
           className={`pointer-events-none absolute inset-x-0 top-0 h-1.5 bg-gradient-to-b ${tier.topLip} opacity-90`}
@@ -163,14 +172,19 @@ function Pedestal({ place, tier }) {
           className={`pointer-events-none absolute inset-x-0 bottom-0 h-5 bg-gradient-to-t ${tier.bottomShade}`}
         />
 
-        {/* Inner top-center radial sheen — like overhead light catching the surface */}
+        {/* Inner top-center radial sheen — overhead light catching the surface
+            (slightly stronger on #1 for extra shine) */}
         <div
           aria-hidden
           className="pointer-events-none absolute inset-x-0 top-0 h-2/3"
-          style={{ background: 'radial-gradient(60% 80% at 50% 0%, rgba(255,255,255,0.42), transparent 72%)' }}
+          style={{
+            background: isOne
+              ? 'radial-gradient(60% 80% at 50% 0%, rgba(255,255,255,0.55), transparent 70%)'
+              : 'radial-gradient(60% 80% at 50% 0%, rgba(255,255,255,0.42), transparent 72%)',
+          }}
         />
 
-        {/* Vertical metal-brush grain — adds material richness without noise */}
+        {/* Vertical metal-brush grain — material richness */}
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 opacity-30 mix-blend-overlay"
@@ -179,6 +193,18 @@ function Pedestal({ place, tier }) {
               'repeating-linear-gradient(180deg, rgba(255,255,255,0.06) 0 1px, transparent 1px 4px)',
           }}
         />
+
+        {/* GOLD SHIMMER SWEEP — only on #1, uses st-foil-shine (no position override) */}
+        {isOne && (
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 st-foil-shine"
+            style={{
+              background:
+                'linear-gradient(100deg, transparent 38%, hsl(46 92% 78% / 0.32) 50%, transparent 62%)',
+            }}
+          />
+        )}
 
         {/* Tier label — only on #1 (the only pedestal with room) */}
         {isOne && (
@@ -205,10 +231,11 @@ function Pedestal({ place, tier }) {
         />
       </div>
 
-      {/* Soft floor reflection — tier-colored glow under the pedestal */}
+      {/* Soft floor reflection — tier-colored glow under the pedestal
+          (#1 gets a stronger, wider reflection) */}
       <div
         aria-hidden
-        className="pointer-events-none absolute -bottom-3 inset-x-1.5 h-3 rounded-full blur-md opacity-70"
+        className={`pointer-events-none absolute ${isOne ? '-bottom-4 inset-x-0 h-4' : '-bottom-3 inset-x-1.5 h-3'} rounded-full blur-md ${isOne ? 'opacity-80' : 'opacity-70'}`}
         style={{ background: tier.reflection }}
       />
     </div>
