@@ -144,12 +144,40 @@ function Pedestal({ place, tier }) {
   const isOne = place === 1;
   return (
     <div className={`${tier.cardWidth} ${tier.pedHeight} relative -mt-0.5`}>
-      {/* Gold halo glow behind #1 — diffuse soft light, sits behind the block */}
+      {/* === STAGE LIGHTING FOR #1 (outer diffuse cone) === */}
       {isOne && (
         <div
           aria-hidden
-          className="pointer-events-none absolute -inset-4 rounded-2xl blur-2xl opacity-60"
-          style={{ background: 'radial-gradient(60% 60% at 50% 40%, rgba(251,191,36,0.55), transparent 70%)' }}
+          className="pointer-events-none absolute left-1/2 -translate-x-1/2 -top-60 w-[230px] h-60 opacity-55"
+          style={{
+            background:
+              'linear-gradient(to bottom, rgba(251,191,36,0) 0%, rgba(251,191,36,0.18) 55%, rgba(251,191,36,0.32) 100%)',
+            clipPath: 'polygon(26% 0%, 74% 0%, 100% 100%, 0% 100%)',
+            filter: 'blur(14px)',
+          }}
+        />
+      )}
+
+      {/* === STAGE LIGHTING FOR #1 (inner focused beam, brighter core) === */}
+      {isOne && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute left-1/2 -translate-x-1/2 -top-60 w-[140px] h-60 opacity-85"
+          style={{
+            background:
+              'linear-gradient(to bottom, rgba(255,237,179,0) 0%, rgba(255,237,179,0.22) 50%, rgba(255,237,179,0.45) 100%)',
+            clipPath: 'polygon(38% 0%, 62% 0%, 100% 100%, 0% 100%)',
+            filter: 'blur(8px)',
+          }}
+        />
+      )}
+
+      {/* === Pulsing breathing halo behind the pedestal === */}
+      {isOne && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -inset-8 rounded-3xl blur-3xl st-breathe"
+          style={{ background: 'radial-gradient(60% 60% at 50% 50%, rgba(251,191,36,0.65), transparent 65%)' }}
         />
       )}
 
@@ -157,7 +185,9 @@ function Pedestal({ place, tier }) {
       <div
         className={`absolute inset-0 rounded-t-2xl ${tier.pedRing} ${tier.pedClass} overflow-hidden`}
         style={{
-          boxShadow: `${tier.bevelShadow}, 0 24px 48px -16px rgba(0,0,0,0.75)`,
+          boxShadow: isOne
+            ? `${tier.bevelShadow}, 0 0 80px 4px rgba(251,191,36,0.5), 0 24px 48px -16px rgba(0,0,0,0.75)`
+            : `${tier.bevelShadow}, 0 24px 48px -16px rgba(0,0,0,0.75)`,
         }}
       >
         {/* Top bright lip — 6px highlight at the top edge */}

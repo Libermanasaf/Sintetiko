@@ -380,6 +380,16 @@ html, body, #root {
   .st-foil-shine { animation: none !important; transform: translateX(-120%); }
 }
 
+/* Breathing halo — gentle scale + opacity pulse (used behind #1 podium) */
+@keyframes st-breathe {
+  0%, 100% { opacity: 0.55; transform: scale(0.95); }
+  50%      { opacity: 0.95; transform: scale(1.08); }
+}
+.st-breathe { animation: st-breathe 3.6s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .st-breathe { animation: none !important; opacity: 0.75; transform: none; }
+}
+
 /* skeleton shimmer */
 .st-skeleton {
   background: linear-gradient(
