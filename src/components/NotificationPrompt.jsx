@@ -26,6 +26,10 @@ export default function NotificationPrompt() {
   const handleEnable = async () => {
     setBusy(true);
     const ok = await subscribeToPush(user?.email);
+    // Once the user has acted on this prompt — whether the subscription
+    // ultimately succeeded or the browser denied — never show it again.
+    // This prevents the banner from re-appearing on every fresh login.
+    localStorage.setItem(DISMISS_KEY, '1');
     setBusy(false);
     setShow(false);
     if (ok) {
