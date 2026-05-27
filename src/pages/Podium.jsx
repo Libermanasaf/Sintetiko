@@ -11,11 +11,13 @@ import { PageHeader, EmptyState, Skeleton } from '@/components/ui/lux';
    ═══════════════════════════════════════════════════════════════════ */
 const TIERS = {
   1: {
-    cardWidth: 'w-[126px]',
-    pedHeight: 'h-44',
+    label: 'אלוף',
+    cardWidth: 'w-[128px]',
+    pedHeight: 'h-52',                       // taller — dramatic hierarchy
     pedClass: 'st-foil st-sweep',
     pedRing: 'ring-1 ring-amber-300/55',
     pedNumColor: 'text-stadium',
+    pedNumSize: 'text-[3.75rem]',
     avatarSize: 'w-[88px] h-[88px]',
     avatarText: 'text-2xl',
     avatarRing: 'ring-amber-300',
@@ -23,38 +25,58 @@ const TIERS = {
     nameColor: 'text-amber-100',
     winTone: 'text-amber-200',
     reflection: 'rgba(251,191,36,0.55)',
+    // sculptural pedestal layers
+    topLip: 'from-amber-100 to-transparent',
+    bottomShade: 'from-amber-950/70 to-transparent',
+    bevelShadow: 'inset 2px 0 0 rgba(254, 240, 138, 0.6), inset -2px 0 0 rgba(146, 64, 14, 0.5)',
+    engrave: '0 1.5px 0 rgba(255, 220, 130, 0.5), 0 -1px 0 rgba(0, 0, 0, 0.4)',
+    labelColor: 'text-amber-950/70',
     delay: 0.05,
     crown: true,
   },
   2: {
-    cardWidth: 'w-[108px]',
-    pedHeight: 'h-32',
+    label: 'סגן',
+    cardWidth: 'w-[110px]',
+    pedHeight: 'h-36',
     pedClass: 'bg-gradient-to-b from-slate-200 via-slate-400 to-slate-700',
     pedRing: 'ring-1 ring-slate-300/45',
     pedNumColor: 'text-stadium',
+    pedNumSize: 'text-[2.75rem]',
     avatarSize: 'w-[68px] h-[68px]',
     avatarText: 'text-xl',
     avatarRing: 'ring-slate-300',
-    avatarGlow: 'shadow-[0_6px_22px_-8px_rgba(203,213,225,0.4)]',
+    avatarGlow: 'shadow-[0_6px_22px_-8px_rgba(203,213,225,0.42)]',
     nameColor: 'text-slate-100',
     winTone: 'text-slate-200',
-    reflection: 'rgba(203,213,225,0.35)',
+    reflection: 'rgba(203,213,225,0.4)',
+    topLip: 'from-white to-transparent',
+    bottomShade: 'from-slate-900/65 to-transparent',
+    bevelShadow: 'inset 2px 0 0 rgba(241, 245, 249, 0.6), inset -2px 0 0 rgba(51, 65, 85, 0.5)',
+    engrave: '0 1.5px 0 rgba(255, 255, 255, 0.55), 0 -1px 0 rgba(0, 0, 0, 0.4)',
+    labelColor: 'text-slate-700/80',
     delay: 0.18,
     crown: false,
   },
   3: {
-    cardWidth: 'w-[108px]',
-    pedHeight: 'h-24',
+    label: 'ארד',
+    cardWidth: 'w-[110px]',
+    pedHeight: 'h-28',
     pedClass: 'bg-gradient-to-b from-orange-300 via-orange-600 to-orange-900',
     pedRing: 'ring-1 ring-orange-400/45',
-    pedNumColor: 'text-orange-100',
+    pedNumColor: 'text-orange-50',
+    pedNumSize: 'text-[2.5rem]',
     avatarSize: 'w-[68px] h-[68px]',
     avatarText: 'text-xl',
     avatarRing: 'ring-orange-400',
-    avatarGlow: 'shadow-[0_6px_22px_-8px_rgba(251,146,60,0.42)]',
+    avatarGlow: 'shadow-[0_6px_22px_-8px_rgba(251,146,60,0.45)]',
     nameColor: 'text-orange-100',
     winTone: 'text-orange-200',
-    reflection: 'rgba(251,146,60,0.42)',
+    reflection: 'rgba(251,146,60,0.45)',
+    topLip: 'from-orange-200 to-transparent',
+    bottomShade: 'from-orange-950/75 to-transparent',
+    bevelShadow: 'inset 2px 0 0 rgba(254, 215, 170, 0.6), inset -2px 0 0 rgba(120, 53, 15, 0.55)',
+    engrave: '0 1.5px 0 rgba(255, 200, 130, 0.5), 0 -1px 0 rgba(0, 0, 0, 0.55)',
+    labelColor: 'text-orange-950/80',
     delay: 0.30,
     crown: false,
   },
@@ -117,26 +139,76 @@ function TopCard({ player, tier }) {
   );
 }
 
-/* ─── Pedestal block with floor reflection ─────────────────────── */
+/* ─── Sculptural pedestal — beveled edges, engraved number, metal grain ── */
 function Pedestal({ place, tier }) {
+  const isOne = place === 1;
   return (
     <div className={`${tier.cardWidth} ${tier.pedHeight} relative -mt-0.5`}>
-      {/* the pedestal itself */}
-      <div className={`absolute inset-0 rounded-t-xl ${tier.pedRing} ${tier.pedClass} shadow-[0_20px_40px_-15px_rgba(0,0,0,0.7)] overflow-hidden`}>
-        {/* tier-colored radial highlight (faint, near top) */}
+      {/* Main pedestal block */}
+      <div
+        className={`absolute inset-0 rounded-t-2xl ${tier.pedRing} ${tier.pedClass} overflow-hidden`}
+        style={{
+          boxShadow: `${tier.bevelShadow}, 0 24px 48px -16px rgba(0,0,0,0.75)`,
+        }}
+      >
+        {/* Top bright lip — 5px highlight at the top edge */}
         <div
-          className="pointer-events-none absolute inset-x-0 top-0 h-1/2 opacity-50"
-          style={{ background: 'radial-gradient(60% 80% at 50% 0%, rgba(255,255,255,0.35), transparent 70%)' }}
           aria-hidden
+          className={`pointer-events-none absolute inset-x-0 top-0 h-1.5 bg-gradient-to-b ${tier.topLip} opacity-90`}
         />
-        <div className={`absolute inset-x-0 top-3 text-center font-black text-5xl ${tier.pedNumColor} leading-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]`}>
+
+        {/* Bottom dark base — anchors the pedestal to the floor */}
+        <div
+          aria-hidden
+          className={`pointer-events-none absolute inset-x-0 bottom-0 h-5 bg-gradient-to-t ${tier.bottomShade}`}
+        />
+
+        {/* Inner top-center radial sheen — like overhead light catching the surface */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 h-2/3"
+          style={{ background: 'radial-gradient(60% 80% at 50% 0%, rgba(255,255,255,0.42), transparent 72%)' }}
+        />
+
+        {/* Vertical metal-brush grain — adds material richness without noise */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 opacity-30 mix-blend-overlay"
+          style={{
+            background:
+              'repeating-linear-gradient(180deg, rgba(255,255,255,0.06) 0 1px, transparent 1px 4px)',
+          }}
+        />
+
+        {/* Tier label — only on #1 (the only pedestal with room) */}
+        {isOne && (
+          <div className="absolute inset-x-0 top-2.5 text-center pointer-events-none">
+            <span className={`text-[0.6rem] font-black tracking-[0.42em] ${tier.labelColor}`}>
+              {tier.label}
+            </span>
+          </div>
+        )}
+
+        {/* Engraved/embossed number — pressed-into-material effect */}
+        <div
+          className={`absolute inset-x-0 ${isOne ? 'top-7' : 'top-3'} text-center font-black ${tier.pedNumColor} ${tier.pedNumSize} leading-none`}
+          style={{ textShadow: tier.engrave }}
+        >
           {place}
         </div>
+
+        {/* Hairline gold/silver/bronze divider near base */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-3 bottom-5 h-px opacity-30"
+          style={{ background: tier.reflection }}
+        />
       </div>
-      {/* soft floor reflection */}
+
+      {/* Soft floor reflection — tier-colored glow under the pedestal */}
       <div
         aria-hidden
-        className="pointer-events-none absolute -bottom-2.5 inset-x-1.5 h-2.5 rounded-full blur-md opacity-60"
+        className="pointer-events-none absolute -bottom-3 inset-x-1.5 h-3 rounded-full blur-md opacity-70"
         style={{ background: tier.reflection }}
       />
     </div>
@@ -331,7 +403,7 @@ export default function Podium() {
                 <Eyebrow icon={Crown}>המנצחים הגדולים</Eyebrow>
 
                 {/* Podium stage — order in RTL flex: first child appears on RIGHT */}
-                <div className="flex items-end justify-center gap-2.5 min-h-[340px]">
+                <div className="flex items-end justify-center gap-3 min-h-[420px]">
                   {second && <PodiumColumn player={second} place={2} />}
                   {first  && <PodiumColumn player={first}  place={1} />}
                   {third  && <PodiumColumn player={third}  place={3} />}
