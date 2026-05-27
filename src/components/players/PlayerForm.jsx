@@ -77,13 +77,13 @@ export default function PlayerForm({ isOpen, onClose, onSubmit, player }) {
             onClick={onClose}
           />
 
-          {/* Modal */}
+          {/* Modal — uses sticky header/footer pattern (not flex-1, which is unreliable with max-h) */}
           <motion.div
             initial={{ opacity: 0, y: 100 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 100 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="fixed bottom-0 left-0 right-0 z-[60] rounded-t-3xl shadow-[0_-20px_60px_rgba(0,0,0,0.7)] max-h-[92vh] flex flex-col overflow-hidden bg-gradient-to-b from-slate-900 to-slate-950"
+            className="fixed bottom-0 left-0 right-0 z-[60] rounded-t-3xl shadow-[0_-20px_60px_rgba(0,0,0,0.7)] max-h-[92vh] overflow-y-auto bg-gradient-to-b from-slate-900 to-slate-950"
             dir="rtl"
             style={{
               // Re-tune the shadcn primary so the Slider inside renders in gold/dark
@@ -92,27 +92,27 @@ export default function PlayerForm({ isOpen, onClose, onSubmit, player }) {
               '--ring': '46 92% 58%',
             }}
           >
-            {/* Gold hairline at the top */}
-            <div className="h-px bg-gradient-to-r from-transparent via-amber-400/70 to-transparent" />
-
-            <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
-              {/* Header */}
-              <div className="flex items-center justify-between px-5 py-4 border-b border-white/8 shrink-0">
-                <h2 className="text-lg font-black st-gold-text">
-                  {player ? 'עריכת שחקן' : 'הוספת שחקן חדש'}
-                </h2>
-                <button
-                  type="button"
-                  onClick={onClose}
-                  aria-label="סגור"
-                  className="grid place-items-center w-9 h-9 rounded-lg bg-slate-800/80 text-slate-400 hover:text-white active:scale-95 transition-all touch-manipulation"
-                >
-                  <X className="w-4 h-4" />
-                </button>
+            <form onSubmit={handleSubmit}>
+              {/* Sticky header — gold hairline + title + close, always pinned to the top of the scroll viewport */}
+              <div className="sticky top-0 z-20 bg-gradient-to-b from-slate-900 to-slate-900/95 backdrop-blur-sm">
+                <div className="h-px bg-gradient-to-r from-transparent via-amber-400/70 to-transparent" />
+                <div className="flex items-center justify-between px-5 py-4 border-b border-white/8">
+                  <h2 className="text-lg font-black st-gold-text">
+                    {player ? 'עריכת שחקן' : 'הוספת שחקן חדש'}
+                  </h2>
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    aria-label="סגור"
+                    className="grid place-items-center w-9 h-9 rounded-lg bg-slate-800/80 text-slate-400 hover:text-white active:scale-95 transition-all touch-manipulation"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
 
-              {/* Scrollable content */}
-              <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4 space-y-4">
+              {/* Scrollable content (flows naturally; modal scrolls if total height exceeds 92vh) */}
+              <div className="px-5 py-4 space-y-4">
                 {/* Image Upload */}
                 <div className="flex justify-center">
                   <label className="cursor-pointer group">
@@ -187,9 +187,9 @@ export default function PlayerForm({ isOpen, onClose, onSubmit, player }) {
                 </div>
               </div>
 
-              {/* Sticky footer with submit button — always visible, safe-area aware */}
+              {/* Sticky footer — pinned to the bottom of the scroll viewport; ALWAYS visible */}
               <div
-                className="shrink-0 border-t border-white/8 bg-slate-950/95 px-5 pt-4"
+                className="sticky bottom-0 z-20 border-t border-white/8 bg-gradient-to-t from-slate-950 to-slate-950/95 backdrop-blur-sm px-5 pt-4"
                 style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}
               >
                 <button
