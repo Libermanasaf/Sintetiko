@@ -35,9 +35,9 @@ export default function QuickRoundModal({ players, onClose, onConfirm }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4" dir="rtl" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[70] flex items-end sm:items-center justify-center p-0 sm:p-4" dir="rtl" onClick={onClose}>
       <div
-        className="w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl shadow-[0_-20px_60px_rgba(0,0,0,0.7)] overflow-hidden bg-gradient-to-b from-slate-900 to-slate-950 max-h-[92vh] flex flex-col"
+        className="w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl shadow-[0_-20px_60px_rgba(0,0,0,0.7)] overflow-hidden bg-gradient-to-b from-slate-900 to-slate-950 flex flex-col max-h-[calc(100dvh-var(--bottom-nav-h)-1rem)] sm:max-h-[92vh] mb-[var(--bottom-nav-h)] sm:mb-0"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Gold hairline */}
@@ -88,11 +88,9 @@ export default function QuickRoundModal({ players, onClose, onConfirm }) {
           </div>
         </div>
 
-        {/* Actions — sticky footer, safe-area aware */}
-        <div
-          className="px-5 pt-3 flex gap-2.5 border-t border-white/8 bg-slate-950/95 shrink-0"
-          style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))' }}
-        >
+        {/* Actions — sticky footer. Modal already sits above the bottom nav
+            (mb on the panel), so a plain pb-4 is enough here. */}
+        <div className="px-5 pt-3 pb-4 flex gap-2.5 border-t border-white/8 bg-slate-950/95 shrink-0">
           <button
             onClick={onClose}
             className="flex-1 min-h-[48px] rounded-xl bg-slate-800 ring-1 ring-white/10 text-slate-300 font-black text-sm active:scale-95 transition-transform touch-manipulation"
