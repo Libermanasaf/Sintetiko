@@ -1,6 +1,6 @@
 // Service worker for Sintetiko Holon — web push + offline app shell
 
-const CACHE = 'sintetiko-v1';
+const CACHE = 'sintetiko-v2';
 
 self.addEventListener('install', () => {
   self.skipWaiting();
@@ -22,6 +22,17 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   if (request.method !== 'GET') return;
   if (!request.url.startsWith(self.location.origin)) return;
+
+  // Navigation (HTML) requests: always go to the network so a stale index.html
+  // can never pin the app to an old JS bundle. Only fall back to cache offline.
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request).catch(() =>
+        caches.match(request).then((cached) => cached || caches.match('/index.html'))
+      )
+    );
+    return;
+  }
 
   event.respondWith(
     fetch(request)

@@ -21,7 +21,11 @@ export function pushSupported() {
 export async function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return null;
   try {
-    return await navigator.serviceWorker.register('/sw.js');
+    // updateViaCache:'none' makes the browser revalidate sw.js against the network
+    // on every load, so a new deploy is picked up instead of serving a stale worker.
+    const reg = await navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' });
+    reg.update().catch(() => {});
+    return reg;
   } catch (e) {
     console.error('Service worker registration failed:', e);
     return null;
