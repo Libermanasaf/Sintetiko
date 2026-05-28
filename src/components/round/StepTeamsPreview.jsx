@@ -41,17 +41,15 @@ export default function StepTeamsPreview({ teams, players, onSave, onReshuffle, 
       className="space-y-6"
     >
       {/* Info Card */}
-      <div className="bg-slate-800/80 rounded-2xl p-5 border border-slate-700/50 shadow-sm">
-        <p className="text-slate-300 text-center leading-relaxed">
-          הקבוצות נוצרו בהצלחה!
-          <br />
-          גרור שחקנים בין קבוצות או ערבב מחדש
+      <div className="bg-slate-800/80 rounded-2xl p-3.5 sm:p-5 border border-slate-700/50 shadow-sm">
+        <p className="text-slate-300 text-center text-xs sm:text-base leading-relaxed">
+          הקבוצות נוצרו בהצלחה! גרור שחקנים בין קבוצות או ערבב מחדש
         </p>
       </div>
 
-      {/* Teams Grid */}
+      {/* Teams Grid — always one column per team, but everything scales down on mobile */}
       <DragDropContext onDragEnd={handleDragEnd}>
-        <div className="grid grid-cols-3 gap-4">
+        <div className={`grid gap-1.5 sm:gap-4 ${teams.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
           {teams.map((teamPlayerIds, teamIndex) => {
             const color = TEAM_COLORS[teamIndex % TEAM_COLORS.length];
             const teamRating = teamPlayerIds.reduce((sum, playerId) => {
@@ -61,11 +59,12 @@ export default function StepTeamsPreview({ teams, players, onSave, onReshuffle, 
             const teamAverage = teamPlayerIds.length > 0 ? teamRating / teamPlayerIds.length : 0;
 
             return (
-              <div key={teamIndex} className="space-y-3">
+              <div key={teamIndex} className="space-y-1.5 sm:space-y-3 min-w-0">
                 {/* Team Header */}
-                <div className={`${color.header} rounded-2xl p-4 shadow-lg`}>
-                  <h3 className={`font-bold ${color.text} text-xl text-center`}>
-                    {TEAM_NAMES[teamIndex]} ({teamAverage.toFixed(1)})
+                <div className={`${color.header} rounded-xl sm:rounded-2xl px-1.5 py-2 sm:p-4 shadow-lg`}>
+                  <h3 className={`font-black ${color.text} text-xs sm:text-xl text-center leading-tight truncate`}>
+                    {TEAM_NAMES[teamIndex]}
+                    <span className="opacity-80"> ({teamAverage.toFixed(1)})</span>
                   </h3>
                 </div>
 
@@ -75,7 +74,7 @@ export default function StepTeamsPreview({ teams, players, onSave, onReshuffle, 
                     <div
                       ref={provided.innerRef}
                       {...provided.droppableProps}
-                      className={`space-y-3 min-h-[60px] rounded-2xl transition-colors ${
+                      className={`space-y-1.5 sm:space-y-3 min-h-[60px] rounded-xl sm:rounded-2xl transition-colors ${
                         snapshot.isDraggingOver ? 'bg-slate-700/60 ring-2 ring-emerald-400' : ''
                       }`}
                     >
@@ -90,7 +89,7 @@ export default function StepTeamsPreview({ teams, players, onSave, onReshuffle, 
                                 ref={provided.innerRef}
                                 {...provided.draggableProps}
                                 {...provided.dragHandleProps}
-                                className={`${color.card} rounded-2xl p-4 shadow-md flex items-center gap-3 transition-opacity ${
+                                className={`${color.card} rounded-xl sm:rounded-2xl p-1.5 sm:p-4 shadow-md flex flex-col sm:flex-row items-center gap-1 sm:gap-3 transition-opacity ${
                                   snapshot.isDragging ? 'opacity-70 shadow-2xl scale-105' : ''
                                 }`}
                               >
@@ -98,16 +97,16 @@ export default function StepTeamsPreview({ teams, players, onSave, onReshuffle, 
                                   <img
                                     src={player.image}
                                     alt={player.name}
-                                    className="w-10 h-10 rounded-full object-cover ring-2 ring-white flex-shrink-0"
+                                    className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover ring-2 ring-white/80 shrink-0"
                                   />
                                 ) : (
-                                  <div className="w-10 h-10 rounded-full bg-white/30 flex items-center justify-center ring-2 ring-white flex-shrink-0">
-                                    <span className={`${color.text} text-sm font-bold`}>
+                                  <div className="grid place-items-center w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white/30 ring-2 ring-white/80 shrink-0">
+                                    <span className={`${color.text} text-xs sm:text-sm font-black`}>
                                       {player.name.charAt(0)}
                                     </span>
                                   </div>
                                 )}
-                                <p className={`${color.text} text-base font-bold`}>
+                                <p className={`${color.text} text-[0.65rem] sm:text-base font-bold text-center sm:text-right leading-tight truncate w-full min-w-0`}>
                                   {player.name}
                                 </p>
                               </div>
