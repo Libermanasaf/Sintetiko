@@ -185,6 +185,8 @@ export default function GameHistory() {
       return all.filter(r => {
         // Round with a declared winner → always visible
         if (r.winningTeam != null) return true;
+        // Explicitly closed round → finalized, always visible in history
+        if (r.is_closed) return true;
         // Old round (>3 days) → backward compatible, always visible
         const cutoff = new Date();
         cutoff.setDate(cutoff.getDate() - 3);

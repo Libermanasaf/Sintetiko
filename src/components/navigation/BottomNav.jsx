@@ -40,6 +40,7 @@ export default function BottomNav({ hidden = false }) {
         Array.isArray(r.openingTeams) && r.openingTeams.length >= 2 &&
         r.winningTeam == null &&
         !r.victoryPhoto &&
+        !r.is_closed &&
         new Date(r.date) >= cutoff &&
         r.is_published === true
       ) || null;

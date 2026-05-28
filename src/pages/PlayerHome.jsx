@@ -151,6 +151,7 @@ export default function PlayerHome() {
         Array.isArray(r.openingTeams) && r.openingTeams.length >= 2 &&
         r.winningTeam == null &&
         !r.victoryPhoto &&
+        !r.is_closed &&
         new Date(r.date) >= cutoff &&
         r.is_published === true
       ) || null;

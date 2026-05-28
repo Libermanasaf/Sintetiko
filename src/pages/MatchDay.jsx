@@ -289,6 +289,7 @@ export default function MatchDay() {
         Array.isArray(r.openingTeams) && r.openingTeams.length >= 2 &&
         r.winningTeam == null &&
         !r.victoryPhoto &&
+        !r.is_closed &&
         (isAdmin || (new Date(r.date) >= cutoff && r.is_published === true))
       ) || null;
     },
@@ -410,12 +411,26 @@ export default function MatchDay() {
     if (!round) return;
     setClosingRound(true);
     try {
-      await Round.update(round.id, { is_published: false });
+      // Finalize the round: it should vanish from the home screen / active views
+      // and live only in game history. is_closed is the flag every active-round
+      // filter checks; is_published:false keeps it out of player-facing views too.
+      // If the is_closed column hasn't been migrated yet, fall back to is_published
+      // alone so closing still succeeds instead of 400ing on the whole update.
+      try {
+        await Round.update(round.id, { is_closed: true, is_published: false });
+      } catch (err) {
+        const msg = String(err?.message || '');
+        const missingCol = err?.code === '42703' || /is_closed/.test(msg) || /column/.test(msg);
+        if (!missingCol) throw err;
+        console.warn('[CloseRound] is_closed column missing — closing via is_published only', msg);
+        await Round.update(round.id, { is_published: false });
+      }
       queryClient.invalidateQueries({ queryKey: ['latest-round'] });
       queryClient.invalidateQueries({ queryKey: ['latest-round-admin'] });
       queryClient.invalidateQueries({ queryKey: ['rounds'] });
       toast.success('המחזור נסגר בהצלחה');
-      navigate('/PlayerHome');
+      // Keep the admin in the admin area after closing — only players go to PlayerHome.
+      navigate(isAdmin ? '/Home' : '/PlayerHome');
     } catch (e) {
       toast.error('שגיאה בסגירת המחזור', { description: e.message });
       setClosingRound(false);
