@@ -100,14 +100,23 @@ export default function PlayerForm({ isOpen, onClose, onSubmit, player }) {
                   <h2 className="text-lg font-black st-gold-text">
                     {player ? 'עריכת שחקן' : 'הוספת שחקן חדש'}
                   </h2>
-                  <button
-                    type="button"
-                    onClick={onClose}
-                    aria-label="סגור"
-                    className="grid place-items-center w-9 h-9 rounded-lg bg-slate-800/80 text-slate-400 hover:text-white active:scale-95 transition-all touch-manipulation"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="submit"
+                      disabled={!name.trim()}
+                      className="px-4 py-1.5 rounded-lg bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white font-black text-sm shadow-[0_4px_12px_-4px_rgba(16,185,129,0.5)] active:scale-95 transition-all disabled:opacity-40 disabled:pointer-events-none touch-manipulation"
+                    >
+                      {player ? 'שמור' : 'הוסף'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={onClose}
+                      aria-label="סגור"
+                      className="grid place-items-center w-9 h-9 rounded-lg bg-slate-800/80 text-slate-400 hover:text-white active:scale-95 transition-all touch-manipulation"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
 
