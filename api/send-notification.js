@@ -1,5 +1,5 @@
 import webpush from 'web-push';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseAdmin } from './_supabaseAdmin.js';
 import { VAPID_PUBLIC_KEY } from '../src/lib/vapidPublic.js';
 
 export default async function handler(req, res) {
@@ -9,13 +9,13 @@ export default async function handler(req, res) {
 
   const VAPID_PUBLIC = VAPID_PUBLIC_KEY;
   const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY;
-  const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
-  const SUPABASE_KEY = process.env.VITE_SUPABASE_ANON_KEY;
 
   if (!VAPID_PRIVATE) {
     return res.status(500).json({ error: 'VAPID_PRIVATE_KEY not configured in Vercel env' });
   }
-  if (!SUPABASE_URL || !SUPABASE_KEY) {
+
+  const supabase = getSupabaseAdmin();
+  if (!supabase) {
     return res.status(500).json({ error: 'Supabase not configured' });
   }
 
@@ -27,8 +27,6 @@ export default async function handler(req, res) {
     body: body || '',
     url: url || '/',
   });
-
-  const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
   let query = supabase.from('push_subscriptions').select('*');
   if (targetEmail) query = query.eq('user_email', targetEmail.toLowerCase());
   const { data: subs, error } = await query;

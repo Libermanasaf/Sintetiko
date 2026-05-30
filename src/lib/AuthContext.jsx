@@ -170,24 +170,29 @@ export const AuthProvider = ({ children }) => {
 
     if (error) return { error };
 
-    // Link this auth user with the selected existing player profile in the database
+    // Link this auth user with the selected existing player profile.
+    // Done server-side (service_role) so the client never needs UPDATE rights on
+    // `players` — the server enforces is_approved=false and the unlinked check.
     let playerName = null;
     if (data?.user && playerId) {
-      const { data: linked, error: updateError } = await supabase
-        .from('players')
-        .update({
-          user_id: data.user.id,
-          email: email.toLowerCase(),
-          is_approved: false
-        })
-        .eq('id', playerId)
-        .select('name')
-        .single();
-
-      if (updateError) {
-        console.error('Error linking player profile during sign up:', updateError.message);
-      } else {
-        playerName = linked?.name || null;
+      try {
+        const res = await fetch('/api/link-player', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            playerId,
+            userId: data.user.id,
+            email: email.toLowerCase(),
+          }),
+        });
+        const linkData = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          console.error('Error linking player profile during sign up:', linkData.error || res.status);
+        } else {
+          playerName = linkData?.name || null;
+        }
+      } catch (linkErr) {
+        console.error('Error linking player profile during sign up:', linkErr);
       }
     }
 

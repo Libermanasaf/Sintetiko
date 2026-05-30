@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseAdmin } from './_supabaseAdmin.js';
 
 const TEAM_NAMES = ['הצהובים', 'הכחולים', 'הכתומים'];
 
@@ -6,8 +6,6 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
-  const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
-  const SUPABASE_KEY = process.env.VITE_SUPABASE_ANON_KEY;
 
   if (!ANTHROPIC_API_KEY) {
     return res.status(500).json({ error: 'ANTHROPIC_API_KEY not configured in Vercel env' });
@@ -74,10 +72,12 @@ ${teamsBlock}
     const summary = data.content?.[0]?.text?.trim() || '';
 
     // Try to persist — column ai_summary must exist in rounds table
-    if (summary && SUPABASE_URL && SUPABASE_KEY) {
+    if (summary) {
       try {
-        const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-        await supabase.from('rounds').update({ ai_summary: summary }).eq('id', roundId);
+        const supabase = getSupabaseAdmin();
+        if (supabase) {
+          await supabase.from('rounds').update({ ai_summary: summary }).eq('id', roundId);
+        }
       } catch {
         // Silently ignore if column doesn't exist yet
       }
