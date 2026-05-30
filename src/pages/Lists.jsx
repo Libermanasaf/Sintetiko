@@ -157,7 +157,7 @@ export default function Lists() {
       }
       return row?.data || null;
     },
-    staleTime: 5_000,
+    staleTime: 30_000,
     refetchOnWindowFocus: true,
   });
 
@@ -282,7 +282,8 @@ export default function Lists() {
   const { data: signups = [], refetch: refetchSignups } = useQuery({
     queryKey: ['signups'],
     queryFn: () => Signup.list('-created_date'),
-    refetchInterval: 10000,
+    staleTime: 15_000,
+    refetchInterval: 30000,
   });
   const { data: players = [] } = useQuery({
     queryKey: ['players'],

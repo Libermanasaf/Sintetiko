@@ -35,9 +35,12 @@ export function createStorage(entityName) {
   const setAll = (items) => localStorage.setItem(key, JSON.stringify(items));
 
   return {
-    async list(sortField, limit) {
+    // `columns` lets callers fetch a narrow projection instead of '*'. Passing
+    // only the fields a screen needs keeps egress down — e.g. the round-polling
+    // screens don't need the heavy victoryPhoto/jsonb blobs, just the flags.
+    async list(sortField, limit, columns) {
       if (supabase) {
-        let query = supabase.from(tableName).select('*');
+        let query = supabase.from(tableName).select(columns || '*');
         if (sortField) {
           const desc = sortField.startsWith('-');
           const field = desc ? sortField.slice(1) : sortField;

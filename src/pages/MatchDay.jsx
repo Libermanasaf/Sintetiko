@@ -293,10 +293,9 @@ export default function MatchDay() {
         (isAdmin || (new Date(r.date) >= cutoff && r.is_published === true))
       ) || null;
     },
-    refetchInterval: 15000,
+    refetchInterval: 60000,
     refetchOnWindowFocus: true,
-    refetchOnMount: 'always',
-    staleTime: 0,
+    staleTime: 30000,
     placeholderData: (prev) => prev,
   });
 
@@ -327,7 +326,7 @@ export default function MatchDay() {
       catch { return []; }
     },
     enabled: !!round,
-    refetchInterval: 15000,
+    refetchInterval: 30000,
   });
 
   const myBetFromDB = bets.find(b => b.player_id === currentPlayer?.id);

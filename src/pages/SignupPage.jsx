@@ -348,7 +348,8 @@ export default function SignupPage() {
   const { data: signups = [], isLoading } = useQuery({
     queryKey: ['signups'],
     queryFn: () => Signup.list('-created_date'),
-    refetchInterval: isAdmin ? 15000 : false,
+    staleTime: 15_000,
+    refetchInterval: isAdmin ? 30000 : false,
   });
 
   return (

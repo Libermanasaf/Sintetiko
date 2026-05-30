@@ -150,7 +150,8 @@ export default function Home() {
       ) || null;
     },
     enabled: isAdmin,
-    refetchInterval: 30000,
+    staleTime: 30_000,
+    refetchInterval: 60000,
   });
 
   // Player-facing query — only published, unfinished rounds. Shares cache with MatchDay/PlayerHome.
@@ -171,10 +172,9 @@ export default function Home() {
       ) || null;
     },
     enabled: !isAdmin,
-    staleTime: 15_000,
+    staleTime: 30_000,
     refetchOnWindowFocus: true,
-    refetchOnMount: 'always',
-    refetchInterval: 30_000,
+    refetchInterval: 60_000,
   });
 
   const handlePublish = async () => {

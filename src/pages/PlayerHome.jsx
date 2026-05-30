@@ -156,9 +156,9 @@ export default function PlayerHome() {
         r.is_published === true
       ) || null;
     },
-    staleTime: 15_000,
+    staleTime: 30_000,
     refetchOnWindowFocus: true,
-    refetchInterval: 30_000,
+    refetchInterval: 60_000,
   });
 
   if (isLoading) {

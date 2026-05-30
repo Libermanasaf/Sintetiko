@@ -46,7 +46,7 @@ export default function BottomNav({ hidden = false }) {
       ) || null;
     },
     enabled: showPlayerMenu,
-    staleTime: 15_000,
+    staleTime: 30_000,
     refetchOnWindowFocus: true,
     refetchInterval: 60_000,
   });

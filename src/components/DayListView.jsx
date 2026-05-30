@@ -63,9 +63,9 @@ export default function DayListView({ day }) {
         rows: rows || EMPTY_ROWS,
       };
     },
-    refetchInterval: 30_000,
+    refetchInterval: 60_000,
     refetchOnWindowFocus: true,
-    staleTime: 10_000,
+    staleTime: 30_000,
   });
 
   const localList = loadDay(day);
