@@ -169,12 +169,26 @@ export default function Lists() {
   const persistAll = useCallback((state) => {
     persist(state);
     if (!supabase) return;
-    supabase
-      .from('lists_state')
-      .upsert(
-        { id: 'main', data: state, updated_at: new Date().toISOString() },
-        { onConflict: 'id' }
-      )
+    // CRITICAL: the local `state` only holds {headers,rows,waiting,lastReset} and
+    // NOT publishedLists — which lives only in the cloud row (written by the
+    // publish flow). If we wrote `state` as-is we'd CLOBBER publishedLists on
+    // every save, un-publishing days behind the admin's back. So read the current
+    // cloud row first and preserve any keys we don't manage locally.
+    (async () => {
+      const { data: existing } = await supabase
+        .from('lists_state').select('data').eq('id', 'main').maybeSingle();
+      const merged = { ...(existing?.data || {}), ...state };
+      // Keep cloud-only keys (publishedLists) that aren't part of local state.
+      if (existing?.data?.publishedLists && !state.publishedLists) {
+        merged.publishedLists = existing.data.publishedLists;
+      }
+      return supabase
+        .from('lists_state')
+        .upsert(
+          { id: 'main', data: merged, updated_at: new Date().toISOString() },
+          { onConflict: 'id' }
+        );
+    })()
       .then(({ error }) => {
         if (!error) { lastSaveErrorAtRef.current = 0; return; }
         console.warn('[lists_state] save failed', error.code, error.message);

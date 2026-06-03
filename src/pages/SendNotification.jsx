@@ -4,7 +4,7 @@ import { Send, Bell, CheckCircle2, AlertCircle, Users, ShieldCheck, MessageCircl
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/ui/lux';
 import { supabase } from '@/lib/supabase';
-import { DAY_FROM_URL, publishDayList } from '@/lib/listPublish';
+import { DAY_FROM_URL, publishDayListVerified } from '@/lib/listPublish';
 
 const ADMIN_EMAIL = 'libermanasaf@gmail.com';
 
@@ -81,14 +81,16 @@ export default function SendNotification() {
 
       // Publish the day's list to players — but ONLY on a real "send to everyone"
       // for a day URL. The admin-only test send (targetEmail) must NOT publish.
-      // Snapshots the current roster so players can finally see it; editing later
-      // leaves this snapshot until the next publish.
+      // Uses the VERIFIED publish (re-reads to confirm it saved) so a silent
+      // failure surfaces loudly instead of leaving players on "not published".
+      let publishedOk = false;
       if (!targetEmail && dayForWhatsApp) {
         try {
-          await publishDayList(dayForWhatsApp);
+          await publishDayListVerified(dayForWhatsApp);
+          publishedOk = true;
         } catch (pubErr) {
-          console.warn('[publish] failed', pubErr);
-          toast.warning('הפוש נשלח, אך פרסום הרשימה לצפייה נכשל — נסה שוב', { duration: 6000 });
+          console.error('[publish] failed', pubErr);
+          toast.error('הפוש נשלח, אך פרסום הרשימה נכשל — פרסם ידנית ממסך "רשימות"', { duration: 8000 });
         }
       }
 
@@ -97,7 +99,7 @@ export default function SendNotification() {
         toast.success(
           targetEmail
             ? `נשלח לאדמין (${data.sent} מכשיר/ים)`
-            : `ההודעה נשלחה ל-${data.sent} מכשיר/ים`
+            : `ההודעה נשלחה ל-${data.sent} מכשיר/ים${publishedOk ? ' • הרשימה פורסמה ✅' : ''}`
         );
         if (!targetEmail) setBody('');
       } else {

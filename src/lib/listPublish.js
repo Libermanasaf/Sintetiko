@@ -47,6 +47,21 @@ export async function publishDayList(day) {
   if (writeErr) throw writeErr;
 }
 
+// Publishes a day, then re-reads lists_state to CONFIRM the snapshot actually
+// landed before reporting success — so a silent failure (e.g. stale code, RLS)
+// can't masquerade as "published". Throws if the write didn't take. Use this
+// from any UI that publishes (Lists button, SendNotification) for one reliable
+// path instead of fire-and-forget.
+export async function publishDayListVerified(day) {
+  await publishDayList(day);
+  const { data: row, error } = await supabase
+    .from('lists_state').select('data').eq('id', 'main').maybeSingle();
+  if (error) throw error;
+  if (!Array.isArray(row?.data?.publishedLists?.[day]?.rows)) {
+    throw new Error('הפרסום לא נשמר ב-Supabase');
+  }
+}
+
 // When the admin confirms a stand-by signup AFTER the day was already published,
 // we don't re-publish to everyone. Instead the confirmed player's name is added
 // to publishedLists[day].extraConfirmed — and only THAT player (matched by their
