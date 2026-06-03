@@ -14,9 +14,14 @@ export function getSupabaseAdmin() {
   const anonKey = process.env.VITE_SUPABASE_ANON_KEY;
   const key = serviceKey || anonKey;
   if (!url || !key) return null;
-  return createClient(url, key, {
+  const client = createClient(url, key, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
+  // Tag the client so callers can tell whether it can actually bypass RLS.
+  // Under RLS, an anon-keyed client reads 0 rows from push_subscriptions etc.,
+  // which silently breaks server pushes — callers should treat that as an error.
+  client.__isServiceRole = !!serviceKey;
+  return client;
 }
 
 export const usingServiceRole = () => !!process.env.SUPABASE_SERVICE_ROLE_KEY;

@@ -18,6 +18,15 @@ export default async function handler(req, res) {
   if (!supabase) {
     return res.status(500).json({ error: 'Supabase not configured' });
   }
+  // Hard fail (instead of silently sending to nobody) when the service_role key
+  // is missing: under RLS an anon-keyed client reads 0 push_subscriptions, so
+  // every push would vanish without a trace. Make the misconfig loud.
+  if (!supabase.__isServiceRole) {
+    console.error('[send-notification] SUPABASE_SERVICE_ROLE_KEY missing — RLS will hide all subscriptions');
+    return res.status(500).json({
+      error: 'SUPABASE_SERVICE_ROLE_KEY חסר ב-Vercel — לא ניתן לקרוא מנויים תחת RLS. הגדר את המפתח ובצע redeploy.',
+    });
+  }
 
   webpush.setVapidDetails('mailto:libermanasaf@gmail.com', VAPID_PUBLIC, VAPID_PRIVATE);
 
