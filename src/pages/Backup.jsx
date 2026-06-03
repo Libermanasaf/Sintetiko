@@ -1,12 +1,27 @@
 import React, { useState, useRef } from 'react';
 import { Player, Round, Payment } from '@/api/entities';
+import { supabase } from '@/lib/supabase';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { Download, Upload, Shield, CheckCircle2, AlertTriangle, Loader2, FileJson, Trash2, Users, CalendarDays, CreditCard } from 'lucide-react';
+import { Download, Upload, Shield, CheckCircle2, AlertTriangle, Loader2, FileJson, Users, CalendarDays, CreditCard } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { PageHeader, StatTile, SectionTitle } from '@/components/ui/lux';
+
+// Every table we back up. `restore: false` means it's captured in the export
+// for safekeeping but NOT written back on restore — push_subscriptions are
+// device-bound and per-user RLS blocks the admin from writing others' rows.
+const BACKUP_TABLES = [
+  { name: 'players', restore: true },
+  { name: 'rounds', restore: true },
+  { name: 'payments', restore: true },
+  { name: 'player_ratings', restore: true },
+  { name: 'signups', restore: true },
+  { name: 'lists_state', restore: true },
+  { name: 'round_bets', restore: true },
+  { name: 'push_subscriptions', restore: false },
+];
 
 export default function Backup() {
   const [importing, setImporting] = useState(false);
@@ -20,32 +35,43 @@ export default function Backup() {
   const { data: rounds = [] } = useQuery({ queryKey: ['rounds'], queryFn: () => Round.list() });
   const { data: payments = [] } = useQuery({ queryKey: ['payments'], queryFn: () => Payment.list() });
 
-  const handleExport = () => {
-    const backup = {
-      version: '1.0',
-      exportedAt: new Date().toISOString(),
-      appName: 'סינתטיקו חולון',
-      data: {
-        players: players.map(({ id, name, rating, image, wins, appearances, created_date, updated_date }) => ({
-          id, name, rating, image, wins, appearances, created_date, updated_date,
-        })),
-        rounds: rounds.map(({ id, date, teams, goalkeepers, openingTeams, winningTeam, teamWins, victoryPhoto, created_date, updated_date }) => ({
-          id, date, teams, goalkeepers, openingTeams, winningTeam, teamWins, victoryPhoto, created_date, updated_date,
-        })),
-        payments: payments.map(({ id, roundId, roundDate, payments: pmts, pricePerPlayer, created_date, updated_date }) => ({
-          id, roundId, roundDate, payments: pmts, pricePerPlayer, created_date, updated_date,
-        })),
-      },
-    };
+  const [exporting, setExporting] = useState(false);
 
-    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `synthetiko-backup-${format(new Date(), 'yyyy-MM-dd_HH-mm', { locale: he })}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success('הגיבוי יוצא בהצלחה!');
+  // Full export: pull EVERY table straight from Supabase (not just the three
+  // loaded into the page), so the backup captures ratings, signups, lists, etc.
+  const handleExport = async () => {
+    if (!supabase) { toast.error('Supabase לא מחובר'); return; }
+    setExporting(true);
+    try {
+      const data = {};
+      for (const { name } of BACKUP_TABLES) {
+        const { data: rows, error } = await supabase.from(name).select('*');
+        if (error) throw new Error(`${name}: ${error.message}`);
+        data[name] = rows || [];
+      }
+
+      const backup = {
+        version: '2.0-full',
+        exportedAt: new Date().toISOString(),
+        appName: 'סינתטיקו חולון',
+        data,
+      };
+
+      const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `synthetiko-backup-${format(new Date(), 'yyyy-MM-dd_HH-mm', { locale: he })}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      const total = Object.values(data).reduce((n, arr) => n + arr.length, 0);
+      toast.success(`הגיבוי יוצא בהצלחה! (${total} רשומות מ-${BACKUP_TABLES.length} טבלאות)`);
+    } catch (err) {
+      console.error('[backup export]', err);
+      toast.error('שגיאה בייצוא הגיבוי', { description: err.message });
+    } finally {
+      setExporting(false);
+    }
   };
 
   const handleFileSelect = (e) => {
@@ -59,9 +85,11 @@ export default function Backup() {
           toast.error('קובץ לא תקין — לא נוצר על ידי המערכת');
           return;
         }
-        const { players: p = [], rounds: r = [], payments: pm = [] } = parsed.data;
+        // Per-table counts for the confirm modal (works for old 1.0 and new 2.0).
+        const counts = {};
+        for (const { name } of BACKUP_TABLES) counts[name] = (parsed.data[name] || []).length;
         setPendingData(parsed);
-        setImportResult({ exportedAt: parsed.exportedAt, players: p.length, rounds: r.length, payments: pm.length });
+        setImportResult({ exportedAt: parsed.exportedAt, counts });
         setConfirmRestore(true);
       } catch {
         toast.error('שגיאה בקריאת הקובץ — וודא שהקובץ תקין');
@@ -71,65 +99,49 @@ export default function Backup() {
     e.target.value = '';
   };
 
+  // Restore by upserting each row under its ORIGINAL id (the backup preserves
+  // ids, and all foreign keys reference those ids — so no remapping needed).
+  // upsert = insert-or-replace, so existing rows are overwritten and missing
+  // ones added; we don't delete first, which is safer if a write fails midway.
+  // push_subscriptions is skipped (device-bound + per-user RLS blocks the admin).
   const handleRestore = async () => {
-    if (!pendingData) return;
+    if (!pendingData || !supabase) return;
     setImporting(true);
     setConfirmRestore(false);
     try {
-      const { players: pData = [], rounds: rData = [], payments: pmData = [] } = pendingData.data;
+      let restored = 0;
+      const skipped = [];
+      for (const { name, restore } of BACKUP_TABLES) {
+        if (!restore) continue;
+        const rows = pendingData.data[name];
+        if (!Array.isArray(rows) || rows.length === 0) continue; // table absent in old backups
 
-      const [existingPlayers, existingRounds, existingPayments] = await Promise.all([
-        Player.list(), Round.list(), Payment.list(),
-      ]);
-
-      await Promise.all([
-        ...existingPlayers.map(p => Player.delete(p.id)),
-        ...existingRounds.map(r => Round.delete(r.id)),
-        ...existingPayments.map(p => Payment.delete(p.id)),
-      ]);
-
-      const playerIdMap = {};
-      for (const p of pData) {
-        const { id: oldId, created_date, updated_date, ...fields } = p;
-        const created = await Player.create(fields);
-        playerIdMap[oldId] = created.id;
-      }
-
-      const roundIdMap = {};
-      for (const r of rData) {
-        const { id: oldId, created_date, updated_date, ...fields } = r;
-        const remappedTeams = (fields.teams || []).map(team => team.map(pid => playerIdMap[pid] || pid));
-        const remappedGoalkeepers = {};
-        if (fields.goalkeepers) {
-          for (const [teamIdx, pid] of Object.entries(fields.goalkeepers)) {
-            remappedGoalkeepers[teamIdx] = playerIdMap[pid] || pid;
+        // Upsert in chunks so a huge table (e.g. player_ratings) doesn't hit
+        // payload limits. onConflict 'id' replaces rows that already exist.
+        const CHUNK = 200;
+        for (let i = 0; i < rows.length; i += CHUNK) {
+          const batch = rows.slice(i, i + CHUNK);
+          const { error } = await supabase.from(name).upsert(batch, { onConflict: 'id' });
+          if (error) {
+            // Don't abort the whole restore — record which table failed and move on.
+            console.error(`[restore] ${name}:`, error.message);
+            skipped.push(`${name} (${error.message})`);
+            break;
           }
         }
-        const created = await Round.create({ ...fields, teams: remappedTeams, goalkeepers: remappedGoalkeepers });
-        roundIdMap[oldId] = created.id;
-      }
-
-      for (const pm of pmData) {
-        const { id: oldId, created_date, updated_date, ...fields } = pm;
-        const remappedPayments = {};
-        if (fields.payments) {
-          for (const [pid, paid] of Object.entries(fields.payments)) {
-            remappedPayments[playerIdMap[pid] || pid] = paid;
-          }
-        }
-        await Payment.create({
-          ...fields,
-          roundId: roundIdMap[fields.roundId] || fields.roundId,
-          payments: remappedPayments,
-        });
+        if (!skipped.some(s => s.startsWith(name))) restored += rows.length;
       }
 
       queryClient.invalidateQueries();
-      toast.success('הגיבוי שוחזר בהצלחה! כל הנתונים הוחלפו.');
+      if (skipped.length) {
+        toast.warning(`שוחזרו ${restored} רשומות. נכשלו: ${skipped.join('; ')}`, { duration: 9000 });
+      } else {
+        toast.success(`הגיבוי שוחזר בהצלחה! ${restored} רשומות שוחזרו.`);
+      }
       setPendingData(null);
       setImportResult(null);
     } catch (err) {
-      toast.error('שגיאה בשחזור — נסה שוב');
+      toast.error('שגיאה בשחזור — נסה שוב', { description: err.message });
       console.error(err);
     } finally {
       setImporting(false);
@@ -158,14 +170,18 @@ export default function Backup() {
             <h2 className="font-black text-white">ייצוא גיבוי</h2>
           </div>
           <p className="text-ink-2 text-sm font-medium leading-relaxed">
-            ייצא את כל הנתונים — שחקנים, מחזורים ותשלומים — לקובץ JSON שניתן לשמור במחשב.
+            ייצא את כל הנתונים — שחקנים, מחזורים, תשלומים, דירוגים, הרשמות ורשימות — לקובץ JSON שניתן לשמור במחשב.
           </p>
           <button
             onClick={handleExport}
-            className="w-full flex items-center justify-center gap-2 min-h-[52px] rounded-xl bg-gradient-to-l from-emerald-500 to-emerald-700 text-white font-black text-base shadow-[0_8px_22px_-8px_rgba(16,185,129,0.6)] active:scale-[0.98] transition-transform"
+            disabled={exporting}
+            className="w-full flex items-center justify-center gap-2 min-h-[52px] rounded-xl bg-gradient-to-l from-emerald-500 to-emerald-700 text-white font-black text-base shadow-[0_8px_22px_-8px_rgba(16,185,129,0.6)] active:scale-[0.98] transition-transform disabled:opacity-60"
           >
-            <Download className="w-5 h-5" />
-            הורד קובץ גיבוי
+            {exporting ? (
+              <><Loader2 className="w-5 h-5 animate-spin" />מייצא את כל הטבלאות...</>
+            ) : (
+              <><Download className="w-5 h-5" />הורד קובץ גיבוי</>
+            )}
           </button>
         </div>
 
@@ -220,21 +236,24 @@ export default function Backup() {
 
             <div className="grid grid-cols-3 gap-2">
               {[
-                { label: 'שחקנים', value: importResult.players, tone: 'text-emerald-300' },
-                { label: 'מחזורים', value: importResult.rounds, tone: 'text-sky-300' },
-                { label: 'תשלומים', value: importResult.payments, tone: 'text-amber-300' },
-              ].map(({ label, value, tone }) => (
-                <div key={label} className="rounded-xl bg-slate-900/80 ring-1 ring-white/8 p-2.5 text-center">
-                  <p className={`tnum text-xl font-black ${tone}`}>{value}</p>
+                { label: 'שחקנים', key: 'players', tone: 'text-emerald-300' },
+                { label: 'מחזורים', key: 'rounds', tone: 'text-sky-300' },
+                { label: 'תשלומים', key: 'payments', tone: 'text-amber-300' },
+                { label: 'דירוגים', key: 'player_ratings', tone: 'text-fuchsia-300' },
+                { label: 'הרשמות', key: 'signups', tone: 'text-teal-300' },
+                { label: 'רשימות', key: 'lists_state', tone: 'text-indigo-300' },
+              ].map(({ label, key, tone }) => (
+                <div key={key} className="rounded-xl bg-slate-900/80 ring-1 ring-white/8 p-2.5 text-center">
+                  <p className={`tnum text-xl font-black ${tone}`}>{importResult.counts?.[key] ?? 0}</p>
                   <p className="text-[0.66rem] text-ink-3 font-bold mt-0.5">{label}</p>
                 </div>
               ))}
             </div>
 
-            <div className="flex items-start gap-2 bg-rose-500/10 ring-1 ring-rose-500/25 rounded-xl px-3 py-2.5">
-              <Trash2 className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
-              <p className="text-rose-200/90 text-xs font-bold leading-relaxed">
-                כל {players.length} השחקנים, {rounds.length} המחזורים ו־{payments.length} התשלומים הנוכחיים יימחקו לצמיתות.
+            <div className="flex items-start gap-2 bg-amber-500/10 ring-1 ring-amber-500/25 rounded-xl px-3 py-2.5">
+              <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+              <p className="text-amber-200/90 text-xs font-bold leading-relaxed">
+                רשומות קיימות יוחלפו בערכים מהגיבוי (לפי מזהה). רשומות שנוספו אחרי הגיבוי יישארו. התראות Push לא משוחזרות.
               </p>
             </div>
 
