@@ -1,12 +1,12 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ClipboardList, ClipboardPaste, RotateCcw, Pencil, Check, CheckCircle2, X as XIcon, Clock, AlertTriangle, Copy } from 'lucide-react';
+import { ClipboardList, ClipboardPaste, RotateCcw, Pencil, Check, CheckCircle2, X as XIcon, Clock, AlertTriangle, Copy, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/ui/lux';
 import { Signup, Player } from '@/api/entities';
 import { supabase } from '@/lib/supabase';
-import { addConfirmedToPublished } from '@/lib/listPublish';
+import { addConfirmedToPublished, publishDayList } from '@/lib/listPublish';
 
 const SIGNUPS_TABLE_SQL = `CREATE TABLE IF NOT EXISTS signups (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -123,6 +123,7 @@ export default function Lists() {
   const [busyId, setBusyId] = useState(null);
   const [diag, setDiag] = useState({ status: 'checking', error: null, count: null });
   const [hydrated, setHydrated] = useState(false);
+  const [publishingDay, setPublishingDay] = useState(null);
   const queryClient = useQueryClient();
   // Throttle "save failed" toast so rapid edits don't spam, and remember
   // whether we ever observed a successful cloud save in this session.
@@ -415,6 +416,34 @@ export default function Lists() {
     });
   }, []);
 
+  // Publish a day's list so regular players can see it. Snapshots the current
+  // roster into publishedLists[day]; until this runs, players see "not published".
+  // First flush the live edits to the cloud, then publish from there — so what
+  // players get is exactly what's on screen. Loud success/failure feedback.
+  const handlePublishDay = useCallback(async (day) => {
+    if (!supabase) { toast.error('Supabase לא מחובר — לא ניתן לפרסם'); return; }
+    setPublishingDay(day);
+    try {
+      // Ensure the latest edits are persisted before snapshotting them.
+      await new Promise((resolve) => {
+        setData(prev => { persistAll(prev); resolve(); return prev; });
+      });
+      await publishDayList(day);
+      // Verify the write actually landed (don't trust a silent success).
+      const { data: row } = await supabase
+        .from('lists_state').select('data').eq('id', 'main').maybeSingle();
+      const ok = Array.isArray(row?.data?.publishedLists?.[day]?.rows);
+      if (!ok) throw new Error('הפרסום לא נשמר ב-Supabase');
+      queryClient.invalidateQueries({ queryKey: ['lists-state'] });
+      toast.success(`רשימת ${DAY_LABELS[day]} פורסמה — השחקנים רואים אותה כעת ✅`);
+    } catch (e) {
+      console.error('[publish day]', e);
+      toast.error('הפרסום נכשל', { description: e?.message || 'נסה שוב' });
+    } finally {
+      setPublishingDay(null);
+    }
+  }, [persistAll, queryClient]);
+
   // Confirm a signup: send push to player + add name to first empty main row + delete signup
   const handleConfirmSignup = async (signup) => {
     setBusyId(signup.id);
@@ -532,6 +561,14 @@ export default function Lists() {
                 <div className={`bg-gradient-to-l ${bg} px-4 py-3 flex items-center justify-between border-b border-white/8 gap-2`}>
                   <EditableHeader value={data.headers[key]} color={color} onChange={val => handleHeaderChange(key, val)} />
                   <div className="flex items-center gap-1.5 shrink-0">
+                    <button onClick={() => handlePublishDay(key)} disabled={publishingDay === key}
+                      title="פרסם לשחקנים — הרשימה תופיע להם רק אחרי פרסום"
+                      className="grid place-items-center h-8 px-2.5 gap-1 rounded-lg bg-amber-500/15 ring-1 ring-amber-500/30 text-amber-300 font-black text-xs hover:bg-amber-500/25 active:scale-95 transition-all disabled:opacity-50">
+                      {publishingDay === key
+                        ? <div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                        : <Send className="w-3.5 h-3.5" />}
+                      <span>פרסם</span>
+                    </button>
                     <button onClick={() => pasteDayList(key)} title="הדבק רשימה מ-WhatsApp"
                       className="grid place-items-center w-8 h-8 rounded-lg bg-slate-800/60 text-slate-500 hover:text-blue-400 active:scale-95 transition-all">
                       <ClipboardPaste className="w-3.5 h-3.5" />
