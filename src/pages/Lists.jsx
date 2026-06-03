@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { PageHeader } from '@/components/ui/lux';
 import { Signup, Player } from '@/api/entities';
 import { supabase } from '@/lib/supabase';
+import { addConfirmedToPublished } from '@/lib/listPublish';
 
 const SIGNUPS_TABLE_SQL = `CREATE TABLE IF NOT EXISTS signups (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -450,6 +451,15 @@ export default function Lists() {
           if (!res.ok) console.warn('[push to player] failed', await res.text());
         } catch (e) { console.warn('[push to player]', e); }
       }
+
+      // If this day was ALREADY published, the live-rows change above stays hidden
+      // from everyone (they see the snapshot). So personalize: add this player to
+      // the published snapshot's extraConfirmed, where only they (by email) will
+      // see their name appended. If the day isn't published yet, this no-ops and
+      // the name simply rides along on the next full publish.
+      try {
+        await addConfirmedToPublished(signup.day, { name: signup.player_name, email });
+      } catch (e) { console.warn('[personalize confirm]', e); }
 
       // Remove from signups
       await Signup.delete(signup.id);

@@ -37,15 +37,21 @@ function loadDay(day) {
 
 export default function DayListView({ day }) {
   const cfg = DAY_CONFIG[day];
-  const { role, loginMode } = useAuth();
+  const { role, loginMode, user } = useAuth();
   const isAdmin = role === 'admin' && loginMode !== 'player';
+  const myEmail = (user?.email || '').toLowerCase();
   const [waitingSignups, setWaitingSignups] = useState([]);
   const [loadingSignups, setLoadingSignups] = useState(true);
 
   // Cloud-first: fetch the cross-device synced list from Supabase.
   // localStorage stays a fallback for offline / first paint before cloud arrives.
-  const { data: cloudList } = useQuery({
-    queryKey: ['lists-state', day],
+  //
+  // Visibility rule: a regular player only sees a day's roster once the admin
+  // PUBLISHES it (by sending a push for that day) — they read the snapshot in
+  // publishedLists[day], never the live roster. The admin always sees the live
+  // roster so they can edit and preview what will be published.
+  const { data: cloudList, isLoading: cloudLoading } = useQuery({
+    queryKey: ['lists-state', day, isAdmin, myEmail],
     queryFn: async () => {
       if (!supabase) return null;
       const { data, error } = await supabase
@@ -55,21 +61,46 @@ export default function DayListView({ day }) {
         .maybeSingle();
       if (error || !data?.data) return null;
       const all = data.data;
-      const rows = all.rows?.[day];
-      const header = all.headers?.[day];
-      if (!rows && !header) return null;
-      return {
-        header: header || DAY_CONFIG[day].label,
-        rows: rows || EMPTY_ROWS,
-      };
+
+      // Admin: live roster (what they're editing / will publish).
+      if (isAdmin) {
+        const rows = all.rows?.[day];
+        const header = all.headers?.[day];
+        if (!rows && !header) return null;
+        return { header: header || DAY_CONFIG[day].label, rows: rows || EMPTY_ROWS };
+      }
+
+      // Player: only the published snapshot. Absent → not published yet.
+      const pub = all.publishedLists?.[day];
+      if (!pub || !Array.isArray(pub.rows)) return { notPublished: true };
+
+      // Personalized: if THIS player was confirmed from stand-by after publish,
+      // append their name to the roster they see (others don't see it). Slot it
+      // into the first empty row, else push to the end. Skip if already present.
+      let rows = pub.rows;
+      const mine = myEmail
+        ? (pub.extraConfirmed || []).find(e => (e.email || '').toLowerCase() === myEmail)
+        : null;
+      if (mine?.name && !rows.some(n => (n || '').trim() === mine.name.trim())) {
+        rows = [...rows];
+        const emptyIdx = rows.findIndex(r => !r || !r.trim());
+        if (emptyIdx >= 0) rows[emptyIdx] = mine.name;
+        else rows.push(mine.name);
+      }
+      return { header: pub.header || DAY_CONFIG[day].label, rows };
     },
     refetchInterval: 60_000,
     refetchOnWindowFocus: true,
     staleTime: 30_000,
   });
 
-  const localList = loadDay(day);
+  // Players must NEVER fall back to the local (live) list — that would leak an
+  // unpublished roster. Only the admin gets the localStorage fallback.
+  const localList = isAdmin ? loadDay(day) : null;
   const listData = cloudList || localList;
+  // "Not published" only once the cloud query has resolved — avoid flashing it
+  // while the snapshot is still loading for a player.
+  const notPublished = !isAdmin && !cloudLoading && (cloudList?.notPublished || cloudList == null);
 
   useEffect(() => {
     // Players don't see the waiting list, so skip the fetch for them.
@@ -86,6 +117,32 @@ export default function DayListView({ day }) {
         setLoadingSignups(false);
       });
   }, [day, isAdmin]);
+
+  // Player hasn't been shown a published list yet (or it's still loading from
+  // cloud). Show a clear "not published" state instead of leaking/empty-crashing.
+  if (notPublished || !listData) {
+    return (
+      <div className="pb-10">
+        <PageHeader
+          icon={ClipboardList}
+          title={cfg.label}
+          subtitle="רשימה"
+          accent={day === 'sunday' ? 'amber' : day === 'wednesday' ? 'sky' : 'emerald'}
+        />
+        <div className="p-4">
+          <div className="rounded-2xl bg-slate-900/50 ring-1 ring-white/8 px-6 py-12 text-center">
+            <div className={`mx-auto mb-4 grid place-items-center w-14 h-14 rounded-2xl ${cfg.bg} ring-1 ${cfg.ring}`}>
+              <Clock className={`w-7 h-7 ${cfg.color}`} strokeWidth={2} />
+            </div>
+            <p className="text-white font-black text-lg">הרשימה ל{cfg.label} טרם פורסמה</p>
+            <p className="text-slate-400 text-sm font-bold mt-2 leading-relaxed">
+              ברגע שהרשימה תפורסם תקבל התראה, והיא תופיע כאן.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const filledRows = listData.rows.filter(n => n.trim());
   const emptyCount = listData.rows.filter(n => !n.trim()).length;

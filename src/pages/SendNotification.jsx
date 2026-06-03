@@ -4,15 +4,10 @@ import { Send, Bell, CheckCircle2, AlertCircle, Users, ShieldCheck, MessageCircl
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/ui/lux';
 import { supabase } from '@/lib/supabase';
+import { DAY_FROM_URL, publishDayList } from '@/lib/listPublish';
 
 const ADMIN_EMAIL = 'libermanasaf@gmail.com';
 
-// Map a SendNotification URL to a lists_state day key (only DayList URLs)
-const DAY_FROM_URL = {
-  '/DayListSunday':    'sunday',
-  '/DayListWednesday': 'wednesday',
-  '/DayListThursday':  'thursday',
-};
 const DAY_LABELS = { sunday: 'יום ראשון', wednesday: 'יום רביעי', thursday: 'יום חמישי' };
 
 // Build the WhatsApp message body for a given day from the cloud-synced list.
@@ -83,6 +78,20 @@ export default function SendNotification() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || `שגיאת שרת ${res.status}`);
+
+      // Publish the day's list to players — but ONLY on a real "send to everyone"
+      // for a day URL. The admin-only test send (targetEmail) must NOT publish.
+      // Snapshots the current roster so players can finally see it; editing later
+      // leaves this snapshot until the next publish.
+      if (!targetEmail && dayForWhatsApp) {
+        try {
+          await publishDayList(dayForWhatsApp);
+        } catch (pubErr) {
+          console.warn('[publish] failed', pubErr);
+          toast.warning('הפוש נשלח, אך פרסום הרשימה לצפייה נכשל — נסה שוב', { duration: 6000 });
+        }
+      }
+
       setResult({ ...data, targetEmail });
       if (data.sent > 0) {
         toast.success(
