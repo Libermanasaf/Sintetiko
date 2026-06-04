@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { PageHeader } from '@/components/ui/lux';
 import { Signup, Player } from '@/api/entities';
 import { supabase } from '@/lib/supabase';
-import { addConfirmedToPublished, publishDayList } from '@/lib/listPublish';
+import { addConfirmedToPublished, publishDayListVerified } from '@/lib/listPublish';
 
 const SIGNUPS_TABLE_SQL = `CREATE TABLE IF NOT EXISTS signups (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -430,10 +430,10 @@ export default function Lists() {
     });
   }, []);
 
-  // Publish a day's list so regular players can see it. Snapshots the current
-  // roster into publishedLists[day]; until this runs, players see "not published".
-  // First flush the live edits to the cloud, then publish from there — so what
-  // players get is exactly what's on screen. Loud success/failure feedback.
+  // Publish a day's list AND notify players. Two steps:
+  //   1) snapshot the roster into publishedLists[day] (verified) so it's visible
+  //   2) push to every subscriber, linking to that day's list page
+  // Publish first so the list is already visible when players tap the push.
   const handlePublishDay = useCallback(async (day) => {
     if (!supabase) { toast.error('Supabase לא מחובר — לא ניתן לפרסם'); return; }
     setPublishingDay(day);
@@ -442,14 +442,33 @@ export default function Lists() {
       await new Promise((resolve) => {
         setData(prev => { persistAll(prev); resolve(); return prev; });
       });
-      await publishDayList(day);
-      // Verify the write actually landed (don't trust a silent success).
-      const { data: row } = await supabase
-        .from('lists_state').select('data').eq('id', 'main').maybeSingle();
-      const ok = Array.isArray(row?.data?.publishedLists?.[day]?.rows);
-      if (!ok) throw new Error('הפרסום לא נשמר ב-Supabase');
+      // Publish + verify the snapshot actually landed (no silent failure).
+      await publishDayListVerified(day);
       queryClient.invalidateQueries({ queryKey: ['lists-state'] });
-      toast.success(`רשימת ${DAY_LABELS[day]} פורסמה — השחקנים רואים אותה כעת ✅`);
+
+      // Then send the push to all players, deep-linking to this day's list.
+      const dayUrl = { sunday: '/DayListSunday', wednesday: '/DayListWednesday', thursday: '/DayListThursday' }[day];
+      let pushed = 0;
+      try {
+        const res = await fetch('/api/send-notification', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: 'סינתטיקו חולון',
+            body: `הרשימה ל${DAY_LABELS[day]} פורסמה — הצצה מי בפנים`,
+            url: dayUrl || '/',
+          }),
+        });
+        const pd = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(pd.error || `שגיאת שרת ${res.status}`);
+        pushed = pd.sent || 0;
+      } catch (pushErr) {
+        console.warn('[publish push]', pushErr);
+        // The list IS published — only the notification failed. Say so precisely.
+        toast.warning(`רשימת ${DAY_LABELS[day]} פורסמה ✅ אך שליחת ההתראה נכשלה`, { duration: 7000 });
+        return;
+      }
+      toast.success(`רשימת ${DAY_LABELS[day]} פורסמה ונשלחה התראה ל-${pushed} שחקנים ✅`);
     } catch (e) {
       console.error('[publish day]', e);
       toast.error('הפרסום נכשל', { description: e?.message || 'נסה שוב' });
@@ -576,7 +595,7 @@ export default function Lists() {
                   <EditableHeader value={data.headers[key]} color={color} onChange={val => handleHeaderChange(key, val)} />
                   <div className="flex items-center gap-1.5 shrink-0">
                     <button onClick={() => handlePublishDay(key)} disabled={publishingDay === key}
-                      title="פרסם לשחקנים — הרשימה תופיע להם רק אחרי פרסום"
+                      title="פרסם לשחקנים ושלח התראה — הרשימה תופיע להם ותישלח הודעת פוש"
                       className="grid place-items-center h-8 px-2.5 gap-1 rounded-lg bg-amber-500/15 ring-1 ring-amber-500/30 text-amber-300 font-black text-xs hover:bg-amber-500/25 active:scale-95 transition-all disabled:opacity-50">
                       {publishingDay === key
                         ? <div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
