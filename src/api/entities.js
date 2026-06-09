@@ -1,5 +1,6 @@
 import { createStorage } from './storage';
 import { supabase } from '../lib/supabase';
+import { sanitizeRow } from '../lib/sanitize';
 
 export const Player = createStorage('Player');
 export const Round = createStorage('Round');
@@ -24,6 +25,7 @@ export const Signup = {
 
   async create(data) {
     if (!supabase) throw new Error('Supabase לא מוגדר');
+    data = sanitizeRow(data);
     const item = {
       ...data,
       id: data.id || crypto.randomUUID(),
@@ -37,6 +39,7 @@ export const Signup = {
 
   async update(id, data) {
     if (!supabase) throw new Error('Supabase לא מוגדר');
+    data = sanitizeRow(data);
     const updateData = { ...data, updated_date: new Date().toISOString() };
     const { data: updated, error } = await supabase.from('signups').update(updateData).eq('id', id).select().single();
     if (error) throw new Error(`עדכון רישום נכשל: ${error.message}`);
@@ -50,10 +53,26 @@ export const Signup = {
   },
 };
 
+// Uploads an image to Supabase Storage (bucket: media) and returns its public URL.
+// Storing the URL — instead of a base64 data-URI in a table column — keeps row
+// payloads tiny so list queries don't re-download megabytes of image data.
+// Falls back to a base64 data-URI when Supabase isn't configured (local dev).
 export async function uploadFile(file) {
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onload = (e) => resolve({ file_url: e.target.result });
-    reader.readAsDataURL(file);
-  });
+  if (!supabase) {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve({ file_url: e.target.result });
+      reader.readAsDataURL(file);
+    });
+  }
+
+  const ext = (file.name?.split('.').pop() || 'jpg').toLowerCase();
+  const path = `${crypto.randomUUID()}.${ext}`;
+  const { error } = await supabase.storage
+    .from('media')
+    .upload(path, file, { cacheControl: '31536000', contentType: file.type || undefined });
+  if (error) throw new Error(`העלאת התמונה נכשלה: ${error.message}`);
+
+  const { data } = supabase.storage.from('media').getPublicUrl(path);
+  return { file_url: data.publicUrl };
 }

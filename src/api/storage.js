@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { sanitizeRow } from '../lib/sanitize';
 
 const generateId = () => crypto.randomUUID();
 
@@ -60,6 +61,7 @@ export function createStorage(entityName) {
     },
 
     async create(data) {
+      data = sanitizeRow(data);
       if (supabase) {
         const item = {
           ...data,
@@ -90,6 +92,7 @@ export function createStorage(entityName) {
     },
 
     async update(id, data) {
+      data = sanitizeRow(data);
       if (supabase) {
         const updateData = {
           ...data,
@@ -115,6 +118,7 @@ export function createStorage(entityName) {
     },
 
     async upsert(data, conflictColumns) {
+      data = sanitizeRow(data);
       if (supabase) {
         const item = { ...data, updated_at: new Date().toISOString() };
         const { data: upserted, error } = await supabase
