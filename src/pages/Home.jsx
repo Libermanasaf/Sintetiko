@@ -6,6 +6,7 @@ import { Trophy, Users, Shuffle, History, Sun, Moon, Send, ChevronLeft, Plus, Ch
 import InstallBanner from '@/components/InstallBanner';
 import { useTheme } from '@/lib/ThemeContext';
 import { useAuth } from '@/lib/AuthContext';
+import { callApi } from '@/lib/apiClient';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Round } from '@/api/entities';
 import { format } from 'date-fns';
@@ -185,14 +186,10 @@ export default function Home() {
       await Round.update(activeRound.id, { is_published: true });
       queryClient.invalidateQueries({ queryKey: ['latest-round'] });
       queryClient.invalidateQueries({ queryKey: ['latest-round-admin'] });
-      await fetch('/api/send-notification', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: 'פורסמו הרכבים!',
-          body: 'הרכבי המחזור החדש מוכנים — לחץ לצפייה',
-          url: '/MatchDay',
-        }),
+      await callApi('/api/send-notification', {
+        title: 'פורסמו הרכבים!',
+        body: 'הרכבי המחזור החדש מוכנים — לחץ לצפייה',
+        url: '/MatchDay',
       });
       setPublished(true);
       toast.success('ההרכבים פורסמו ונשלחה הודעה לכל השחקנים!');

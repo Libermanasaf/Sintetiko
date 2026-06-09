@@ -1,4 +1,4 @@
-import { getSupabaseAdmin } from './_supabaseAdmin.js';
+import { getSupabaseAdmin, getCallerUser } from './_supabaseAdmin.js';
 
 // Links a freshly-signed-up auth user to an existing (unlinked) player row.
 // Runs server-side with the service_role key so the client never needs UPDATE
@@ -16,6 +16,31 @@ export default async function handler(req, res) {
 
   const supabase = getSupabaseAdmin();
   if (!supabase) return res.status(500).json({ error: 'Supabase not configured' });
+
+  // Authorization (flexible — runs right after signUp, where a session may not
+  // exist yet if email confirmation is on):
+  //   • If a JWT is present, it MUST match the userId being linked.
+  //   • Otherwise, the userId must be a real auth user created just now
+  //     (within the last 2 minutes) — so an attacker can't pass an arbitrary
+  //     userId to pre-claim a profile.
+  // Either way the "already linked" guard below prevents hijacking a claimed row.
+  const caller = await getCallerUser(req, supabase);
+  if (caller) {
+    if (caller.id !== userId) {
+      return res.status(403).json({ error: 'ניתן לקשר רק את החשבון שלך' });
+    }
+  } else {
+    const { data: authUser } = await supabase.auth.admin.getUserById(userId);
+    const u = authUser?.user;
+    if (!u) return res.status(401).json({ error: 'משתמש לא תקף' });
+    const ageMs = Date.now() - new Date(u.created_at).getTime();
+    if (!(ageMs >= 0 && ageMs < 2 * 60 * 1000)) {
+      return res.status(403).json({ error: 'קישור מותר רק בעת ההרשמה' });
+    }
+    if (u.email && email && u.email.toLowerCase() !== email.toLowerCase()) {
+      return res.status(403).json({ error: 'אימייל לא תואם' });
+    }
+  }
 
   // Load the target row and refuse if it's already claimed by someone.
   const { data: player, error: readErr } = await supabase

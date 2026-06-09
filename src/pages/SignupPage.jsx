@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { Signup, Player } from '@/api/entities';
 import { PageHeader, Skeleton } from '@/components/ui/lux';
 import { useAuth } from '@/lib/AuthContext';
+import { callApi } from '@/lib/apiClient';
 import { createPageUrl } from '@/utils';
 
 const ADMIN_EMAIL = 'libermanasaf@gmail.com';
@@ -231,15 +232,11 @@ function AdminSignups({ signups, players, isLoading }) {
       const player = players.find(p => p.id === signup.player_id);
       const email = player?.email || signup.user_email;
       if (email) {
-        await fetch('/api/send-notification', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            targetEmail: email,
-            title: 'סינתטיקו חולון — אתה בפנים! ✅',
-            body: `${signup.player_name}, הגעתך ל${DAYS.find(d => d.key === signup.day)?.label} אושרה!`,
-            url: '/',
-          }),
+        await callApi('/api/send-notification', {
+          targetEmail: email,
+          title: 'סינתטיקו חולון — אתה בפנים! ✅',
+          body: `${signup.player_name}, הגעתך ל${DAYS.find(d => d.key === signup.day)?.label} אושרה!`,
+          url: '/',
         });
       }
       toast.success(`${signup.player_name} אושר ונשלחה התראה`);

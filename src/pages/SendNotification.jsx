@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { PageHeader } from '@/components/ui/lux';
 import { supabase } from '@/lib/supabase';
 import { DAY_FROM_URL, publishDayListVerified } from '@/lib/listPublish';
+import { callApi } from '@/lib/apiClient';
 
 const ADMIN_EMAIL = 'libermanasaf@gmail.com';
 
@@ -66,15 +67,11 @@ export default function SendNotification() {
     if (targetEmail) setSendingAdmin(true); else setSending(true);
     setResult(null);
     try {
-      const res = await fetch('/api/send-notification', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: title.trim() || 'סינתטיקו חולון',
-          body: body.trim(),
-          url: url.trim() || '/',
-          ...(targetEmail ? { targetEmail } : {}),
-        }),
+      const res = await callApi('/api/send-notification', {
+        title: title.trim() || 'סינתטיקו חולון',
+        body: body.trim(),
+        url: url.trim() || '/',
+        ...(targetEmail ? { targetEmail } : {}),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || `שגיאת שרת ${res.status}`);

@@ -25,3 +25,25 @@ export function getSupabaseAdmin() {
 }
 
 export const usingServiceRole = () => !!process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+const ADMIN_EMAIL = 'libermanasaf@gmail.com';
+
+// Verifies the caller's Supabase JWT from the Authorization header and returns
+// the authenticated user (or null). supabase-js sends this header automatically
+// on fetch when a session exists. Without this, the api/ endpoints are open to
+// anyone on the internet. Pass the admin client (service_role) to validate.
+export async function getCallerUser(req, supabase) {
+  try {
+    const auth = req.headers?.authorization || req.headers?.Authorization || '';
+    const token = auth.startsWith('Bearer ') ? auth.slice(7) : null;
+    if (!token || !supabase) return null;
+    const { data, error } = await supabase.auth.getUser(token);
+    if (error || !data?.user) return null;
+    return data.user;
+  } catch {
+    return null;
+  }
+}
+
+export const isAdminUser = (user) =>
+  !!user && (user.email || '').toLowerCase() === ADMIN_EMAIL;

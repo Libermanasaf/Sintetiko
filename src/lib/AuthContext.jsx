@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from './supabase';
+import { callApi } from './apiClient';
 
 const AuthContext = createContext();
 
@@ -176,14 +177,10 @@ export const AuthProvider = ({ children }) => {
     let playerName = null;
     if (data?.user && playerId) {
       try {
-        const res = await fetch('/api/link-player', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            playerId,
-            userId: data.user.id,
-            email: email.toLowerCase(),
-          }),
+        const res = await callApi('/api/link-player', {
+          playerId,
+          userId: data.user.id,
+          email: email.toLowerCase(),
         });
         const linkData = await res.json().catch(() => ({}));
         if (!res.ok) {

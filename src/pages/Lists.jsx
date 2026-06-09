@@ -7,6 +7,7 @@ import { PageHeader } from '@/components/ui/lux';
 import { Signup, Player } from '@/api/entities';
 import { supabase } from '@/lib/supabase';
 import { addConfirmedToPublished, publishDayListVerified } from '@/lib/listPublish';
+import { callApi } from '@/lib/apiClient';
 
 const SIGNUPS_TABLE_SQL = `CREATE TABLE IF NOT EXISTS signups (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -450,14 +451,10 @@ export default function Lists() {
       const dayUrl = { sunday: '/DayListSunday', wednesday: '/DayListWednesday', thursday: '/DayListThursday' }[day];
       let pushed = 0;
       try {
-        const res = await fetch('/api/send-notification', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            title: 'סינתטיקו חולון',
-            body: `הרשימה ל${DAY_LABELS[day]} פורסמה — הצצה מי בפנים`,
-            url: dayUrl || '/',
-          }),
+        const res = await callApi('/api/send-notification', {
+          title: 'סינתטיקו חולון',
+          body: `הרשימה ל${DAY_LABELS[day]} פורסמה — הצצה מי בפנים`,
+          url: dayUrl || '/',
         });
         const pd = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(pd.error || `שגיאת שרת ${res.status}`);
@@ -500,15 +497,11 @@ export default function Lists() {
       const email = player?.email || signup.user_email;
       if (email && email !== 'unknown') {
         try {
-          const res = await fetch('/api/send-notification', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              targetEmail: email,
-              title: 'סינתטיקו חולון — אתה בפנים! ✅',
-              body: `${signup.player_name}, הגעתך ל${DAY_LABELS[signup.day]} אושרה`,
-              url: '/',
-            }),
+          const res = await callApi('/api/send-notification', {
+            targetEmail: email,
+            title: 'סינתטיקו חולון — אתה בפנים! ✅',
+            body: `${signup.player_name}, הגעתך ל${DAY_LABELS[signup.day]} אושרה`,
+            url: '/',
           });
           if (!res.ok) console.warn('[push to player] failed', await res.text());
         } catch (e) { console.warn('[push to player]', e); }

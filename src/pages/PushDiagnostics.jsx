@@ -171,15 +171,11 @@ export default function PushDiagnostics() {
   const handleTest = async () => {
     setBusy('test');
     try {
-      const res = await fetch('/api/send-notification', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          targetEmail: user?.email,
-          title: '🔔 התראת בדיקה',
-          body: 'אם אתה רואה את ההתראה הזו — המערכת עובדת מצוין!',
-          url: '/',
-        }),
+      const res = await callApi('/api/send-notification', {
+        targetEmail: user?.email,
+        title: '🔔 התראת בדיקה',
+        body: 'אם אתה רואה את ההתראה הזו — המערכת עובדת מצוין!',
+        url: '/',
       });
       const data = await res.json().catch(() => null);
       if (!res.ok) {

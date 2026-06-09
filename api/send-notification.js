@@ -1,6 +1,8 @@
 import webpush from 'web-push';
-import { getSupabaseAdmin } from './_supabaseAdmin.js';
+import { getSupabaseAdmin, getCallerUser, isAdminUser } from './_supabaseAdmin.js';
 import { VAPID_PUBLIC_KEY } from '../src/lib/vapidPublic.js';
+
+const ADMIN_EMAIL = 'libermanasaf@gmail.com';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -31,6 +33,22 @@ export default async function handler(req, res) {
   webpush.setVapidDetails('mailto:libermanasaf@gmail.com', VAPID_PUBLIC, VAPID_PRIVATE);
 
   const { title, body, url, targetEmail } = req.body || {};
+
+  // Authorization. The real abuse vector is BROADCAST (a stranger blasting every
+  // subscriber with spam/phishing) and targeting arbitrary players. Gate by audience:
+  //   • Notify the ADMIN only (targetEmail === admin): allowed without auth —
+  //     this is the system "new signup / new registration" alert, runs before a
+  //     session exists, and only ever reaches the admin (not an attack surface).
+  //   • Everything else (broadcast to all, or targeting another player): requires
+  //     a valid ADMIN JWT.
+  const targetsAdminOnly = targetEmail && targetEmail.toLowerCase() === ADMIN_EMAIL;
+  if (!targetsAdminOnly) {
+    const caller = await getCallerUser(req, supabase);
+    if (!caller) return res.status(401).json({ error: 'נדרשת התחברות' });
+    if (!isAdminUser(caller)) {
+      return res.status(403).json({ error: 'רק מנהל יכול לשלוח התראות' });
+    }
+  }
   const payload = JSON.stringify({
     title: title || 'סינתטיקו חולון',
     body: body || '',
