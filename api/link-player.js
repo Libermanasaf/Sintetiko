@@ -30,14 +30,18 @@ export default async function handler(req, res) {
       return res.status(403).json({ error: 'ניתן לקשר רק את החשבון שלך' });
     }
   } else {
+    // No session (email-confirmation flow). Validate strictly: the userId must
+    // be a real auth user, freshly created (tightened to 60s), and the email
+    // sent MUST exactly match that user's email — no optional bypass. This binds
+    // the link request to the actual account that was just created server-side.
     const { data: authUser } = await supabase.auth.admin.getUserById(userId);
     const u = authUser?.user;
     if (!u) return res.status(401).json({ error: 'משתמש לא תקף' });
     const ageMs = Date.now() - new Date(u.created_at).getTime();
-    if (!(ageMs >= 0 && ageMs < 2 * 60 * 1000)) {
+    if (!(ageMs >= 0 && ageMs < 60 * 1000)) {
       return res.status(403).json({ error: 'קישור מותר רק בעת ההרשמה' });
     }
-    if (u.email && email && u.email.toLowerCase() !== email.toLowerCase()) {
+    if (!u.email || !email || u.email.toLowerCase() !== email.toLowerCase()) {
       return res.status(403).json({ error: 'אימייל לא תואם' });
     }
   }
