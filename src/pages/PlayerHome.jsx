@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase';
 import { useQuery } from '@tanstack/react-query';
 import { motion, animate } from 'framer-motion';
 import { Star, Trophy, Zap, Activity, TrendingUp, ShieldQuestion, Users, Lock, ChevronLeft, Flame, Bell } from 'lucide-react';
-import { Player, PlayerRating, Round } from '@/api/entities';
+import { Player, Round } from '@/api/entities';
 import { SectionTitle, EmptyState, Skeleton } from '@/components/ui/lux';
 import InstallBanner from '@/components/InstallBanner';
 import { pushSupported, subscribeToPush } from '@/lib/push';
@@ -129,11 +129,18 @@ export default function PlayerHome() {
     queryFn: () => Player.list('-appearances'),
   });
 
-  // Ratings I received — only count + average are shown to the player.
-  // Rater identity is NEVER exposed in the UI.
-  const { data: ratingsReceived = [] } = useQuery({
-    queryKey: ['ratings-received', player?.id],
-    queryFn: () => PlayerRating.filter({ rated_player_id: player.id }),
+  // Ratings I received — only count + average. Fetched via a SECURITY DEFINER
+  // RPC that returns ONLY the aggregate for the logged-in player, so rater
+  // identities are never sent to the client (RLS now hides individual rows;
+  // a player can only read ratings they themselves gave).
+  const { data: ratingSummary } = useQuery({
+    queryKey: ['my-rating-summary', player?.id],
+    queryFn: async () => {
+      if (!supabase) return { rating_count: 0, rating_avg: 0 };
+      const { data, error } = await supabase.rpc('my_rating_summary');
+      if (error) { console.warn('[rating summary]', error.message); return { rating_count: 0, rating_avg: 0 }; }
+      return data?.[0] || { rating_count: 0, rating_avg: 0 };
+    },
     enabled: !!player?.id,
     staleTime: 30_000,
     refetchOnWindowFocus: true,
@@ -192,10 +199,8 @@ export default function PlayerHome() {
   const rankIdx = allPlayers.findIndex(p => p.id === player.id);
   const rank = rankIdx >= 0 ? rankIdx + 1 : null;
 
-  const ratingsCount = ratingsReceived.length;
-  const ratingsAvg = ratingsCount > 0
-    ? ratingsReceived.reduce((sum, r) => sum + (Number(r.rating) || 0), 0) / ratingsCount
-    : 0;
+  const ratingsCount = Number(ratingSummary?.rating_count) || 0;
+  const ratingsAvg = Number(ratingSummary?.rating_avg) || 0;
 
   return (
     <div className="flex flex-col items-center px-6 pt-6 pb-10 gap-6" dir="rtl">
