@@ -34,11 +34,13 @@ export const AuthProvider = ({ children }) => {
           return;
         }
 
-        // Fetch player approval status
+        // Fetch player approval status. Match by user_id only (every approved
+        // player is linked to a user_id) — avoids needing read access to the
+        // email column, which is now admin-only for privacy.
         const { data: player, error: playerError } = await supabase
           .from('players')
           .select('is_approved')
-          .or(`user_id.eq.${session.user.id},email.eq.${userEmail}`)
+          .eq('user_id', session.user.id)
           .maybeSingle();
 
         if (playerError || !player || !player.is_approved) {
@@ -125,12 +127,14 @@ export const AuthProvider = ({ children }) => {
     const user = data.user;
     const userEmail = email.toLowerCase();
 
-    // If not admin, check if they are approved by admin in players table
+    // If not admin, check if they are approved by admin in players table.
+    // Match by user_id only (all approved players are linked); email column is
+    // now admin-only and not needed for this lookup.
     if (userEmail !== 'libermanasaf@gmail.com') {
       const { data: player, error: playerError } = await supabase
         .from('players')
         .select('is_approved')
-        .or(`user_id.eq.${user.id},email.eq.${userEmail}`)
+        .eq('user_id', user.id)
         .maybeSingle();
 
       if (playerError || !player || !player.is_approved) {

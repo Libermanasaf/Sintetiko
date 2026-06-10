@@ -269,7 +269,7 @@ export default function MatchDay() {
       const { data } = await supabase
         .from('players')
         .select('*')
-        .or(`user_id.eq.${user.id},email.eq.${user.email?.toLowerCase()}`)
+        .eq('user_id', user.id)
         .maybeSingle();
       return data;
     },

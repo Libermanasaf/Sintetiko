@@ -199,15 +199,14 @@ export default function LandingPage() {
         return;
       }
       try {
-        const { data, error } = await supabase
-          .from('players')
-          .select('id, name, email, user_id')
-          .order('name');
+        // Use the unlinked_players() RPC: returns only id+name of players not yet
+        // linked to an account. Avoids reading the email column (now admin-only).
+        const { data, error } = await supabase.rpc('unlinked_players');
         if (error) {
           console.error('Error fetching players:', error.message);
           return;
         }
-        if (data) setSquadPlayers(data.filter(p => !p.email && !p.user_id));
+        if (data) setSquadPlayers(data);
       } catch (err) {
         console.error('Error in fetchUnlinkedPlayers:', err);
       }

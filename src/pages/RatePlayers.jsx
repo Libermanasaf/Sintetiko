@@ -111,7 +111,7 @@ export default function RatePlayers() {
       const { data } = await supabase
         .from('players')
         .select('id')
-        .or(`user_id.eq.${user.id},email.eq.${user.email?.toLowerCase()}`)
+        .eq('user_id', user.id)
         .maybeSingle();
       return data;
     },

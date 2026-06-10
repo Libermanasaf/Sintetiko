@@ -116,7 +116,7 @@ export default function PlayerHome() {
       const { data, error } = await supabase
         .from('players')
         .select('*')
-        .or(`user_id.eq.${user.id},email.eq.${user.email?.toLowerCase()}`)
+        .eq('user_id', user.id)
         .maybeSingle();
       if (error) throw error;
       return data;
