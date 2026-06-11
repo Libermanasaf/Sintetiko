@@ -279,7 +279,11 @@ export default function MatchDay() {
   const { data: round, isLoading } = useQuery({
     queryKey: isAdmin ? ['latest-round-admin'] : ['latest-round'],
     queryFn: async () => {
-      const rounds = await Round.list('-created_date');
+      // Only the 5 most recent rounds — the active round is always among the
+      // newest (it leaves the active filter once closed). Avoids re-fetching the
+      // entire rounds history on every 60s poll, which would scale egress with
+      // total rounds. GameHistory still fetches all (it needs the full history).
+      const rounds = await Round.list('-created_date', 5);
       // Admin: any active (uncompleted) round — no date/publish filter so editing remains possible until they explicitly close it.
       // Player: limited to last 3 days + published.
       const cutoff = new Date();

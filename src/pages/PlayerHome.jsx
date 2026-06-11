@@ -150,7 +150,7 @@ export default function PlayerHome() {
   const { data: activeRound } = useQuery({
     queryKey: ['latest-round'],
     queryFn: async () => {
-      const rounds = await Round.list('-created_date');
+      const rounds = await Round.list('-created_date', 5); // only recent: active round is always newest
       const cutoff = new Date();
       cutoff.setDate(cutoff.getDate() - 3);
       cutoff.setHours(0, 0, 0, 0);
