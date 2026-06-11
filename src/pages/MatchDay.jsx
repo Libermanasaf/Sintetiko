@@ -128,14 +128,17 @@ function GoalEditorSheet({ open, player, teamIndex, currentGoals, onClose, onCha
 
 
 // ─── Vote chart ───────────────────────────────────────────────────────────
-function VoteChart({ round, bets, myVotedIndex, myPlayerId }) {
-  const total = bets.length;
+// Driven by aggregate counts (voteSummary: [{voted_team_index, vote_count}]),
+// not raw bet rows — so it scales flat with viewers. Voter names are not shown
+// (privacy + egress); the tally is what matters for "who will win".
+function VoteChart({ round, voteSummary, totalVotes, myVotedIndex }) {
+  const countFor = (idx) => Number(voteSummary.find(v => v.voted_team_index === idx)?.vote_count || 0);
   return (
     <div className="space-y-3">
       {round.teams.map((_, idx) => {
         const t = teamOf(idx);
-        const teamBets = bets.filter(b => b.voted_team_index === idx);
-        const pct = total > 0 ? Math.round((teamBets.length / total) * 100) : 0;
+        const count = countFor(idx);
+        const pct = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
         const isMyVote = idx === myVotedIndex;
         return (
           <div key={idx} className="space-y-1">
@@ -147,7 +150,7 @@ function VoteChart({ round, bets, myVotedIndex, myPlayerId }) {
                 )}
               </div>
               <span className="text-ink-3 text-[0.62rem] font-bold tnum">
-                {teamBets.length} קולות · {pct}%
+                {count} קולות · {pct}%
               </span>
             </div>
             <div className="h-7 bg-slate-800/80 rounded-lg overflow-hidden ring-1 ring-white/5">
@@ -160,27 +163,6 @@ function VoteChart({ round, bets, myVotedIndex, myPlayerId }) {
                 {pct >= 20 && <span className="text-slate-900 font-black text-xs tnum">{pct}%</span>}
               </motion.div>
             </div>
-            {teamBets.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.3 + idx * 0.1 }}
-                className="flex flex-wrap gap-1"
-              >
-                {teamBets.map((b, i) => (
-                  <span
-                    key={i}
-                    className={`text-[0.62rem] px-1.5 py-0.5 rounded-full font-bold ${
-                      b.player_id === myPlayerId
-                        ? 'bg-amber-400/20 text-amber-200'
-                        : 'bg-slate-800/80 text-slate-400'
-                    }`}
-                  >
-                    {b.player_name}
-                  </span>
-                ))}
-              </motion.div>
-            )}
           </div>
         );
       })}
@@ -189,7 +171,7 @@ function VoteChart({ round, bets, myVotedIndex, myPlayerId }) {
 }
 
 // ─── Betting section ──────────────────────────────────────────────────────
-function BettingSection({ round, bets, onVote, voting, hasVoted, myVotedIndex, myPlayerId }) {
+function BettingSection({ round, voteSummary, totalVotes, onVote, voting, hasVoted, myVotedIndex }) {
   return (
     <LuxCard accent="amber" glow>
       <div className="px-4 pt-3.5 pb-2 text-center">
@@ -224,7 +206,7 @@ function BettingSection({ round, bets, onVote, voting, hasVoted, myVotedIndex, m
                   );
                 })}
               </div>
-              {bets.length === 0 && (
+              {totalVotes === 0 && (
                 <p className="text-ink-3 text-[0.62rem] text-center font-bold">היה הראשון להמר!</p>
               )}
             </motion.div>
@@ -235,7 +217,7 @@ function BettingSection({ round, bets, onVote, voting, hasVoted, myVotedIndex, m
               animate={{ opacity: 1, scale: 1, y: 0 }}
               transition={{ type: 'spring', damping: 22, stiffness: 220 }}
             >
-              <VoteChart round={round} bets={bets} myVotedIndex={myVotedIndex} myPlayerId={myPlayerId} />
+              <VoteChart round={round} voteSummary={voteSummary} totalVotes={totalVotes} myVotedIndex={myVotedIndex} />
             </motion.div>
           )}
         </AnimatePresence>
@@ -322,24 +304,25 @@ export default function MatchDay() {
     enabled: !!round,
   });
 
-  const { data: bets = [] } = useQuery({
-    queryKey: ['round-bets', round?.id],
+  // Live vote tally via RPC: returns per-team COUNTS + which one is mine, not the
+  // raw bet rows. This keeps egress flat (O(viewers)) no matter how many people
+  // vote — pulling all rows for 100+ viewers every 30s was quadratic (~4 GB/mo).
+  const { data: voteSummary = [] } = useQuery({
+    queryKey: ['round-vote-summary', round?.id],
     queryFn: async () => {
-      if (!round) return [];
-      try { return await RoundBet.filter({ round_id: round.id }); }
-      catch { return []; }
+      if (!round || !supabase) return [];
+      const { data, error } = await supabase.rpc('round_vote_summary', { p_round_id: round.id });
+      if (error) { console.warn('[vote summary]', error.message); return []; }
+      return data || [];
     },
     enabled: !!round,
     refetchInterval: 30000,
   });
 
-  const myBetFromDB = bets.find(b => b.player_id === currentPlayer?.id);
-  const myVotedIndex = myBetFromDB?.voted_team_index ?? localVotedIndex;
+  const totalVotes = voteSummary.reduce((s, v) => s + Number(v.vote_count), 0);
+  const myVotedFromDB = voteSummary.find(v => v.is_mine)?.voted_team_index;
+  const myVotedIndex = myVotedFromDB ?? localVotedIndex;
   const hasVoted = myVotedIndex !== null && myVotedIndex !== undefined;
-
-  const optimisticBets = hasVoted && !myBetFromDB && currentPlayer
-    ? [...bets, { player_id: currentPlayer.id, player_name: currentPlayer.name, voted_team_index: localVotedIndex, round_id: round?.id }]
-    : bets;
 
   const handleVote = async (teamIndex) => {
     if (!round || voting) return;
@@ -351,7 +334,7 @@ export default function MatchDay() {
           { round_id: round.id, player_id: currentPlayer.id, player_name: currentPlayer.name, voted_team_index: teamIndex },
           'round_id,player_id'
         );
-        queryClient.invalidateQueries({ queryKey: ['round-bets', round.id] });
+        queryClient.invalidateQueries({ queryKey: ['round-vote-summary', round.id] });
         toast.success(`הימרת על ${teamOf(teamIndex).name}!`);
       }
     } catch (e) {
@@ -406,8 +389,12 @@ export default function MatchDay() {
     mvpRef.current = { roundId: round.id, vote: candidateId };
     localStorage.setItem(`mvp_vote_${round.id}`, candidateId);
     setMvpVersion(v => v + 1);
-    const nextVotes = { ...serverMvpVotes, [candidateId]: (serverMvpVotes[candidateId] || 0) + 1 };
-    Round.update(round.id, { mvpVotes: nextVotes }).catch(() => {});
+    // Atomic server-side increment — avoids the lost-update race when many
+    // people vote at once (was a client read-modify-write of the whole jsonb).
+    if (supabase) {
+      supabase.rpc('cast_mvp_vote', { p_round_id: round.id, p_candidate_id: candidateId })
+        .then(({ error }) => { if (error) console.warn('[mvp vote]', error.message); });
+    }
   };
 
   const handleCloseRound = async () => {
@@ -667,12 +654,12 @@ export default function MatchDay() {
         >
           <BettingSection
             round={round}
-            bets={optimisticBets}
+            voteSummary={voteSummary}
+            totalVotes={totalVotes}
             onVote={handleVote}
             voting={voting}
             hasVoted={hasVoted}
             myVotedIndex={myVotedIndex}
-            myPlayerId={currentPlayer?.id}
           />
         </motion.div>
 
