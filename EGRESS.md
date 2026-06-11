@@ -40,6 +40,22 @@ accumulates, payload grows → egress grows → cap blown.
 After the caps, **round count does not affect egress**. The only growth term is
 `Player.list` (scales with player count, not rounds) — modest.
 
+## All quota dimensions (not just query egress)
+
+| Dimension | Free cap | Status | Protection |
+|---|---|---|---|
+| Egress (queries) | 5 GB/mo | safe (capped) | limits + RPC aggregates |
+| Database size | 500 MB | 12 MB used | tiny; no base64 in rows |
+| **Storage** | 1 GB | safe | **images compressed to ~250 KB on upload** |
+| Storage egress | — | safe | compressed + 1-year CDN cache |
+| Monthly Active Users | 50,000 | nowhere near | — |
+| Realtime | 200 conn | **0 used** (not used) | — |
+
+**Images**: `uploadFile()` compresses to max 1600px / JPEG 80% before upload
+(`src/lib/imageCompress.js`). A phone photo (3–12 MB) becomes ~250 KB. Without
+this, a victory photo per round fills the 1 GB Storage cap in ~400 rounds and
+re-downloads megabytes on every view. Never upload raw user files.
+
 ## Structural safety net (you can't "forget" a limit)
 
 `storage.js list()` enforces a **hard default cap of 1000 rows**. A query that
