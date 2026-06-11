@@ -5,9 +5,12 @@ import { useQuery } from '@tanstack/react-query';
 import { Round } from '@/api/entities';
 
 export default function PlayerStatsModal({ player, onClose, allPlayers }) {
+  // Synergy is computed from recent rounds; cap at 100 so this doesn't pull the
+  // entire history (which grows unbounded) every time the modal opens.
   const { data: rounds = [], isLoading: isLoadingRounds } = useQuery({
-    queryKey: ['rounds'],
-    queryFn: () => Round.list('-date'),
+    queryKey: ['rounds-recent-100'],
+    queryFn: () => Round.list('-date', 100),
+    staleTime: 60_000,
   });
 
   if (!player) return null;

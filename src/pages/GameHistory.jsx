@@ -177,10 +177,14 @@ export default function GameHistory() {
   const [resultsSummary, setResultsSummary] = useState(null);
   const queryClient = useQueryClient();
 
+  // Paginate so history egress never scales with total rounds: load `limit`
+  // most-recent rounds, with a "load more" button. 50 covers ~6 months of play.
+  const [historyLimit, setHistoryLimit] = useState(50);
+
   const { data: rounds = [], isLoading } = useQuery({
-    queryKey: ['rounds', isAdmin],
+    queryKey: ['rounds', isAdmin, historyLimit],
     queryFn: async () => {
-      const all = await Round.list('-created_date');
+      const all = await Round.list('-created_date', historyLimit);
       if (isAdmin) return all;
       return all.filter(r => {
         // Round with a declared winner → always visible
@@ -380,6 +384,17 @@ export default function GameHistory() {
                   <History className="w-8 h-8 text-slate-600 mx-auto mb-2" strokeWidth={1.8} />
                   <p className="text-ink-3 text-sm font-bold">לא נמצא משחק בתאריך זה</p>
                 </div>
+              )}
+
+              {/* Load older rounds — only when we fetched a full page (more may exist).
+                  Keeps history egress flat regardless of total rounds. */}
+              {rounds.length >= historyLimit && (
+                <button
+                  onClick={() => setHistoryLimit((n) => n + 50)}
+                  className="w-full max-w-sm min-h-[44px] rounded-xl bg-slate-800/70 ring-1 ring-white/10 text-slate-300 text-sm font-bold active:scale-[0.98] transition-transform"
+                >
+                  טען מחזורים ישנים יותר
+                </button>
               )}
             </div>
 

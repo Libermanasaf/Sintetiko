@@ -36,9 +36,10 @@ export function createStorage(entityName) {
   const setAll = (items) => localStorage.setItem(key, JSON.stringify(items));
 
   return {
-    // `columns` lets callers fetch a narrow projection instead of '*'. Passing
-    // only the fields a screen needs keeps egress down — e.g. the round-polling
-    // screens don't need the heavy victoryPhoto/jsonb blobs, just the flags.
+    // EGRESS: pass `limit` for any growing table (rounds, ratings) used in a
+    // screen that polls or is opened often. Unbounded list() on a growing table
+    // is the #1 cause of egress blowups — see EGRESS.md. `columns` fetches a
+    // narrow projection instead of '*' to shrink payloads further.
     async list(sortField, limit, columns) {
       if (supabase) {
         let query = supabase.from(tableName).select(columns || '*');
