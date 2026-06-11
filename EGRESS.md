@@ -40,8 +40,30 @@ accumulates, payload grows → egress grows → cap blown.
 After the caps, **round count does not affect egress**. The only growth term is
 `Player.list` (scales with player count, not rounds) — modest.
 
-## If you ever approach the cap again
+## Structural safety net (you can't "forget" a limit)
 
-- Check the Usage Dashboard → Egress. If a single table dominates, it's almost
-  certainly a new unbounded/polling query — apply rule 2/3.
-- Measure a query's real cost: `select sum(pg_column_size(t.*)) from <table> t;`
+`storage.js list()` enforces a **hard default cap of 1000 rows**. A query that
+forgets to pass a limit can't pull a whole growing table — it's capped
+automatically. To get more, pass an explicit number; to get everything (Backup
+only), pass `limit: 'all'`. This protects code that hasn't been written yet.
+
+**Aggregates run in the DB, not the client.** Per-player rating averages come
+from the `admin_rating_averages()` / `my_rating_summary()` RPCs — we never pull
+the whole player_ratings table just to average it. Any new "compute over a whole
+growing table" need should be a SECURITY DEFINER RPC returning the aggregate.
+
+## Monitoring (the last line of defense)
+
+Automated egress alerts aren't available via SQL (the metric lives in Supabase's
+management API, not the database). So the human check stays: once a month, open
+**Usage Dashboard → Egress**. If a single table dominates, it's almost certainly
+a new unbounded/polling query — apply the rules above.
+
+Measure a query's real cost: `select sum(pg_column_size(t.*)) from <table> t;`
+
+## Projection ceiling (where free tier genuinely ends)
+
+Modeled: the app stays under cap up to ~500 players / 1000 rounds / 200 daily
+active users (~57%). Beyond ~1000 players with 300+ daily-active users, the
+polling load alone exceeds free tier — that's a Pro-plan-sized org regardless of
+code. Content size (rounds, ratings) no longer matters at all.

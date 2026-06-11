@@ -31,9 +31,10 @@ export default function Backup() {
   const fileInputRef = useRef(null);
   const queryClient = useQueryClient();
 
-  const { data: players = [] } = useQuery({ queryKey: ['players'], queryFn: () => Player.list() });
-  const { data: rounds = [] } = useQuery({ queryKey: ['rounds'], queryFn: () => Round.list() });
-  const { data: payments = [] } = useQuery({ queryKey: ['payments'], queryFn: () => Payment.list() });
+  // Backup must capture EVERY row — opt out of the default list cap with 'all'.
+  const { data: players = [] } = useQuery({ queryKey: ['players-all'], queryFn: () => Player.list(null, 'all') });
+  const { data: rounds = [] } = useQuery({ queryKey: ['rounds-all'], queryFn: () => Round.list(null, 'all') });
+  const { data: payments = [] } = useQuery({ queryKey: ['payments-all'], queryFn: () => Payment.list(null, 'all') });
 
   const [exporting, setExporting] = useState(false);
 

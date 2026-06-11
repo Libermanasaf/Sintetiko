@@ -129,29 +129,29 @@ export default function RatePlayers() {
     enabled: !!myPlayer?.id,
   });
 
-  // Admin-only: pull every rating so we can show per-player averages.
-  const { data: allRatings = [] } = useQuery({
-    queryKey: ['all-player-ratings'],
-    queryFn: () => PlayerRating.list(),
+  // Admin-only: per-player rating averages, computed in the DB via RPC so we
+  // never pull the whole (unbounded) player_ratings table to the client. Returns
+  // one row per rated player — egress is O(players), not O(ratings).
+  const { data: ratingAverages = [] } = useQuery({
+    queryKey: ['admin-rating-averages'],
+    queryFn: async () => {
+      if (!supabase) return [];
+      const { data, error } = await supabase.rpc('admin_rating_averages');
+      if (error) { console.warn('[rating averages]', error.message); return []; }
+      return data || [];
+    },
     enabled: isAdmin,
     staleTime: 30_000,
   });
 
   const ratingStatsByPlayer = useMemo(() => {
     if (!isAdmin) return {};
-    const buckets = {};
-    for (const r of allRatings) {
-      const pid = r.rated_player_id;
-      if (!buckets[pid]) buckets[pid] = { sum: 0, count: 0 };
-      buckets[pid].sum += Number(r.rating) || 0;
-      buckets[pid].count += 1;
-    }
     const result = {};
-    for (const [pid, { sum, count }] of Object.entries(buckets)) {
-      result[pid] = { avg: (sum / count).toFixed(1), count };
+    for (const r of ratingAverages) {
+      result[r.rated_player_id] = { avg: Number(r.avg_rating).toFixed(1), count: Number(r.rating_count) };
     }
     return result;
-  }, [allRatings, isAdmin]);
+  }, [ratingAverages, isAdmin]);
 
   const myRatingsMap = Object.fromEntries(myRatings.map(r => [r.rated_player_id, r.rating]));
   // Merge server ratings with optimistic local ones

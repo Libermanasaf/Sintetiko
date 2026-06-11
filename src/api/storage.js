@@ -3,6 +3,15 @@ import { sanitizeRow } from '../lib/sanitize';
 
 const generateId = () => crypto.randomUUID();
 
+// HARD EGRESS CEILING: list() never returns more than this many rows unless a
+// caller *explicitly* asks for more (a number) or for everything (limit: 'all').
+// This is the structural safety net — even a future query that forgets to pass a
+// limit can't pull thousands of rows and blow the egress cap. 500 comfortably
+// covers every screen; only Backup needs 'all'. See EGRESS.md.
+// 1000 rows of the heaviest table (~1KB/row) is ~1MB worst case per fetch —
+// safe — while still blocking the "accidentally pull 10k rows" failure mode.
+const DEFAULT_LIST_LIMIT = 1000;
+
 const sortItems = (items, sortField) => {
   if (!sortField) return items;
   const desc = sortField.startsWith('-');
@@ -36,11 +45,12 @@ export function createStorage(entityName) {
   const setAll = (items) => localStorage.setItem(key, JSON.stringify(items));
 
   return {
-    // EGRESS: pass `limit` for any growing table (rounds, ratings) used in a
-    // screen that polls or is opened often. Unbounded list() on a growing table
-    // is the #1 cause of egress blowups — see EGRESS.md. `columns` fetches a
-    // narrow projection instead of '*' to shrink payloads further.
+    // EGRESS: `limit` caps rows. If omitted, DEFAULT_LIST_LIMIT (500) is applied
+    // automatically — so a forgotten limit can't pull a whole growing table.
+    // Pass an explicit number for more, or limit: 'all' to opt out (Backup only).
+    // `columns` fetches a narrow projection instead of '*' to shrink payloads.
     async list(sortField, limit, columns) {
+      const effectiveLimit = limit === 'all' ? null : (limit || DEFAULT_LIST_LIMIT);
       if (supabase) {
         let query = supabase.from(tableName).select(columns || '*');
         if (sortField) {
@@ -48,8 +58,8 @@ export function createStorage(entityName) {
           const field = desc ? sortField.slice(1) : sortField;
           query = query.order(field, { ascending: !desc });
         }
-        if (limit) {
-          query = query.limit(limit);
+        if (effectiveLimit) {
+          query = query.limit(effectiveLimit);
         }
         const { data, error } = await query;
         if (error) throw error;
@@ -58,7 +68,7 @@ export function createStorage(entityName) {
 
       // Fallback
       const items = sortItems(getAll(), sortField);
-      return limit ? items.slice(0, limit) : items;
+      return effectiveLimit ? items.slice(0, effectiveLimit) : items;
     },
 
     async create(data) {
