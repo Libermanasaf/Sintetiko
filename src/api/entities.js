@@ -1,6 +1,7 @@
 import { createStorage } from './storage';
 import { supabase } from '../lib/supabase';
 import { sanitizeRow } from '../lib/sanitize';
+import { compressImage } from '../lib/imageCompress';
 
 export const Player = createStorage('Player');
 export const Round = createStorage('Round');
@@ -58,19 +59,23 @@ export const Signup = {
 // payloads tiny so list queries don't re-download megabytes of image data.
 // Falls back to a base64 data-URI when Supabase isn't configured (local dev).
 export async function uploadFile(file) {
+  // Compress before anything else: phone photos are 3–12 MB; this cuts them to
+  // ~250 KB, saving Storage (1 GB cap) and egress on every view. Fail-soft.
+  const compressed = await compressImage(file);
+
   if (!supabase) {
     return new Promise((resolve) => {
       const reader = new FileReader();
       reader.onload = (e) => resolve({ file_url: e.target.result });
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(compressed);
     });
   }
 
-  const ext = (file.name?.split('.').pop() || 'jpg').toLowerCase();
+  const ext = (compressed.name?.split('.').pop() || 'jpg').toLowerCase();
   const path = `${crypto.randomUUID()}.${ext}`;
   const { error } = await supabase.storage
     .from('media')
-    .upload(path, file, { cacheControl: '31536000', contentType: file.type || undefined });
+    .upload(path, compressed, { cacheControl: '31536000', contentType: compressed.type || undefined });
   if (error) throw new Error(`העלאת התמונה נכשלה: ${error.message}`);
 
   const { data } = supabase.storage.from('media').getPublicUrl(path);
