@@ -9,6 +9,17 @@ were fixed; this doc keeps them from coming back. **Read before adding any query
 visit, is an egress bomb.** Egress = payload_size × frequency × users. As data
 accumulates, payload grows → egress grows → cap blown.
 
+## Frequency, not concurrency, is the egress risk
+
+100 users hitting the app *at the same instant* is fine — egress is the monthly
+byte sum and doesn't care about timing; only the 60-connection pool cares, and we
+peak at ~3. The real risk is **total opens/month**: 100 users × many opens/day.
+The biggest per-open payload is the `['players']` list (~18 KB), pulled on almost
+every screen. It barely changes, so it's cached for **10 minutes**
+(`setQueryDefaults(['players'])` in `src/lib/query-client.js`) — safe because
+every player mutation already `invalidateQueries(['players'])`, so a real change
+refetches immediately. This cuts the frequency-driven egress ~88%.
+
 ## Hard rules (enforced by review)
 
 1. **Never store base64 in a table column.** Images go to Storage via
@@ -51,10 +62,20 @@ After the caps, **round count does not affect egress**. The only growth term is
 | Monthly Active Users | 50,000 | nowhere near | — |
 | Realtime | 200 conn | **0 used** (not used) | — |
 
-**Images**: `uploadFile()` compresses to max 1600px / JPEG 80% before upload
-(`src/lib/imageCompress.js`). A phone photo (3–12 MB) becomes ~250 KB. Without
-this, a victory photo per round fills the 1 GB Storage cap in ~400 rounds and
-re-downloads megabytes on every view. Never upload raw user files.
+**Images**: `uploadFile()` compresses before upload (`src/lib/imageCompress.js`).
+It downscales to max 1600px and steps JPEG quality (80%→42%, then width) down
+until the result is **actually under a hard 250 KB ceiling** — not a fixed
+quality that merely hopes to land there. A phone photo (3–12 MB) becomes ~250 KB.
+Why the ceiling is enforced, not assumed: the victory photo is the heaviest asset
+in the app. 100 people viewing one after a match each pull it from origin once
+(cold CDN); at 4.45 MB that's ~425 MB/match → would blow the cap in ~12 matches.
+At 250 KB it's ~24 MB/match. Never upload raw user files.
+
+**Old uncompressed photos** (uploaded before compression existed) are retrofitted
+by `scripts/recompress-storage-photos.cjs` — downloads each Storage victory photo,
+re-encodes with `sharp` to ≤250 KB, re-uploads to the same path (URL unchanged).
+Dry-run by default; `--apply` to write. Needs `SUPABASE_SERVICE_ROLE_KEY` in env
+(local admin run only — never in the client bundle).
 
 ## Structural safety net (you can't "forget" a limit)
 
