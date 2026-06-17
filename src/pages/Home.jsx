@@ -173,9 +173,10 @@ export default function Home() {
       ) || null;
     },
     enabled: !isAdmin,
-    staleTime: 30_000,
+    // Idle probe: a published round arrives via push + invalidateQueries, so this
+    // poll is only a fallback. 5 min keeps idle-month egress flat (see query-client.js).
     refetchOnWindowFocus: true,
-    refetchInterval: 60_000,
+    refetchInterval: 5 * 60_000,
   });
 
   const handlePublish = async () => {

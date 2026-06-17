@@ -30,3 +30,21 @@ queryClientInstance.setQueryDefaults(['players'], {
 	staleTime: 10 * 60_000,
 	gcTime: 15 * 60_000,
 });
+
+// The ['latest-round'] probe ("is a match live right now?") is pulled on nearly
+// every open by Home/PlayerHome/BottomNav and polled while the tab is visible.
+// In a month with no matches the answer never changes, yet at 100 opens/day it
+// would re-fetch the 5 recent rounds 300k+ times (~4 GB) for nothing — the
+// biggest idle-month egress driver. We cache it 3 minutes.
+//
+// SAFE for liveness: (1) publishing a round already calls
+// invalidateQueries(['latest-round']) → instant refetch; (2) a published round
+// also fires a push notification, so the probe is only a fallback, not the
+// primary signal; (3) MatchDay (the live screen) sets its OWN staleTime: 30s /
+// refetchInterval: 60s locally, and the shorter staleTime wins for an active
+// observer — so the live screen stays live. This default only relaxes the
+// idle probe on the home screens.
+queryClientInstance.setQueryDefaults(['latest-round'], {
+	staleTime: 3 * 60_000,
+	gcTime: 5 * 60_000,
+});

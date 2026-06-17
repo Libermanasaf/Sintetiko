@@ -20,6 +20,16 @@ every screen. It barely changes, so it's cached for **10 minutes**
 every player mutation already `invalidateQueries(['players'])`, so a real change
 refetches immediately. This cuts the frequency-driven egress ~88%.
 
+The second driver is the `['latest-round']` probe ("is a match live?"), pulled on
+every open and polled continuously by `BottomNav` (mounted on every screen). In a
+month with **no matches** the answer never changes, yet at 100 opens/day it would
+re-fetch 300k+ times (~4 GB) for nothing. Fixed two ways: cached **3 min**
+(`setQueryDefaults(['latest-round'])`) and the home-screen polls relaxed from 60s
+to **5 min** (`Home`, `PlayerHome`, `BottomNav`). Safe because a published round
+arrives via push + `invalidateQueries`, so the poll is a fallback, not the primary
+signal. `MatchDay` keeps its local 30s stale / 60s poll (the shorter local
+staleTime wins for the active observer), so the **live screen stays live**.
+
 ## Hard rules (enforced by review)
 
 1. **Never store base64 in a table column.** Images go to Storage via

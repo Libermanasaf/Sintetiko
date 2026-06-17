@@ -46,9 +46,11 @@ export default function BottomNav({ hidden = false }) {
       ) || null;
     },
     enabled: showPlayerMenu,
-    staleTime: 30_000,
+    // BottomNav is mounted on every screen, so this poll runs the whole time the
+    // app is open — the single biggest idle-month egress term. A published round
+    // arrives via push + invalidateQueries, so 5 min is a safe fallback cadence.
     refetchOnWindowFocus: true,
-    refetchInterval: 60_000,
+    refetchInterval: 5 * 60_000,
   });
 
   if (hidden) return null;
