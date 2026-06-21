@@ -74,14 +74,21 @@ export default function Payments() {
   const CUTOFF_DATE = new Date('2026-04-30');
   const eligibleRounds = sortedRounds.slice(3).filter(r => new Date(r.date) > CUTOFF_DATE);
   const irrelevantDates = sortedRounds.slice(3).filter(r => new Date(r.date) <= CUTOFF_DATE).map(r => new Date(r.date));
-  const greenDates = eligibleRounds.filter(r => {
+  // A round is fully paid only when EVERY player in it has paid. Earlier this used
+  // a hard-coded 18 (assuming 3×6 squads), which marked a 24-player round green at
+  // 22 paid. Compare against the round's actual roster size instead.
+  const rosterSize = (r) => (r.teams || []).flat().length;
+  const paidCountFor = (r) => {
     const rec = paymentRecords.find(p => p.roundId === r.id);
-    return rec && Object.values(rec.payments || {}).filter(Boolean).length >= 18;
+    return rec ? Object.values(rec.payments || {}).filter(Boolean).length : 0;
+  };
+  const greenDates = eligibleRounds.filter(r => {
+    const size = rosterSize(r);
+    return size > 0 && paidCountFor(r) >= size;
   }).map(r => new Date(r.date));
   const redDates = eligibleRounds.filter(r => {
-    const rec = paymentRecords.find(p => p.roundId === r.id);
-    if (!rec) return true;
-    return Object.values(rec.payments || {}).filter(Boolean).length < 18;
+    const size = rosterSize(r);
+    return size === 0 ? true : paidCountFor(r) < size;
   }).map(r => new Date(r.date));
 
   const roundPlayers = useMemo(() => {
