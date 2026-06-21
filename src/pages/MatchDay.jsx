@@ -386,6 +386,12 @@ export default function MatchDay() {
 
   const handleMvpVote = (candidateId) => {
     if (mvpRef.current.vote || !round?.id) return;
+    // A player can't vote for themselves. currentPlayer is set from the logged-in
+    // user_id; admins have no currentPlayer, so this never blocks them.
+    if (currentPlayer && candidateId === currentPlayer.id) {
+      toast.error('אי אפשר להצביע לעצמך');
+      return;
+    }
     mvpRef.current = { roundId: round.id, vote: candidateId };
     localStorage.setItem(`mvp_vote_${round.id}`, candidateId);
     setMvpVersion(v => v + 1);
@@ -686,14 +692,16 @@ export default function MatchDay() {
                   const maxVotes = totalMvpVotes > 0 ? Math.max(...Object.values(displayMvpVotes)) : 0;
                   const isTopVoted = maxVotes > 0 && votes === maxVotes;
                   const isMyVote = myMvpVote === pid;
+                  const isMe = !!currentPlayer && currentPlayer.id === pid;
 
                   return (
                     <button
                       type="button"
                       key={pid}
                       onClick={() => handleMvpVote(pid)}
+                      disabled={isMe && !hasVotedMvp}
                       className={`relative w-full flex items-center gap-3 p-3 rounded-xl ring-1 text-right overflow-hidden transition-all touch-manipulation
-                        ${!hasVotedMvp ? 'active:scale-[0.99] cursor-pointer hover:bg-white/5' : 'cursor-default'}
+                        ${isMe && !hasVotedMvp ? 'opacity-55 cursor-not-allowed' : !hasVotedMvp ? 'active:scale-[0.99] cursor-pointer hover:bg-white/5' : 'cursor-default'}
                         ${isMyVote
                           ? 'ring-amber-400/60 bg-amber-500/15'
                           : isTopVoted && hasVotedMvp
@@ -720,7 +728,12 @@ export default function MatchDay() {
 
                       {/* Name + team */}
                       <div className="relative min-w-0 flex-1">
-                        <p className={`font-black text-sm truncate ${isMyVote ? 'text-amber-300' : isTopVoted && hasVotedMvp ? 'text-amber-200' : 'text-slate-200'}`}>{p.name}</p>
+                        <p className={`font-black text-sm truncate flex items-center gap-1.5 ${isMyVote ? 'text-amber-300' : isTopVoted && hasVotedMvp ? 'text-amber-200' : 'text-slate-200'}`}>
+                          {p.name}
+                          {isMe && (
+                            <span className="shrink-0 text-[0.55rem] font-black px-1.5 py-0.5 rounded-full bg-slate-700/80 ring-1 ring-white/10 text-slate-300">אתה</span>
+                          )}
+                        </p>
                         <p className={`text-[0.6rem] font-bold ${t.text} opacity-70`}>{t.name}</p>
                       </div>
 
