@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from './supabase';
 import { callApi } from './apiClient';
+import { recordLogin, recordDailyPresence } from './loginActivity';
 
 const AuthContext = createContext();
 
@@ -30,6 +31,7 @@ export const AuthProvider = ({ children }) => {
           setUser(session.user);
           const savedMode = localStorage.getItem('sintetiko_login_mode');
           setRole(savedMode === 'player' ? 'player' : 'admin');
+          recordDailyPresence(session.user, 'מנהל המערכת');
           setIsInitializing(false);
           return;
         }
@@ -39,7 +41,7 @@ export const AuthProvider = ({ children }) => {
         // email column, which is now admin-only for privacy.
         const { data: player, error: playerError } = await supabase
           .from('players')
-          .select('is_approved')
+          .select('is_approved, name')
           .eq('user_id', session.user.id)
           .maybeSingle();
 
@@ -52,6 +54,7 @@ export const AuthProvider = ({ children }) => {
           // Approved player
           setUser(session.user);
           setRole('player');
+          recordDailyPresence(session.user, player.name);
         }
       } else {
         setUser(null);
@@ -130,10 +133,11 @@ export const AuthProvider = ({ children }) => {
     // If not admin, check if they are approved by admin in players table.
     // Match by user_id only (all approved players are linked); email column is
     // now admin-only and not needed for this lookup.
+    let playerName = userEmail === 'libermanasaf@gmail.com' ? 'מנהל המערכת' : null;
     if (userEmail !== 'libermanasaf@gmail.com') {
       const { data: player, error: playerError } = await supabase
         .from('players')
-        .select('is_approved')
+        .select('is_approved, name')
         .eq('user_id', user.id)
         .maybeSingle();
 
@@ -141,12 +145,15 @@ export const AuthProvider = ({ children }) => {
         await supabase.auth.signOut();
         return { error: { message: 'החשבון שלך ממתין לאישור מנהל המערכת (יו"ר ההתאחדות).' } };
       }
+      playerName = player.name;
     }
 
     const detectedRole = userEmail === 'libermanasaf@gmail.com' ? selectedRole : 'player';
     localStorage.setItem('sintetiko_login_mode', selectedRole);
     setLoginMode(selectedRole);
     setRole(detectedRole);
+    // Record this deliberate login (best-effort) for the admin activity screen.
+    recordLogin(user, playerName);
     return { error: null };
   };
 

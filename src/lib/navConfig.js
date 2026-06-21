@@ -1,7 +1,7 @@
 import {
   Home, Users, BarChart3, Shuffle, History, Trophy,
   CreditCard, Shield, UserCheck, Star, Download, UsersRound,
-  BellRing, Bell, Send, ClipboardList, ClipboardCheck,
+  BellRing, Bell, Send, ClipboardList, ClipboardCheck, LogIn,
 } from 'lucide-react';
 
 // Single source of truth for navigation + access control.
@@ -21,6 +21,7 @@ export const menuItems = [
   { name: 'תשלומים',    page: 'Payments',     icon: CreditCard, admin: true },
   { name: 'אישור משתמשים', page: 'UserApprovals', icon: UserCheck, admin: true },
   { name: 'משתמשים רשומים', page: 'RegisteredUsers', icon: UsersRound, admin: true },
+  { name: 'כניסות למערכת', page: 'LoginActivity', icon: LogIn, admin: true },
   { name: 'גיבוי ושחזור', page: 'Backup',     icon: Shield,    admin: true },
   { name: 'שלח התראות',   page: 'SendNotification', icon: Send,     admin: true },
   { name: 'אבחון התראות',  page: 'PushDiagnostics', icon: BellRing, admin: true },
