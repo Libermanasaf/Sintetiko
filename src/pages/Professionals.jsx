@@ -191,7 +191,7 @@ function ProCard({ pro, index, isAdmin, onEdit, onDelete }) {
 
         {/* Gallery — square thumbnails; tap to enlarge. */}
         {gallery.length > 0 && (
-          <div className="grid grid-cols-4 gap-2 mt-4">
+          <div className="grid grid-cols-5 gap-1.5 mt-4">
             {gallery.map((src, i) => (
               <button key={i} onClick={() => setLightbox(i)} aria-label={`הגדל תמונה ${i + 1}`}
                 className="relative aspect-square rounded-xl overflow-hidden ring-1 ring-white/10 bg-slate-950 active:scale-95 transition-transform touch-manipulation">
