@@ -215,11 +215,13 @@ function Gallery({ images, name }) {
   return (
     <div className="relative">
       <div ref={scroller} onScroll={onScroll}
-        className="flex overflow-x-auto snap-x snap-mandatory"
+        className="flex overflow-x-auto snap-x snap-mandatory bg-slate-950"
         style={{ scrollbarWidth: 'none' }}>
         {images.map((src, i) => (
-          <img key={i} src={src} alt={`${name} — תמונה ${i + 1}`} width="600" height="340" loading="lazy" decoding="async"
-               className="w-full shrink-0 snap-center object-cover aspect-[16/9]" />
+          <div key={i} className="w-full shrink-0 snap-center h-56 grid place-items-center">
+            <img src={src} alt={`${name} — תמונה ${i + 1}`} loading="lazy" decoding="async"
+                 className="max-h-full max-w-full object-contain" />
+          </div>
         ))}
       </div>
 
