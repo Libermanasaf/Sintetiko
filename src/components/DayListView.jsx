@@ -54,13 +54,11 @@ export default function DayListView({ day }) {
     queryKey: ['lists-state', day, isAdmin, myEmail],
     queryFn: async () => {
       if (!supabase) return null;
-      const { data, error } = await supabase
-        .from('lists_state')
-        .select('data')
-        .eq('id', 'main')
-        .maybeSingle();
-      if (error || !data?.data) return null;
-      const all = data.data;
+      // Server-gated: the RPC returns the full blob to admins but ONLY the
+      // published snapshot to players (live `rows` never leave the server).
+      const { data, error } = await supabase.rpc('get_lists_state');
+      if (error || !data) return null;
+      const all = data;
 
       // Admin: live roster (what they're editing / will publish).
       if (isAdmin) {
