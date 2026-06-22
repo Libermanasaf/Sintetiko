@@ -165,12 +165,12 @@ function ProCard({ pro, index, isAdmin, onEdit, onDelete }) {
           <p className="text-ink-2 text-sm font-medium mt-3 leading-relaxed">{pro.description}</p>
         )}
 
-        {/* Contact actions */}
-        <div className="flex items-center gap-2 mt-4">
+        {/* Contact actions — compact, content-sized chips */}
+        <div className="flex items-center flex-wrap gap-2 mt-4">
           {pro.phone && (
             <a href={waLink(pro.phone, pro.name)} target="_blank" rel="noopener noreferrer"
                aria-label={`וואטסאפ ל${pro.name}`}
-               className="flex-1 min-h-[46px] flex items-center justify-center gap-2 rounded-xl bg-[#25D366]/15 ring-1 ring-[#25D366]/40 text-[#25D366] font-black text-sm active:scale-[0.98] transition-transform touch-manipulation">
+               className="min-h-[46px] px-3.5 flex items-center justify-center gap-2 rounded-xl bg-[#25D366]/15 ring-1 ring-[#25D366]/40 text-[#25D366] font-black text-sm active:scale-[0.98] transition-transform touch-manipulation">
               <WhatsAppIcon className="w-5 h-5" />
               וואטסאפ
             </a>
