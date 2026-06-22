@@ -35,6 +35,7 @@ const tableMapping = {
   'PlayerRating': 'player_ratings',
   'RoundBet': 'round_bets',
   'Signup': 'signups',
+  'Professional': 'professionals',
 };
 
 export function createStorage(entityName) {

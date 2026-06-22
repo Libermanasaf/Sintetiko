@@ -1,7 +1,7 @@
 import {
   Home, Users, BarChart3, Shuffle, History, Trophy,
   CreditCard, Shield, UserCheck, Star, Download, UsersRound,
-  BellRing, Bell, Send, ClipboardList, ClipboardCheck, LogIn,
+  BellRing, Bell, Send, ClipboardList, ClipboardCheck, LogIn, Briefcase,
 } from 'lucide-react';
 
 // Single source of truth for navigation + access control.
@@ -16,6 +16,7 @@ export const menuItems = [
   { name: 'סטטיסטיקות', page: 'Statistics',   icon: BarChart3, admin: true, player: true },
   { name: 'יצירת מחזור', page: 'CreateRound', icon: Shuffle,   admin: true },
   { name: 'היסטוריית משחקים', page: 'GameHistory', icon: History, admin: true, player: true },
+  { name: 'בעלי המקצוע שלנו', page: 'Professionals', icon: Briefcase, admin: true, player: true },
   { name: 'דרג שחקנים', page: 'RatePlayers',  icon: Star,      admin: true, player: true },
   { name: 'רשימות',      page: 'Lists',        icon: ClipboardList, admin: true },
   { name: 'תשלומים',    page: 'Payments',     icon: CreditCard, admin: true },

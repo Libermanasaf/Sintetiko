@@ -8,6 +8,7 @@ export const Round = createStorage('Round');
 export const Payment = createStorage('Payment');
 export const PlayerRating = createStorage('PlayerRating');
 export const RoundBet = createStorage('RoundBet');
+export const Professional = createStorage('Professional');
 
 /* ─── Signup entity — Supabase only (no silent fallback so errors are visible) ─── */
 export const Signup = {
