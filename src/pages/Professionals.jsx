@@ -195,7 +195,7 @@ function ProCard({ pro, index, isAdmin, onEdit, onDelete }) {
           <div className="flex flex-wrap gap-1.5 mt-4">
             {gallery.map((src, i) => (
               <button key={i} onClick={() => setLightbox(i)} aria-label={`הגדל תמונה ${i + 1}`}
-                className="relative w-14 h-14 rounded-lg overflow-hidden ring-1 ring-white/10 bg-slate-950 active:scale-95 transition-transform touch-manipulation">
+                className="relative w-16 h-16 rounded-lg overflow-hidden ring-1 ring-white/10 bg-slate-950 active:scale-95 transition-transform touch-manipulation">
                 <img src={src} alt={`${pro.name} — תמונה ${i + 1}`} loading="lazy" decoding="async"
                      className="w-full h-full object-cover" />
               </button>
