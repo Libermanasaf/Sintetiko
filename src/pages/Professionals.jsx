@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Professional, uploadFile } from '@/api/entities';
 import { useAuth } from '@/lib/AuthContext';
@@ -117,6 +117,7 @@ function ProCard({ pro, index, isAdmin, onEdit, onDelete }) {
   const gallery = Array.isArray(pro.gallery) ? pro.gallery.filter(Boolean) : [];
   const ig = igLink(pro.instagram);
   const [confirmDel, setConfirmDel] = useState(false);
+  const [lightbox, setLightbox] = useState(-1); // index of opened image, -1 = closed
 
   return (
     <motion.article
@@ -125,9 +126,6 @@ function ProCard({ pro, index, isAdmin, onEdit, onDelete }) {
       transition={{ delay: Math.min(index * 0.05, 0.3), type: 'spring', damping: 20, stiffness: 200 }}
       className="st-card overflow-hidden"
     >
-      {/* Gallery carousel — scroll-snap, touch-friendly. Only if photos exist. */}
-      {gallery.length > 0 && <Gallery images={gallery} name={pro.name} />}
-
       <div className="p-4">
         {/* Header row: avatar + name + profession chip */}
         <div className="flex items-start gap-3">
@@ -190,65 +188,71 @@ function ProCard({ pro, index, isAdmin, onEdit, onDelete }) {
             </a>
           )}
         </div>
+
+        {/* Gallery — square thumbnails; tap to enlarge. */}
+        {gallery.length > 0 && (
+          <div className="grid grid-cols-4 gap-2 mt-4">
+            {gallery.map((src, i) => (
+              <button key={i} onClick={() => setLightbox(i)} aria-label={`הגדל תמונה ${i + 1}`}
+                className="relative aspect-square rounded-xl overflow-hidden ring-1 ring-white/10 bg-slate-950 active:scale-95 transition-transform touch-manipulation">
+                <img src={src} alt={`${pro.name} — תמונה ${i + 1}`} loading="lazy" decoding="async"
+                     className="w-full h-full object-cover" />
+              </button>
+            ))}
+          </div>
+        )}
       </div>
+
+      <AnimatePresence>
+        {lightbox >= 0 && (
+          <Lightbox images={gallery} start={lightbox} name={pro.name} onClose={() => setLightbox(-1)} />
+        )}
+      </AnimatePresence>
     </motion.article>
   );
 }
 
-function Gallery({ images, name }) {
-  const scroller = useRef(null);
-  const [idx, setIdx] = useState(0);
-
-  const scrollTo = (i) => {
-    const el = scroller.current;
-    if (!el) return;
-    const clamped = Math.max(0, Math.min(images.length - 1, i));
-    el.scrollTo({ left: el.clientWidth * clamped * (document.dir === 'rtl' ? -1 : 1), behavior: 'smooth' });
-    setIdx(clamped);
-  };
-  const onScroll = () => {
-    const el = scroller.current;
-    if (!el) return;
-    setIdx(Math.round(Math.abs(el.scrollLeft) / el.clientWidth));
-  };
+// Fullscreen image viewer opened from a thumbnail. Tap backdrop or ✕ to close;
+// arrows step through (RTL-aware). The image is contained, never cropped.
+function Lightbox({ images, start, name, onClose }) {
+  const [idx, setIdx] = useState(start);
+  const go = (d) => setIdx((i) => Math.max(0, Math.min(images.length - 1, i + d)));
 
   return (
-    <div className="relative">
-      <div ref={scroller} onScroll={onScroll}
-        className="flex overflow-x-auto snap-x snap-mandatory bg-slate-950"
-        style={{ scrollbarWidth: 'none' }}>
-        {images.map((src, i) => (
-          <div key={i} className="w-full shrink-0 snap-center h-56 grid place-items-center">
-            <img src={src} alt={`${name} — תמונה ${i + 1}`} loading="lazy" decoding="async"
-                 className="max-h-full max-w-full object-contain" />
-          </div>
-        ))}
-      </div>
+    <motion.div
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[60] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <button onClick={onClose} aria-label="סגור"
+        className="absolute top-4 left-4 grid place-items-center w-10 h-10 rounded-full bg-white/10 ring-1 ring-white/20 text-white active:scale-90 transition-transform">
+        <X className="w-5 h-5" />
+      </button>
+
+      <motion.img
+        key={idx}
+        initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }}
+        src={images[idx]} alt={`${name} — תמונה ${idx + 1}`}
+        onClick={(e) => e.stopPropagation()}
+        className="max-h-[85vh] max-w-full object-contain rounded-xl"
+      />
 
       {images.length > 1 && (
         <>
-          {/* dots */}
-          <div className="absolute inset-x-0 bottom-2 flex justify-center gap-1.5 pointer-events-none">
-            {images.map((_, i) => (
-              <span key={i} className={`h-1.5 rounded-full transition-all ${i === idx ? 'w-5 bg-amber-300' : 'w-1.5 bg-white/50'}`} />
-            ))}
-          </div>
-          {/* arrows (RTL-aware: visually prev/next) */}
-          <button onClick={() => scrollTo(idx - 1)} aria-label="הקודם"
-            className="absolute top-1/2 -translate-y-1/2 right-2 grid place-items-center w-8 h-8 rounded-full bg-black/45 ring-1 ring-white/15 text-white backdrop-blur-sm active:scale-90 transition-transform">
-            <ChevronRight className="w-5 h-5" />
+          <button onClick={(e) => { e.stopPropagation(); go(-1); }} disabled={idx === 0} aria-label="הקודם"
+            className="absolute top-1/2 -translate-y-1/2 right-3 grid place-items-center w-11 h-11 rounded-full bg-white/10 ring-1 ring-white/20 text-white active:scale-90 transition-transform disabled:opacity-30">
+            <ChevronRight className="w-6 h-6" />
           </button>
-          <button onClick={() => scrollTo(idx + 1)} aria-label="הבא"
-            className="absolute top-1/2 -translate-y-1/2 left-2 grid place-items-center w-8 h-8 rounded-full bg-black/45 ring-1 ring-white/15 text-white backdrop-blur-sm active:scale-90 transition-transform">
-            <ChevronLeft className="w-5 h-5" />
+          <button onClick={(e) => { e.stopPropagation(); go(1); }} disabled={idx === images.length - 1} aria-label="הבא"
+            className="absolute top-1/2 -translate-y-1/2 left-3 grid place-items-center w-11 h-11 rounded-full bg-white/10 ring-1 ring-white/20 text-white active:scale-90 transition-transform disabled:opacity-30">
+            <ChevronLeft className="w-6 h-6" />
           </button>
+          <span className="absolute bottom-5 left-1/2 -translate-x-1/2 text-xs font-black px-3 py-1 rounded-full bg-white/10 text-white tnum">
+            {idx + 1} / {images.length}
+          </span>
         </>
       )}
-      {/* count badge */}
-      <span className="absolute top-2 left-2 text-[0.6rem] font-black px-2 py-0.5 rounded-full bg-black/55 text-white tnum">
-        {idx + 1}/{images.length}
-      </span>
-    </div>
+    </motion.div>
   );
 }
 
