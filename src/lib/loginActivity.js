@@ -2,6 +2,15 @@
 // Fail-soft by design: a tracking write must NEVER block or break auth.
 import { supabase } from './supabase';
 
+// The screen the user is on right now (first screen of this session/day).
+function currentPage() {
+  try {
+    return (window.location.pathname || '/').slice(0, 80);
+  } catch {
+    return null;
+  }
+}
+
 // Logs a deliberate login (someone signed in with credentials).
 export async function recordLogin(user, name) {
   if (!supabase || !user?.id) return;
@@ -11,6 +20,7 @@ export async function recordLogin(user, name) {
       email: user.email?.toLowerCase() || null,
       name: name || null,
       event_type: 'login',
+      entry_page: currentPage(),
     });
   } catch { /* ignore — tracking is best-effort */ }
 }
@@ -29,6 +39,7 @@ export async function recordDailyPresence(user, name) {
       email: user.email?.toLowerCase() || null,
       name: name || null,
       event_type: 'daily',
+      entry_page: currentPage(),
     });
     // 23505 = unique violation: a daily row already exists for today — that's fine.
     if (!error || error.code === '23505') localStorage.setItem(key, today);

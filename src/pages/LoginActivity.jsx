@@ -1,9 +1,20 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
-import { motion } from 'framer-motion';
-import { LogIn, Users, CalendarDays, TrendingUp, User, Clock, Crown } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { LogIn, Users, CalendarDays, TrendingUp, User, Clock, Crown, X, MapPin, ChevronLeft, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageHeader, EmptyState, Skeleton } from '@/components/ui/lux';
+
+// Friendly Hebrew labels for the entry-page paths we record.
+const PAGE_LABELS = {
+  '/': 'דף הבית', '/Home': 'דף הבית', '/PlayerHome': 'דף הבית',
+  '/Statistics': 'סטטיסטיקות', '/Podium': 'פודיום', '/GameHistory': 'היסטוריית משחקים',
+  '/RatePlayers': 'דירוג שחקנים', '/Players': 'סגל שחקנים', '/Payments': 'תשלומים',
+  '/Lists': 'רשימות', '/MatchDay': 'סביבת המשחק', '/Professionals': 'בעלי המקצוע',
+  '/Notifications': 'התראות', '/SignupPage': 'רישום',
+  '/DayListSunday': 'רשימת ראשון', '/DayListWednesday': 'רשימת רביעי', '/DayListThursday': 'רשימת חמישי',
+};
+const pageLabel = (p) => PAGE_LABELS[p] || p || 'לא ידוע';
 
 const RANGES = [
   { days: 7, label: '7 ימים' },
@@ -17,6 +28,7 @@ export default function LoginActivity() {
   const [daily, setDaily] = useState([]);
   const [byUser, setByUser] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedUser, setSelectedUser] = useState(null); // {user_id, name, email} | null
 
   useEffect(() => {
     let cancelled = false;
@@ -141,12 +153,14 @@ export default function LoginActivity() {
               ) : (
                 <div className="space-y-2">
                   {byUser.map((u, i) => (
-                    <motion.div
+                    <motion.button
                       key={u.user_id || i}
+                      type="button"
+                      onClick={() => setSelectedUser({ user_id: u.user_id, name: u.name, email: u.email })}
                       initial={{ opacity: 0, y: 6 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: Math.min(i * 0.02, 0.3) }}
-                      className="flex items-center gap-3 rounded-xl bg-slate-800/50 ring-1 ring-white/5 p-2.5"
+                      className="w-full text-right flex items-center gap-3 rounded-xl bg-slate-800/50 ring-1 ring-white/5 p-2.5 active:scale-[0.99] hover:bg-slate-800/80 transition-all touch-manipulation"
                     >
                       <div className={`grid place-items-center w-7 h-7 rounded-lg text-xs font-black shrink-0 tnum ${
                         i === 0 ? 'bg-amber-500/25 text-amber-300 ring-1 ring-amber-400/40'
@@ -168,7 +182,8 @@ export default function LoginActivity() {
                         <p className="text-amber-300 font-black text-base tnum leading-none">{u.days_active}</p>
                         <p className="text-slate-500 text-[0.6rem] font-bold mt-0.5 tnum">{u.total_events} כניסות</p>
                       </div>
-                    </motion.div>
+                      <ChevronLeft className="w-4 h-4 text-slate-600 shrink-0" />
+                    </motion.button>
                   ))}
                 </div>
               )}
@@ -176,7 +191,84 @@ export default function LoginActivity() {
           </>
         )}
       </div>
+
+      <AnimatePresence>
+        {selectedUser && (
+          <UserDetailModal user={selectedUser} onClose={() => setSelectedUser(null)} />
+        )}
+      </AnimatePresence>
     </div>
+  );
+}
+
+function UserDetailModal({ user, onClose }) {
+  const [events, setEvents] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!supabase || !user?.user_id) return;
+      const { data, error } = await supabase.rpc('login_activity_user_detail', { p_user_id: user.user_id, p_limit: 100 });
+      if (cancelled) return;
+      if (error) { toast.error('שגיאה בטעינת הפירוט', { description: error.message }); setEvents([]); return; }
+      setEvents(data || []);
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
+
+  const fmt = (d) => new Date(d).toLocaleString('he-IL', {
+    day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit',
+  });
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 40, opacity: 0 }}
+        onClick={(e) => e.stopPropagation()}
+        className="w-full sm:max-w-md bg-slate-900 ring-1 ring-white/10 rounded-t-3xl sm:rounded-3xl p-5 max-h-[85vh] overflow-y-auto"
+      >
+        <div className="flex items-center gap-3 mb-4">
+          <div className="grid place-items-center w-10 h-10 rounded-xl st-foil text-base font-black shrink-0">
+            {(user.name?.[0] || user.email?.[0] || '?').toUpperCase()}
+          </div>
+          <div className="min-w-0 flex-1">
+            <h2 className="font-black text-white text-base truncate">{user.name || user.email || '—'}</h2>
+            <p className="text-slate-500 text-xs font-bold">פירוט כניסות</p>
+          </div>
+          <button onClick={onClose} aria-label="סגור" className="grid place-items-center w-9 h-9 rounded-lg bg-slate-800 text-slate-400 active:scale-95"><X className="w-5 h-5" /></button>
+        </div>
+
+        {events === null ? (
+          <div className="py-10 grid place-items-center text-slate-500"><Loader2 className="w-6 h-6 animate-spin" /></div>
+        ) : events.length === 0 ? (
+          <EmptyState icon={Clock} title="אין כניסות מתועדות" hint="הכניסות יופיעו כאן." />
+        ) : (
+          <div className="space-y-2">
+            {events.map((e, i) => (
+              <div key={i} className="flex items-center gap-3 rounded-xl bg-slate-800/50 ring-1 ring-white/5 p-3">
+                <div className={`grid place-items-center w-8 h-8 rounded-lg shrink-0 ${e.event_type === 'login' ? 'bg-sky-500/15 text-sky-300' : 'bg-emerald-500/15 text-emerald-300'}`}>
+                  {e.event_type === 'login' ? <LogIn className="w-4 h-4" /> : <Clock className="w-4 h-4" />}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-white text-sm font-bold tnum">{fmt(e.created_date)}</p>
+                  <p className="flex items-center gap-1 text-[0.65rem] text-ink-3 font-bold mt-0.5">
+                    <MapPin className="w-3 h-3 text-slate-500 shrink-0" />
+                    {pageLabel(e.entry_page)}
+                  </p>
+                </div>
+                <span className="text-[0.6rem] font-black px-2 py-0.5 rounded-full bg-slate-700/60 text-slate-300 shrink-0">
+                  {e.event_type === 'login' ? 'התחברות' : 'נוכחות'}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </motion.div>
+    </motion.div>
   );
 }
 
