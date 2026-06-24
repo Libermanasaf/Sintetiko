@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { BarChart3, Users, Crown, Zap, ListOrdered } from 'lucide-react';
+import { BarChart3, Users, Crown, Zap, ListOrdered, Search, X } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { Player } from '@/api/entities';
 import PlayerStatsModal from '@/components/statistics/PlayerStatsModal';
@@ -84,12 +84,21 @@ function MiniPodium({ title, icon: Icon, players, tone, statFn }) {
 
 export default function Statistics() {
   const [selectedPlayer, setSelectedPlayer] = useState(null);
+  const [search, setSearch] = useState('');
   const { data: players = [], isLoading } = useQuery({
     queryKey: ['players'],
     queryFn: () => Player.list('-appearances'),
   });
 
   const byAppearances = [...players].sort((a, b) => (b.appearances || 0) - (a.appearances || 0));
+  // Keep each player's true rank, then filter the view by name — so searching
+  // narrows the rows shown but the # column still reflects the real ranking.
+  const rankedRows = useMemo(() => {
+    const ranked = byAppearances.map((p, i) => ({ player: p, rank: i }));
+    const q = search.trim().toLowerCase();
+    if (!q) return ranked;
+    return ranked.filter(({ player }) => (player.name || '').toLowerCase().includes(q));
+  }, [byAppearances, search]);
   const byEfficiency = [...players]
     .filter(p => (p.appearances || 0) >= 5)
     .sort((a, b) => (b.wins || 0) / (b.appearances || 1) - (a.wins || 0) / (a.appearances || 1));
@@ -129,22 +138,47 @@ export default function Statistics() {
 
             <SectionTitle icon={ListOrdered} className="mb-4">טבלת הופעות מלאה</SectionTitle>
 
+            {/* Search by name */}
+            <div className="relative mb-3">
+              <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
+              <input
+                type="search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="חיפוש שחקן לפי שם"
+                className="w-full min-h-[48px] pr-10 pl-10 rounded-xl bg-slate-900/70 ring-1 ring-white/8 text-slate-200 placeholder:text-slate-500 font-medium focus:ring-amber-400/40 focus:outline-none transition-all"
+              />
+              {search && (
+                <button
+                  onClick={() => setSearch('')}
+                  aria-label="נקה חיפוש"
+                  className="absolute left-2 top-1/2 -translate-y-1/2 grid place-items-center w-8 h-8 rounded-lg text-slate-400 hover:text-white active:scale-90 transition-all"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+
             <div className="rounded-2xl overflow-hidden ring-1 ring-amber-500/15 bg-slate-900/60">
               <div className="grid grid-cols-[40px_1fr_72px] items-center px-4 py-2.5 bg-slate-800/80 border-b border-amber-500/15">
                 <span className="text-[0.7rem] font-black text-amber-400/80">#</span>
                 <span className="text-[0.7rem] font-black text-amber-400/80">שחקן</span>
                 <span className="text-[0.7rem] font-black text-amber-400/80 text-center">הופעות</span>
               </div>
-              {byAppearances.map((player, index) => (
+              {rankedRows.length === 0 ? (
+                <div className="px-4 py-8 text-center text-slate-500 text-sm font-bold">
+                  לא נמצא שחקן בשם "{search}"
+                </div>
+              ) : rankedRows.map(({ player, rank }, i) => (
                 <motion.div
                   key={player.id}
                   initial={{ opacity: 0, x: -8 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: Math.min(index * 0.03, 0.4) }}
+                  transition={{ delay: Math.min(i * 0.03, 0.4) }}
                   className="grid grid-cols-[40px_1fr_72px] items-center px-4 py-3 border-b border-slate-800/80 last:border-b-0"
                 >
-                  <span className={`text-sm font-black tnum ${RANK_TEXT[index] || 'text-slate-600'}`}>
-                    {index + 1}
+                  <span className={`text-sm font-black tnum ${RANK_TEXT[rank] || 'text-slate-600'}`}>
+                    {rank + 1}
                   </span>
                   <div className="flex items-center gap-2.5 min-w-0">
                     {player.image ? (
