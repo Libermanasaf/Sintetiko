@@ -8,6 +8,7 @@ import LandingPage from '@/components/auth/LandingPage';
 import { registerServiceWorker, ensureSubscribed } from '@/lib/push';
 import NotificationPrompt from '@/components/NotificationPrompt';
 import { recordPageVisit } from '@/lib/loginActivity';
+import OfflineBanner from '@/components/OfflineBanner';
 
 // Compact crest monogram for the header — gold ring + pitch core
 function HeaderCrest() {
@@ -73,6 +74,7 @@ export default function Layout({ children, currentPageName }) {
 
   return (
     <div dir="rtl" className="relative min-h-screen st-stage overflow-hidden">
+      <OfflineBanner />
       <a href="#main-content" className="st-skip-link">דלג לתוכן הראשי</a>
 
       {/* Stadium texture — mowed-pitch stripes + fine grain */}

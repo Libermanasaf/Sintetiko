@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>סינתטיקו חולון — אין חיבור</title>
+  <style>
+    :root { color-scheme: dark; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      min-height: 100dvh;
+      display: grid;
+      place-items: center;
+      padding: 1.5rem;
+      font-family: -apple-system, "Segoe UI", Rubik, Arial, sans-serif;
+      background:
+        radial-gradient(80% 60% at 50% 0%, #0b3b2c 0%, transparent 60%),
+        linear-gradient(#020617, #060d09);
+      color: #e8eef0;
+      text-align: center;
+    }
+    .card {
+      max-width: 22rem;
+      width: 100%;
+      background: linear-gradient(#0d1722, #0a1119);
+      border: 1px solid rgba(224,169,46,0.35);
+      border-radius: 1.5rem;
+      padding: 2.25rem 1.75rem;
+      box-shadow: 0 20px 60px -20px rgba(0,0,0,0.7);
+    }
+    .crest {
+      width: 72px; height: 72px;
+      margin: 0 auto 1.25rem;
+      display: grid; place-items: center;
+      border-radius: 50%;
+      background: linear-gradient(160deg, #fde9b8, #e0a92e 46%, #9a6a16);
+      box-shadow: 0 8px 24px -8px rgba(224,169,46,0.6);
+    }
+    .crest svg { width: 40px; height: 40px; }
+    h1 { font-size: 1.4rem; font-weight: 800; margin-bottom: 0.6rem; }
+    p { font-size: 0.95rem; line-height: 1.6; color: #9fb0b8; margin-bottom: 1.5rem; }
+    button {
+      width: 100%;
+      min-height: 50px;
+      border: none;
+      border-radius: 1rem;
+      font-size: 1rem;
+      font-weight: 800;
+      color: #0a1209;
+      background: linear-gradient(160deg, #fde9b8, #e0a92e 46%, #9a6a16);
+      cursor: pointer;
+      transition: transform 0.1s;
+    }
+    button:active { transform: scale(0.98); }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="crest">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#0a1209" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M1 1l22 22" />
+        <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55" />
+        <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39" />
+        <path d="M10.71 5.05A16 16 0 0 1 22.58 9" />
+        <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88" />
+        <path d="M8.53 16.11a6 6 0 0 1 6.95 0" />
+        <line x1="12" y1="20" x2="12.01" y2="20" />
+      </svg>
+    </div>
+    <h1>אין חיבור לאינטרנט</h1>
+    <p>סינתטיקו חולון צריכה חיבור כדי לטעון מחזורים, רשימות וסטטיסטיקות. בדוק את החיבור ונסה שוב.</p>
+    <button onclick="location.reload()">נסה שוב</button>
+  </div>
+  <script>
+    // Auto-reload the moment connectivity returns.
+    window.addEventListener('online', () => location.reload());
+  </script>
+</body>
+</html>
