@@ -203,18 +203,25 @@ export default function LoginActivity() {
 
 function UserDetailModal({ user, onClose }) {
   const [events, setEvents] = useState(null);
+  const [interest, setInterest] = useState(null); // [{page, visits}]
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       if (!supabase || !user?.user_id) return;
-      const { data, error } = await supabase.rpc('login_activity_user_detail', { p_user_id: user.user_id, p_limit: 100 });
+      const [ev, iv] = await Promise.all([
+        supabase.rpc('login_activity_user_detail', { p_user_id: user.user_id, p_limit: 100 }),
+        supabase.rpc('page_visits_for_user', { p_user_id: user.user_id }),
+      ]);
       if (cancelled) return;
-      if (error) { toast.error('שגיאה בטעינת הפירוט', { description: error.message }); setEvents([]); return; }
-      setEvents(data || []);
+      if (ev.error) { toast.error('שגיאה בטעינת הפירוט', { description: ev.error.message }); setEvents([]); }
+      else setEvents(ev.data || []);
+      setInterest(iv.error ? [] : (iv.data || []));
     })();
     return () => { cancelled = true; };
   }, [user]);
+
+  const maxVisits = interest && interest.length ? Math.max(...interest.map((r) => r.visits)) : 1;
 
   const fmt = (d) => new Date(d).toLocaleString('he-IL', {
     day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit',
@@ -242,6 +249,32 @@ function UserDetailModal({ user, onClose }) {
           <button onClick={onClose} aria-label="סגור" className="grid place-items-center w-9 h-9 rounded-lg bg-slate-800 text-slate-400 active:scale-95"><X className="w-5 h-5" /></button>
         </div>
 
+        {/* Interest map — which areas this user visits most */}
+        {interest && interest.length > 0 && (
+          <div className="mb-5">
+            <div className="flex items-center gap-2 mb-2.5">
+              <MapPin className="w-4 h-4 text-amber-400" />
+              <h3 className="font-black text-white text-sm">אזורים שמעניינים אותו</h3>
+            </div>
+            <div className="space-y-2">
+              {interest.map((r, i) => (
+                <div key={i} className="relative rounded-xl bg-slate-800/50 ring-1 ring-white/5 px-3 py-2.5 overflow-hidden">
+                  <div className="absolute inset-y-0 right-0 bg-amber-500/10" style={{ width: `${Math.round((r.visits / maxVisits) * 100)}%` }} />
+                  <div className="relative flex items-center justify-between">
+                    <span className="font-black text-slate-200 text-sm">{pageLabel(r.page)}</span>
+                    <span className="tnum font-black text-amber-300 text-sm">{r.visits}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Login/presence events */}
+        <div className="flex items-center gap-2 mb-2.5">
+          <Clock className="w-4 h-4 text-sky-400" />
+          <h3 className="font-black text-white text-sm">כניסות אחרונות</h3>
+        </div>
         {events === null ? (
           <div className="py-10 grid place-items-center text-slate-500"><Loader2 className="w-6 h-6 animate-spin" /></div>
         ) : events.length === 0 ? (

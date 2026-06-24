@@ -11,6 +11,22 @@ function currentPage() {
   }
 }
 
+// Records that the logged-in user visited a page, as an atomic per-user counter
+// (one row per user, bumped — never a row per visit, so egress stays flat).
+// Skips noise: only counts real app areas, dedupes rapid repeats of the same path.
+let _lastBumped = { path: null, at: 0 };
+export async function recordPageVisit(page, name) {
+  if (!supabase || !page) return;
+  const path = String(page).slice(0, 60);
+  const now = Date.now();
+  // Ignore an immediate re-fire of the same path (e.g. double effect) within 1.5s.
+  if (_lastBumped.path === path && now - _lastBumped.at < 1500) return;
+  _lastBumped = { path, at: now };
+  try {
+    await supabase.rpc('bump_page_visit', { p_page: path, p_name: name || null });
+  } catch { /* best-effort */ }
+}
+
 // Logs a deliberate login (someone signed in with credentials).
 export async function recordLogin(user, name) {
   if (!supabase || !user?.id) return;

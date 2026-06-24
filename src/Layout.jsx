@@ -7,6 +7,7 @@ import { useAuth } from '@/lib/AuthContext';
 import LandingPage from '@/components/auth/LandingPage';
 import { registerServiceWorker, ensureSubscribed } from '@/lib/push';
 import NotificationPrompt from '@/components/NotificationPrompt';
+import { recordPageVisit } from '@/lib/loginActivity';
 
 // Compact crest monogram for the header — gold ring + pitch core
 function HeaderCrest() {
@@ -41,7 +42,7 @@ function HeaderCrest() {
   );
 }
 
-export default function Layout({ children }) {
+export default function Layout({ children, currentPageName }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { role, user, isInitializing } = useAuth();
 
@@ -54,6 +55,13 @@ export default function Layout({ children }) {
       ensureSubscribed(user.email);
     }
   }, [role, user]);
+
+  // Track which areas each logged-in user visits (atomic per-user counter).
+  useEffect(() => {
+    if (user && currentPageName) {
+      recordPageVisit(`/${currentPageName}`);
+    }
+  }, [currentPageName, user]);
 
   if (isInitializing) {
     return <div className="min-h-screen st-stage" aria-hidden="true" />;
