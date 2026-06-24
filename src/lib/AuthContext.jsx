@@ -39,14 +39,36 @@ export const AuthProvider = ({ children }) => {
         // Fetch player approval status. Match by user_id only (every approved
         // player is linked to a user_id) — avoids needing read access to the
         // email column, which is now admin-only for privacy.
-        const { data: player, error: playerError } = await supabase
-          .from('players')
-          .select('is_approved, name')
-          .eq('user_id', session.user.id)
-          .maybeSingle();
+        let player = null, playerError = null;
+        try {
+          const res = await supabase
+            .from('players')
+            .select('is_approved, name')
+            .eq('user_id', session.user.id)
+            .maybeSingle();
+          player = res.data;
+          playerError = res.error;
+        } catch (e) {
+          playerError = e;
+        }
 
-        if (playerError || !player || !player.is_approved) {
-          // Player is not approved or not found. Log them out.
+        // OFFLINE-SAFE: only log a user out when the server EXPLICITLY says they're
+        // not approved / not found. A network error (e.g. airplane mode) must NOT
+        // evict an already-signed-in user — keep their session and let the cached
+        // role stand, so going offline never throws them back to the login screen.
+        const isNetworkError = playerError && (
+          playerError.message === 'Load failed' ||
+          playerError.message === 'Failed to fetch' ||
+          /network|fetch|timeout|offline/i.test(playerError.message || '') ||
+          !navigator.onLine
+        );
+
+        if (isNetworkError) {
+          // Offline / transient: trust the existing session, don't sign out.
+          setUser(session.user);
+          setRole('player');
+        } else if (playerError || !player || !player.is_approved) {
+          // Server answered: this user is genuinely not approved → log them out.
           setUser(null);
           setRole(null);
           await supabase.auth.signOut();
