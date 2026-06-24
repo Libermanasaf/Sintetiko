@@ -34,50 +34,78 @@ export default function CreateRound() {
   };
 
   const handleNextFromSelection = () => {
-    // Distribute players to teams (initially random)
-    const shuffled = [...selectedPlayers].sort(() => Math.random() - 0.5);
-    const newTeams = Array.from({ length: numTeams }, () => []);
-
-    shuffled.forEach((playerId, index) => {
-      const teamIndex = index % numTeams;
-      newTeams[teamIndex].push(playerId);
-    });
-
-    setTeams(newTeams);
+    // Distribute players into the fairest balanced split right away (not a plain
+    // random round-robin) so the first preview is already as equal as possible.
+    setTeams(balanceTeams(selectedPlayers));
     setGoalkeepers({});
     setOpeningTeams(null);
     setStep(3);
   };
 
-  const balanceTeams = (playerIds) => {
-    // Balance teams using zigzag distribution
-    const allPlayers = playerIds.map((playerId) =>
-      players.find((p) => p.id === playerId)
-    );
+  // Balances players into the fairest split by average rating. Instead of a fixed
+  // zigzag (which always returns the SAME teams and isn't truly optimal), we run
+  // many randomized splits and keep the one with the smallest spread between team
+  // averages — so the result is both genuinely balanced AND different each click
+  // (you see players actually move). avoidTeams (optional) nudges away from the
+  // previous arrangement so consecutive reshuffles visibly change.
+  const balanceTeams = (playerIds, avoidTeams = null, teamCount = numTeams) => {
+    const roster = playerIds
+      .map((id) => players.find((p) => p.id === id))
+      .filter(Boolean);
+    const n = roster.length;
+    if (n === 0) return Array.from({ length: teamCount }, () => []);
 
-    // Sort by rating descending
-    allPlayers.sort((a, b) => (b.rating || 3) - (a.rating || 3));
+    // Target sizes: as even as possible (e.g. 17 into 3 → 6,6,5).
+    const base = Math.floor(n / teamCount);
+    const extra = n % teamCount;
+    const sizes = Array.from({ length: teamCount }, (_, i) => base + (i < extra ? 1 : 0));
 
-    // Zigzag distribution
-    const newTeams = Array.from({ length: numTeams }, () => []);
-    let direction = 1;
-    let teamIndex = 0;
+    const ratingOf = (p) => p.rating || 3;
+    const avg = (team) => (team.length ? team.reduce((s, p) => s + ratingOf(p), 0) / team.length : 0);
+    const spread = (teams) => {
+      const avgs = teams.map(avg);
+      return Math.max(...avgs) - Math.min(...avgs);
+    };
+    const idsOf = (teams) => teams.map((t) => t.map((p) => p.id));
+    const sameAs = (teams, other) => {
+      if (!other) return false;
+      const key = (tt) => tt.map((t) => [...t].sort().join(',')).sort().join('|');
+      return key(idsOf(teams)) === key(other);
+    };
 
-    allPlayers.forEach((player) => {
-      newTeams[teamIndex].push(player.id);
-      teamIndex += direction;
-
-      if (teamIndex >= numTeams || teamIndex < 0) {
-        direction *= -1;
-        teamIndex += direction;
+    // One random split honoring the target sizes.
+    const randomSplit = () => {
+      const shuffled = [...roster].sort(() => Math.random() - 0.5);
+      const teams = [];
+      let cursor = 0;
+      for (let i = 0; i < teamCount; i++) {
+        teams.push(shuffled.slice(cursor, cursor + sizes[i]));
+        cursor += sizes[i];
       }
-    });
+      return teams;
+    };
 
-    return newTeams;
+    let best = null;
+    let bestSpread = Infinity;
+    const ATTEMPTS = 600;
+    for (let i = 0; i < ATTEMPTS; i++) {
+      const candidate = randomSplit();
+      const s = spread(candidate);
+      // Prefer the smallest spread; skip an arrangement identical to the previous
+      // one so a reshuffle always looks different (unless it's the only optimum).
+      if (s < bestSpread || (s === bestSpread && best && sameAs(best, avoidTeams) && !sameAs(candidate, avoidTeams))) {
+        best = candidate;
+        bestSpread = s;
+        if (bestSpread === 0) break; // perfectly equal — can't do better
+      }
+    }
+
+    return idsOf(best);
   };
 
   const handleReshufflePreview = () => {
-    const newTeams = balanceTeams(teams.flat());
+    // Pass the current arrangement so the reshuffle visibly differs from it.
+    const newTeams = balanceTeams(teams.flat(), teams.map((t) => [...t].sort().join(',')).sort().join('|'));
     setTeams(newTeams);
   };
 
@@ -112,17 +140,11 @@ export default function CreateRound() {
     }
     setNumTeams(3);
     setPlayersPerTeam(6);
-    // Zigzag balance into 3 teams
-    const sorted = [...matchedPlayers].sort((a, b) => (b.rating || 3) - (a.rating || 3));
-    const newTeams = [[], [], []];
-    let dir = 1, idx = 0;
-    sorted.forEach(player => {
-      newTeams[idx].push(player.id);
-      idx += dir;
-      if (idx >= 3 || idx < 0) { dir *= -1; idx += dir; }
-    });
-    setTeams(newTeams);
-    setSelectedPlayers(matchedPlayers.map(p => p.id));
+    // Fairest balanced split into 3 teams (same optimizer as the reshuffle).
+    // Pass 3 explicitly — setNumTeams(3) above hasn't applied to state yet.
+    const ids = matchedPlayers.map((p) => p.id);
+    setTeams(balanceTeams(ids, null, 3));
+    setSelectedPlayers(ids);
     setGoalkeepers({});
     setOpeningTeams(null);
     setShowQuickModal(false);
