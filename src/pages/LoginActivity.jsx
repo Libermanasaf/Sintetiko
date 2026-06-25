@@ -236,7 +236,8 @@ function UserDetailModal({ user, onClose }) {
       <motion.div
         initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 40, opacity: 0 }}
         onClick={(e) => e.stopPropagation()}
-        className="w-full sm:max-w-md bg-slate-900 ring-1 ring-white/10 rounded-t-3xl sm:rounded-3xl p-5 max-h-[85vh] overflow-y-auto"
+        className="w-full sm:max-w-md bg-slate-900 ring-1 ring-white/10 rounded-t-3xl sm:rounded-3xl p-5 overflow-y-auto overscroll-contain max-h-[calc(100dvh-1.5rem)] sm:max-h-[85vh]"
+        style={{ paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom, 0px))' }}
       >
         <div className="flex items-center gap-3 mb-4">
           <div className="grid place-items-center w-10 h-10 rounded-xl st-foil text-base font-black shrink-0">

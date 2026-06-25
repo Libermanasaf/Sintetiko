@@ -303,7 +303,8 @@ function ProfessionalForm({ initial, onSave, onCancel, saving }) {
       className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={onCancel}>
       <motion.div initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 40, opacity: 0 }}
         onClick={(e) => e.stopPropagation()}
-        className="w-full sm:max-w-md bg-slate-900 ring-1 ring-white/10 rounded-t-3xl sm:rounded-3xl p-5 space-y-4 max-h-[92vh] overflow-y-auto">
+        className="w-full sm:max-w-md bg-slate-900 ring-1 ring-white/10 rounded-t-3xl sm:rounded-3xl p-5 space-y-4 overflow-y-auto overscroll-contain max-h-[calc(100dvh-1.5rem)] sm:max-h-[92vh]"
+        style={{ paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom, 0px))' }}>
         <div className="flex items-center justify-between">
           <h2 className="font-black text-white text-lg">{form.id ? 'עריכת איש מקצוע' : 'איש מקצוע חדש'}</h2>
           <button onClick={onCancel} aria-label="סגור" className="grid place-items-center w-9 h-9 rounded-lg bg-slate-800 text-slate-400 active:scale-95"><X className="w-5 h-5" /></button>

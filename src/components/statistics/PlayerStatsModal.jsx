@@ -67,7 +67,7 @@ export default function PlayerStatsModal({ player, onClose, allPlayers }) {
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="w-full max-w-sm bg-slate-900 border border-slate-700 rounded-3xl p-6 space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto"
+        className="w-full max-w-sm bg-slate-900 border border-slate-700 rounded-3xl p-6 space-y-5 shadow-2xl max-h-[90dvh] overflow-y-auto overscroll-contain"
         dir="rtl"
       >
         <div className="flex items-center justify-between sticky top-0 bg-slate-900 z-10 pb-2">
