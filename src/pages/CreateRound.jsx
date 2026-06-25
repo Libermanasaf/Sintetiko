@@ -85,22 +85,41 @@ export default function CreateRound() {
       return teams;
     };
 
-    let best = null;
+    // Generate many candidate splits, keep the best spread found, and COLLECT all
+    // distinct arrangements within a tiny tolerance of it. Then pick one at random
+    // (preferring one different from the previous arrangement) — so every reshuffle
+    // is both near-optimally balanced AND visibly different, instead of always
+    // converging to the same single optimum.
+    const TOLERANCE = 0.001;          // treat spreads this close as "equally good"
+    const ATTEMPTS = 1200;
     let bestSpread = Infinity;
-    const ATTEMPTS = 600;
+    let pool = [];                    // arrangements at (near-)best spread
+    const seen = new Set();
+    const keyOf = (teams) => idsOf(teams).map((t) => [...t].sort().join(',')).sort().join('|');
+
     for (let i = 0; i < ATTEMPTS; i++) {
       const candidate = randomSplit();
       const s = spread(candidate);
-      // Prefer the smallest spread; skip an arrangement identical to the previous
-      // one so a reshuffle always looks different (unless it's the only optimum).
-      if (s < bestSpread || (s === bestSpread && best && sameAs(best, avoidTeams) && !sameAs(candidate, avoidTeams))) {
-        best = candidate;
+      if (s < bestSpread - TOLERANCE) {
+        // Strictly better — reset the pool to this new best tier.
         bestSpread = s;
-        if (bestSpread === 0) break; // perfectly equal — can't do better
+        pool = [candidate];
+        seen.clear();
+        seen.add(keyOf(candidate));
+      } else if (s <= bestSpread + TOLERANCE) {
+        // As good as the best tier — add it if we haven't seen this arrangement.
+        const k = keyOf(candidate);
+        if (!seen.has(k)) { seen.add(k); pool.push(candidate); }
+        if (s < bestSpread) bestSpread = s;
       }
     }
 
-    return idsOf(best);
+    if (pool.length === 0) return idsOf(randomSplit());
+    // Prefer an arrangement different from the current one; fall back to any.
+    const fresh = pool.filter((t) => !sameAs(t, avoidTeams));
+    const choices = fresh.length ? fresh : pool;
+    const pick = choices[Math.floor(Math.random() * choices.length)];
+    return idsOf(pick);
   };
 
   const handleReshufflePreview = () => {
