@@ -167,15 +167,18 @@ export default function Lists() {
   // Save state to BOTH localStorage and Supabase. Fire-and-forget for the cloud
   // write so the UI stays instant; localStorage is the offline fallback.
   // Surfaces save failures as a throttled toast — no more silent data loss.
+  // Returns the cloud-save promise so callers (e.g. publish) can AWAIT it and be
+  // sure the edit landed before snapshotting — without this, publish raced the
+  // save and could snapshot a stale roster.
   const persistAll = useCallback((state) => {
     persist(state);
-    if (!supabase) return;
+    if (!supabase) return Promise.resolve();
     // CRITICAL: the local `state` only holds {headers,rows,waiting,lastReset} and
     // NOT publishedLists — which lives only in the cloud row (written by the
     // publish flow). If we wrote `state` as-is we'd CLOBBER publishedLists on
     // every save, un-publishing days behind the admin's back. So read the current
     // cloud row first and preserve any keys we don't manage locally.
-    (async () => {
+    return (async () => {
       const { data: existing } = await supabase
         .from('lists_state').select('data').eq('id', 'main').maybeSingle();
       const merged = { ...(existing?.data || {}), ...state };
@@ -439,10 +442,13 @@ export default function Lists() {
     if (!supabase) { toast.error('Supabase לא מחובר — לא ניתן לפרסם'); return; }
     setPublishingDay(day);
     try {
-      // Ensure the latest edits are persisted before snapshotting them.
-      await new Promise((resolve) => {
-        setData(prev => { persistAll(prev); resolve(); return prev; });
+      // Ensure the latest edits are FULLY persisted to the cloud before we
+      // snapshot them. Previously this didn't await the save, so publish raced
+      // it and could snapshot a stale roster (edits after a publish stayed hidden).
+      const current = await new Promise((resolve) => {
+        setData(prev => { resolve(prev); return prev; });
       });
+      await persistAll(current);
       // Publish + verify the snapshot actually landed (no silent failure).
       await publishDayListVerified(day);
       queryClient.invalidateQueries({ queryKey: ['lists-state'] });
