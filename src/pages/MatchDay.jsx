@@ -407,19 +407,55 @@ export default function MatchDay() {
     if (!round) return;
     setClosingRound(true);
     try {
+      // Award trophies on close. Closing a round used to ONLY set is_closed, so a
+      // round finished from here had its winner & trophies never recorded (wins
+      // weren't bumped, winningTeam stayed null). Now: if a result exists and no
+      // winner is recorded yet, derive the winner from teamWins and bump each
+      // winning player's `wins`. Guarded by winningTeam == null so re-closing or a
+      // round already finalized in StepResults can't double-award.
+      let winnerUpdate = {};
+      try {
+        const tw = round.teamWins || {};
+        const hasResult = Object.values(tw).some((v) => (v || 0) > 0);
+        if (hasResult && round.winningTeam == null && Array.isArray(round.teams)) {
+          let maxWins = -1, winningTeamIndex = -1, tie = false;
+          round.teams.forEach((_, i) => {
+            const w = tw[i] || 0;
+            if (w > maxWins) { maxWins = w; winningTeamIndex = i; tie = false; }
+            else if (w === maxWins) { tie = true; }
+          });
+          if (!tie && winningTeamIndex >= 0 && maxWins > 0) {
+            winnerUpdate = { winningTeam: winningTeamIndex };
+            // +1 win for each player on the winning team (best-effort, parallel).
+            const winners = round.teams[winningTeamIndex] || [];
+            await Promise.all(
+              winners.map((pid) => {
+                const p = allPlayers.find((x) => x.id === pid);
+                return p ? Player.update(pid, { wins: (p.wins || 0) + 1 }) : null;
+              })
+            );
+            queryClient.invalidateQueries({ queryKey: ['players'] });
+          }
+        }
+      } catch (awardErr) {
+        // Don't block closing if trophy distribution hiccups — surface it though.
+        console.warn('[CloseRound] trophy award failed', awardErr);
+        toast.warning('המחזור ייסגר, אך חלוקת הגביעים נכשלה — בדוק ידנית');
+      }
+
       // Finalize the round: it should vanish from the home screen / active views
       // and live only in game history. is_closed is the flag every active-round
       // filter checks; is_published:false keeps it out of player-facing views too.
       // If the is_closed column hasn't been migrated yet, fall back to is_published
       // alone so closing still succeeds instead of 400ing on the whole update.
       try {
-        await Round.update(round.id, { is_closed: true, is_published: false });
+        await Round.update(round.id, { is_closed: true, is_published: false, ...winnerUpdate });
       } catch (err) {
         const msg = String(err?.message || '');
         const missingCol = err?.code === '42703' || /is_closed/.test(msg) || /column/.test(msg);
         if (!missingCol) throw err;
         console.warn('[CloseRound] is_closed column missing — closing via is_published only', msg);
-        await Round.update(round.id, { is_published: false });
+        await Round.update(round.id, { is_published: false, ...winnerUpdate });
       }
       queryClient.invalidateQueries({ queryKey: ['latest-round'] });
       queryClient.invalidateQueries({ queryKey: ['latest-round-admin'] });
