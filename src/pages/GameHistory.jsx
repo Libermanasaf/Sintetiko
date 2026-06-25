@@ -248,13 +248,26 @@ export default function GameHistory() {
 
   const handlePhotoUpload = async (e) => {
     const file = e.target.files?.[0];
+    e.target.value = ''; // reset so picking the same file again re-triggers change
     if (!file || !selectedRound) return;
+    // Guard: only images. (accept="image/*" already filters, but be safe.)
+    if (!file.type.startsWith('image/')) {
+      toast.error('יש לבחור קובץ תמונה');
+      return;
+    }
     setUploadingPhoto(true);
-    const { file_url } = await uploadFile(file);
-    await Round.update(selectedRound.id, { victoryPhoto: file_url });
-    queryClient.invalidateQueries({ queryKey: ['rounds'] });
-    toast.success('תמונת הניצחון נשמרה!');
-    setUploadingPhoto(false);
+    try {
+      const { file_url } = await uploadFile(file);
+      await Round.update(selectedRound.id, { victoryPhoto: file_url });
+      queryClient.invalidateQueries({ queryKey: ['rounds'] });
+      toast.success('תמונת הניצחון נשמרה!');
+    } catch (err) {
+      // Without this, a failed/large upload left the spinner stuck with no message.
+      console.error('[victory photo]', err);
+      toast.error('העלאת התמונה נכשלה', { description: err?.message || 'נסה שוב' });
+    } finally {
+      setUploadingPhoto(false);
+    }
   };
 
   const removePhoto = async () => {
@@ -462,6 +475,7 @@ export default function GameHistory() {
                                 <Upload className="w-5 h-5 text-amber-400" />
                               </div>
                               <p className="text-ink-3 text-sm font-bold">לחץ להעלאת תמונת ניצחון</p>
+                              <p className="text-slate-500 text-xs">בחר תמונה מהגלריה או צלם</p>
                             </>
                           )}
                         </label>
