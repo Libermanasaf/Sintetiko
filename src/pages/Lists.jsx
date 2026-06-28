@@ -125,6 +125,29 @@ export default function Lists() {
   const [diag, setDiag] = useState({ status: 'checking', error: null, count: null });
   const [hydrated, setHydrated] = useState(false);
   const [publishingDay, setPublishingDay] = useState(null);
+  const [viewersByDay, setViewersByDay] = useState({}); // { day: Set<name> } — who opened the published list
+
+  // Load who has viewed each day's published list (since its last publish), and
+  // refresh every 60s so ✓ marks appear as players open the list.
+  useEffect(() => {
+    if (!supabase) return;
+    let cancelled = false;
+    const load = async () => {
+      const days = ['sunday', 'wednesday', 'thursday'];
+      const results = await Promise.all(
+        days.map((d) => supabase.rpc('list_viewers', { p_day: d }).then(({ data }) => [d, data]))
+      );
+      if (cancelled) return;
+      const next = {};
+      for (const [d, rows] of results) {
+        next[d] = new Set((rows || []).map((v) => (v.name || '').trim()).filter(Boolean));
+      }
+      setViewersByDay(next);
+    };
+    load();
+    const id = setInterval(load, 60_000);
+    return () => { cancelled = true; clearInterval(id); };
+  }, []);
   const queryClient = useQueryClient();
   // Throttle "save failed" toast so rapid edits don't spam, and remember
   // whether we ever observed a successful cloud save in this session.
@@ -592,6 +615,14 @@ export default function Lists() {
               <div key={key} className={`rounded-2xl bg-slate-900/70 ring-1 ${ring} overflow-hidden`}>
                 <div className={`bg-gradient-to-l ${bg} px-4 py-3 flex items-center justify-between border-b border-white/8 gap-2`}>
                   <EditableHeader value={data.headers[key]} color={color} onChange={val => handleHeaderChange(key, val)} />
+                  {(() => {
+                    const seenCount = (data.rows[key] || []).filter(n => n.trim() && viewersByDay[key]?.has(n.trim())).length;
+                    return seenCount > 0 ? (
+                      <span className="flex items-center gap-1 text-emerald-400 text-[0.65rem] font-black shrink-0" title="ראו את הרשימה">
+                        <Check className="w-3.5 h-3.5" strokeWidth={3} />{seenCount} ראו
+                      </span>
+                    ) : null;
+                  })()}
                   <div className="flex items-center gap-1.5 shrink-0">
                     <button onClick={() => handlePublishDay(key)} disabled={publishingDay === key}
                       title="פרסם לשחקנים ושלח התראה — הרשימה תופיע להם ותישלח הודעת פוש"
@@ -618,15 +649,23 @@ export default function Lists() {
 
                 {/* Main 18 rows */}
                 <div className="divide-y divide-white/5">
-                  {data.rows[key].map((name, i) => (
+                  {data.rows[key].map((name, i) => {
+                    const seen = name.trim() && viewersByDay[key]?.has(name.trim());
+                    return (
                     <div key={i} className="flex items-center gap-3 px-3 py-1.5">
                       <span className="text-ink-3 text-xs font-black tnum w-5 shrink-0 text-center">{i + 1}</span>
                       <input type="text" value={name} onChange={e => handleRowChange(key, i, e.target.value)}
                         onPaste={e => handleInputPaste(key, 'rows', e)}
                         placeholder="—"
                         className="flex-1 bg-transparent text-white text-sm font-bold placeholder:text-white/15 outline-none py-1 min-w-0" dir="rtl" />
+                      {seen && (
+                        <span className="flex items-center gap-0.5 text-emerald-400 shrink-0" title="ראה את הרשימה">
+                          <Check className="w-4 h-4" strokeWidth={3} />
+                        </span>
+                      )}
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 {/* Waiting section */}
