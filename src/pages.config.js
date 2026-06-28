@@ -71,6 +71,7 @@ import DayListWednesday from './pages/DayListWednesday';
 import DayListThursday from './pages/DayListThursday';
 import LoginActivity from './pages/LoginActivity';
 import Professionals from './pages/Professionals';
+import Debts from './pages/Debts';
 import __Layout from './Layout.jsx';
 
 export const PAGES = {
@@ -98,6 +99,7 @@ export const PAGES = {
     "DayListThursday": DayListThursday,
     "LoginActivity": LoginActivity,
     "Professionals": Professionals,
+    "Debts": Debts,
 }
 
 export const pagesConfig = {

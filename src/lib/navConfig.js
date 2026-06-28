@@ -1,7 +1,7 @@
 import {
   Home, Users, BarChart3, Shuffle, History, Trophy,
   CreditCard, Shield, UserCheck, Star, Download, UsersRound,
-  BellRing, Bell, Send, ClipboardList, ClipboardCheck, LogIn, Briefcase,
+  BellRing, Bell, Send, ClipboardList, ClipboardCheck, LogIn, Briefcase, Coins,
 } from 'lucide-react';
 
 // Single source of truth for navigation + access control.
@@ -20,6 +20,7 @@ export const menuItems = [
   { name: 'דרג שחקנים', page: 'RatePlayers',  icon: Star,      admin: true, player: true },
   { name: 'רשימות',      page: 'Lists',        icon: ClipboardList, admin: true },
   { name: 'תשלומים',    page: 'Payments',     icon: CreditCard, admin: true },
+  { name: 'חובות',       page: 'Debts',        icon: Coins,      admin: true },
   { name: 'אישור משתמשים', page: 'UserApprovals', icon: UserCheck, admin: true },
   { name: 'משתמשים רשומים', page: 'RegisteredUsers', icon: UsersRound, admin: true },
   { name: 'כניסות למערכת', page: 'LoginActivity', icon: LogIn, admin: true },
