@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { ClipboardList, Clock, User } from 'lucide-react';
+import { ClipboardList, Clock, User, Check } from 'lucide-react';
 import { PageHeader, EmptyState, Skeleton } from '@/components/ui/lux';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/AuthContext';
@@ -42,6 +42,7 @@ export default function DayListView({ day }) {
   const myEmail = (user?.email || '').toLowerCase();
   const [waitingSignups, setWaitingSignups] = useState([]);
   const [loadingSignups, setLoadingSignups] = useState(true);
+  const [viewers, setViewers] = useState(new Set()); // normalized names that viewed (admin)
 
   // Cloud-first: fetch the cross-device synced list from Supabase.
   // localStorage stays a fallback for offline / first paint before cloud arrives.
@@ -116,6 +117,34 @@ export default function DayListView({ day }) {
       });
   }, [day, isAdmin]);
 
+  // Record that THIS player has seen the published list (once they're actually
+  // viewing a published roster — not admins, not the "not published" state). The
+  // RPC is idempotent (one row per user/day) so re-opening doesn't pile up rows.
+  useEffect(() => {
+    if (!supabase || isAdmin) return;
+    if (!user || notPublished || !cloudList || cloudList.notPublished) return;
+    supabase.rpc('record_list_view', { p_day: day }).then(({ error }) => {
+      if (error) console.warn('[list view]', error.message);
+    });
+  }, [day, isAdmin, user, notPublished, cloudList]);
+
+  // Admin: load who has viewed this day's list (since last publish) and refresh
+  // periodically so the ✓ marks appear as players open it. Names are normalized
+  // (trim) for matching against the roster text.
+  useEffect(() => {
+    if (!supabase || !isAdmin) return;
+    let cancelled = false;
+    const load = () => {
+      supabase.rpc('list_viewers', { p_day: day }).then(({ data, error }) => {
+        if (cancelled || error || !data) return;
+        setViewers(new Set(data.map((v) => (v.name || '').trim()).filter(Boolean)));
+      });
+    };
+    load();
+    const id = setInterval(load, 60_000);
+    return () => { cancelled = true; clearInterval(id); };
+  }, [day, isAdmin]);
+
   // Player hasn't been shown a published list yet (or it's still loading from
   // cloud). Show a clear "not published" state instead of leaking/empty-crashing.
   if (notPublished || !listData) {
@@ -160,6 +189,12 @@ export default function DayListView({ day }) {
           <div className={`${cfg.bg} px-4 py-3 flex items-center gap-2`}>
             <span className={`w-2 h-2 rounded-full ${cfg.dot}`} />
             <span className={`font-black text-sm ${cfg.color}`}>רשימה ראשית</span>
+            {isAdmin && viewers.size > 0 && (
+              <span className="flex items-center gap-1 text-emerald-400 text-[0.65rem] font-black">
+                <Check className="w-3 h-3" strokeWidth={3} />
+                {filledRows.filter(n => viewers.has(n.trim())).length} ראו
+              </span>
+            )}
             <span className="text-slate-400 text-xs font-bold mr-auto">{filledRows.length} / {listData.rows.length}</span>
           </div>
           <div className="divide-y divide-white/5">
@@ -180,6 +215,13 @@ export default function DayListView({ day }) {
                       <User className={`w-3.5 h-3.5 ${cfg.color}`} strokeWidth={2.4} />
                     </div>
                     <span className="text-white font-bold text-sm">{name}</span>
+                    {/* Admin: ✓ if this player has opened the published list */}
+                    {isAdmin && viewers.has(name.trim()) && (
+                      <span className="mr-auto flex items-center gap-1 text-emerald-400 shrink-0" title="ראה את הרשימה">
+                        <Check className="w-4 h-4" strokeWidth={3} />
+                        <span className="text-[0.6rem] font-black hidden xs:inline">ראה</span>
+                      </span>
+                    )}
                   </>
                 ) : (
                   <span className="text-slate-600 text-sm font-medium">— מקום פנוי —</span>
