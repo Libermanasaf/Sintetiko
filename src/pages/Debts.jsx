@@ -1,13 +1,43 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
+import { callApi } from '../lib/apiClient';
 import { motion } from 'framer-motion';
-import { Coins, User, Check, Loader2 } from 'lucide-react';
+import { Coins, User, Check, Loader2, BellRing } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageHeader, EmptyState, Skeleton } from '@/components/ui/lux';
 
+const DAY_FMT = (d) => new Date(d).toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
 export default function Debts() {
   const queryClient = useQueryClient();
+  const [remindingId, setRemindingId] = useState(null); // `${round_id}_${player_id}` being reminded
+
+  // Send a personal payment-reminder push to one debtor (targeted by email).
+  const sendReminder = async (debt) => {
+    if (!debt.email || !debt.subscribed) {
+      toast.error('לא ניתן לשלוח', { description: `ל${debt.player_name} אין התראות פעילות` });
+      return;
+    }
+    const id = `${debt.round_id}_${debt.player_id}`;
+    setRemindingId(id);
+    try {
+      const res = await callApi('/api/send-notification', {
+        targetEmail: debt.email,
+        title: 'תזכורת תשלום — סינתטיקו חולון 💰',
+        body: `היי ${debt.player_name}, טרם שילמת עבור המשחק בתאריך ${DAY_FMT(debt.round_date)}`,
+        url: '/',
+      });
+      const pd = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(pd.error || `שגיאת שרת ${res.status}`);
+      if ((pd.sent || 0) === 0) toast.warning(`התזכורת ל${debt.player_name} לא נמסרה (אין מנוי פעיל)`);
+      else toast.success(`תזכורת נשלחה ל${debt.player_name}`);
+    } catch (e) {
+      toast.error('שליחת התזכורת נכשלה', { description: e.message });
+    } finally {
+      setRemindingId(null);
+    }
+  };
 
   const { data: debts = [], isLoading } = useQuery({
     queryKey: ['debts'],
@@ -71,16 +101,30 @@ export default function Debts() {
                   מחזור <span className="tnum">{fmtDate(d.round_date)}</span> · חוב <span className="tnum text-rose-300">₪{d.amount}</span>
                 </p>
               </div>
-              <button
-                onClick={() => markPaid.mutate({ round_id: d.round_id, player_id: d.player_id })}
-                disabled={markPaid.isPending}
-                className="flex items-center gap-1.5 min-h-[40px] px-3.5 rounded-xl bg-emerald-500/15 ring-1 ring-emerald-500/35 text-emerald-300 font-black text-sm active:scale-95 transition-transform touch-manipulation disabled:opacity-50 shrink-0"
-              >
-                {markPaid.isPending && markPaid.variables?.player_id === d.player_id
-                  ? <Loader2 className="w-4 h-4 animate-spin" />
-                  : <Check className="w-4 h-4" strokeWidth={3} />}
-                שולם
-              </button>
+              <div className="flex items-center gap-1.5 shrink-0">
+                {/* Reminder push — disabled if the debtor has no active push */}
+                <button
+                  onClick={() => sendReminder(d)}
+                  disabled={remindingId !== null || !d.subscribed}
+                  title={d.subscribed ? 'שלח תזכורת תשלום' : `ל${d.player_name} אין התראות פעילות`}
+                  aria-label="שלח תזכורת"
+                  className="grid place-items-center w-10 h-10 rounded-xl bg-amber-500/15 ring-1 ring-amber-500/35 text-amber-300 active:scale-95 transition-transform touch-manipulation disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  {remindingId === `${d.round_id}_${d.player_id}`
+                    ? <Loader2 className="w-4 h-4 animate-spin" />
+                    : <BellRing className="w-4 h-4" />}
+                </button>
+                <button
+                  onClick={() => markPaid.mutate({ round_id: d.round_id, player_id: d.player_id })}
+                  disabled={markPaid.isPending}
+                  className="flex items-center gap-1.5 min-h-[40px] px-3.5 rounded-xl bg-emerald-500/15 ring-1 ring-emerald-500/35 text-emerald-300 font-black text-sm active:scale-95 transition-transform touch-manipulation disabled:opacity-50"
+                >
+                  {markPaid.isPending && markPaid.variables?.player_id === d.player_id
+                    ? <Loader2 className="w-4 h-4 animate-spin" />
+                    : <Check className="w-4 h-4" strokeWidth={3} />}
+                  שולם
+                </button>
+              </div>
             </motion.div>
           ))
         )}
