@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { callApi } from '../lib/apiClient';
 import { motion } from 'framer-motion';
-import { Coins, User, Check, Loader2, BellRing } from 'lucide-react';
+import { Coins, User, Check, Loader2, BellRing, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageHeader, EmptyState, Skeleton } from '@/components/ui/lux';
 
@@ -12,6 +12,31 @@ const DAY_FMT = (d) => new Date(d).toLocaleDateString('he-IL', { day: '2-digit',
 export default function Debts() {
   const queryClient = useQueryClient();
   const [remindingId, setRemindingId] = useState(null); // `${round_id}_${player_id}` being reminded
+  const [editing, setEditing] = useState(null);   // `${round_id}_${player_id}` whose amount is being edited
+  const [editValue, setEditValue] = useState('');
+
+  // Save a manual per-debt amount.
+  const setAmount = useMutation({
+    mutationFn: ({ round_id, player_id, amount }) =>
+      supabase.rpc('set_debt_amount', { p_round_id: round_id, p_player_id: player_id, p_amount: amount })
+        .then(({ error }) => { if (error) throw error; }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['debts'] });
+      queryClient.invalidateQueries({ queryKey: ['payments'] });
+      setEditing(null);
+    },
+    onError: (e) => toast.error('עדכון הסכום נכשל', { description: e.message }),
+  });
+
+  const startEdit = (d) => {
+    setEditing(`${d.round_id}_${d.player_id}`);
+    setEditValue(String(d.amount ?? 40));
+  };
+  const saveEdit = (d) => {
+    const n = parseInt(editValue, 10);
+    if (Number.isNaN(n) || n < 0) { toast.error('סכום לא תקין'); return; }
+    setAmount.mutate({ round_id: d.round_id, player_id: d.player_id, amount: n });
+  };
 
   // Send a personal payment-reminder push to one debtor (targeted by email).
   const sendReminder = async (debt) => {
@@ -97,8 +122,33 @@ export default function Debts() {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="font-black text-white text-sm truncate">{d.player_name}</p>
-                <p className="text-ink-3 text-xs font-bold mt-0.5">
-                  מחזור <span className="tnum">{fmtDate(d.round_date)}</span> · חוב <span className="tnum text-rose-300">₪{d.amount}</span>
+                <p className="text-ink-3 text-xs font-bold mt-0.5 flex items-center gap-1 flex-wrap">
+                  <span>מחזור</span>
+                  <span className="tnum">{fmtDate(d.round_date)}</span>
+                  <span>· חוב</span>
+                  {editing === `${d.round_id}_${d.player_id}` ? (
+                    <span className="inline-flex items-center gap-1">
+                      <span className="text-rose-300">₪</span>
+                      <input
+                        type="number" inputMode="numeric" autoFocus
+                        value={editValue}
+                        onChange={(e) => setEditValue(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === 'Enter') saveEdit(d); if (e.key === 'Escape') setEditing(null); }}
+                        className="w-14 bg-slate-800 ring-1 ring-amber-400/40 rounded-md px-1.5 py-0.5 text-amber-200 tnum text-xs font-black outline-none"
+                      />
+                      <button onClick={() => saveEdit(d)} disabled={setAmount.isPending}
+                        className="grid place-items-center w-6 h-6 rounded-md bg-emerald-500/20 text-emerald-300 active:scale-90" aria-label="שמור סכום">
+                        {setAmount.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3.5 h-3.5" strokeWidth={3} />}
+                      </button>
+                    </span>
+                  ) : (
+                    <button onClick={() => startEdit(d)}
+                      title="לחץ לעריכת הסכום"
+                      className="inline-flex items-center gap-1 tnum text-rose-300 hover:text-amber-300 transition-colors">
+                      ₪{d.amount}
+                      <Pencil className="w-3 h-3 opacity-60" />
+                    </button>
+                  )}
                 </p>
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
