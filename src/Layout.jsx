@@ -6,7 +6,7 @@ import InstallPrompt from '@/components/InstallPrompt';
 import { useAuth } from '@/lib/AuthContext';
 import LandingPage from '@/components/auth/LandingPage';
 import { registerServiceWorker, ensureSubscribed } from '@/lib/push';
-import NotificationPrompt from '@/components/NotificationPrompt';
+import NotificationGate from '@/components/NotificationGate';
 import { recordPageVisit } from '@/lib/loginActivity';
 import OfflineBanner from '@/components/OfflineBanner';
 
@@ -129,9 +129,9 @@ export default function Layout({ children, currentPageName }) {
           paddingBottom: 'calc(68px + env(safe-area-inset-bottom, 0px))',
         }}
       >
-        <NotificationPrompt />
         {children}
       </main>
+      <NotificationGate />
 
       <InstallPrompt />
 
