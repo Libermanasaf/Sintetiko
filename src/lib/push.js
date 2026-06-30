@@ -18,6 +18,9 @@ export function pushSupported() {
   );
 }
 
+// Guards against a reload loop: only auto-reload once per page load.
+let _reloadedForUpdate = false;
+
 export async function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return null;
   try {
@@ -25,6 +28,28 @@ export async function registerServiceWorker() {
     // on every load, so a new deploy is picked up instead of serving a stale worker.
     const reg = await navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' });
     reg.update().catch(() => {});
+
+    // When a new service worker takes control (new deploy activated), reload once
+    // so the user runs the latest code automatically — no manual hard-refresh,
+    // no stale "PWA cache" showing an old version after a deploy.
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (_reloadedForUpdate) return;
+      _reloadedForUpdate = true;
+      window.location.reload();
+    });
+
+    // If an updated worker is found and installs while the app is open, activate
+    // it immediately (it already calls skipWaiting, but nudge waiting ones too).
+    reg.addEventListener('updatefound', () => {
+      const installing = reg.installing;
+      if (!installing) return;
+      installing.addEventListener('statechange', () => {
+        if (installing.state === 'installed' && navigator.serviceWorker.controller) {
+          reg.waiting?.postMessage?.({ type: 'SKIP_WAITING' });
+        }
+      });
+    });
+
     return reg;
   } catch (e) {
     console.error('Service worker registration failed:', e);

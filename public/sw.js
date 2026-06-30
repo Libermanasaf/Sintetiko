@@ -1,6 +1,6 @@
 // Service worker for Sintetiko Holon — web push + offline app shell
 
-const CACHE = 'sintetiko-v3';
+const CACHE = 'sintetiko-v4';
 
 // Pre-cache the offline fallback so a navigation can ALWAYS render something
 // (never a blank screen) even on the very first offline launch. The app's JS/CSS
@@ -14,6 +14,11 @@ self.addEventListener('install', (event) => {
       .catch(() => {})            // never let a failed precache block install
       .then(() => self.skipWaiting())
   );
+});
+
+// Let the page ask a waiting worker to activate immediately (auto-update flow).
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
