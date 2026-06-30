@@ -3,6 +3,8 @@ import { Player } from '@/api/entities';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { Trophy, Crown, ListOrdered } from 'lucide-react';
+import MvpBadge from '@/components/MvpBadge';
+import { useMvpCounts } from '@/lib/useMvpCounts';
 import { PageHeader, EmptyState, Skeleton } from '@/components/ui/lux';
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -334,6 +336,7 @@ function Eyebrow({ icon: Icon, children }) {
 
 /* ─── Leaderboard row ──────────────────────────────────────────── */
 function RankRow({ player, idx }) {
+  const mvpCounts = useMvpCounts();
   const place = idx + 1;
   const isGold = place === 1;
   const isSilver = place === 2;
@@ -389,8 +392,9 @@ function RankRow({ player, idx }) {
           </div>
         )}
         <div className="min-w-0">
-          <p className={`font-black text-sm truncate ${isTop3 ? 'text-white' : 'text-slate-200'}`}>
-            {player.name}
+          <p className={`font-black text-sm truncate flex items-center gap-1.5 ${isTop3 ? 'text-white' : 'text-slate-200'}`}>
+            <span className="truncate">{player.name}</span>
+            <MvpBadge count={mvpCounts[player.id]} />
           </p>
           {winRate != null && (
             <p className="text-[0.62rem] text-ink-3 font-bold tnum mt-0.5">

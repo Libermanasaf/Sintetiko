@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Star, Pencil, Trash2, Check, X, Trophy, Users } from 'lucide-react';
+import MvpBadge from '@/components/MvpBadge';
 import { motion } from 'framer-motion';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
@@ -15,7 +16,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 
-export default function PlayerCard({ player, onUpdate, onDelete, onEdit }) {
+export default function PlayerCard({ player, onUpdate, onDelete, onEdit, mvpCount }) {
   const [isEditingRating, setIsEditingRating] = useState(false);
   const [tempRating, setTempRating] = useState(player.rating || 3);
 
@@ -51,7 +52,10 @@ export default function PlayerCard({ player, onUpdate, onDelete, onEdit }) {
 
         {/* Name */}
         <div className="flex-1 min-w-0">
-          <h3 className="font-bold text-white text-lg leading-tight truncate">{player.name}</h3>
+          <h3 className="font-bold text-white text-lg leading-tight truncate flex items-center gap-1.5">
+            <span className="truncate">{player.name}</span>
+            <MvpBadge count={mvpCount} />
+          </h3>
           <div className="flex items-center gap-3 mt-1">
             <div className="flex items-center gap-1">
               <Trophy className="w-3.5 h-3.5 text-amber-500" />

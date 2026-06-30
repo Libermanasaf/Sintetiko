@@ -1,10 +1,13 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { X, User, Trophy, Star, Zap, Heart, Skull } from 'lucide-react';
+import MvpBadge from '@/components/MvpBadge';
+import { useMvpCounts } from '@/lib/useMvpCounts';
 import { useQuery } from '@tanstack/react-query';
 import { Round } from '@/api/entities';
 
 export default function PlayerStatsModal({ player, onClose, allPlayers }) {
+  const mvpCounts = useMvpCounts();
   // Synergy is computed from recent rounds; cap at 100 so this doesn't pull the
   // entire history (which grows unbounded) every time the modal opens.
   const { data: rounds = [], isLoading: isLoadingRounds } = useQuery({
@@ -86,7 +89,10 @@ export default function PlayerStatsModal({ player, onClose, allPlayers }) {
             </div>
           )}
           <div>
-            <p className="text-xl font-black text-white">{player.name}</p>
+            <p className="text-xl font-black text-white flex items-center gap-2">
+              <span>{player.name}</span>
+              <MvpBadge count={mvpCounts[player.id]} />
+            </p>
             <div className="flex items-center gap-0.5 mt-1">
               {Array.from({ length: 5 }, (_, i) => (
                 <Star key={i} className={`w-4 h-4 ${i < Math.floor(player.rating || 3) ? 'fill-amber-400 text-amber-400' : 'text-slate-600'}`} />

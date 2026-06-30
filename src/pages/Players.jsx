@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Users, Search } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 import PlayerCard from '@/components/players/PlayerCard';
+import { useMvpCounts } from '@/lib/useMvpCounts';
 import PlayerForm from '@/components/players/PlayerForm';
 import { PageHeader, EmptyState, Skeleton } from '@/components/ui/lux';
 
@@ -11,6 +12,7 @@ export default function Players() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const mvpCounts = useMvpCounts();
   const queryClient = useQueryClient();
 
   const { data: players = [], isLoading } = useQuery({
@@ -103,6 +105,7 @@ export default function Players() {
                 <PlayerCard
                   key={player.id}
                   player={player}
+                  mvpCount={mvpCounts[player.id]}
                   onUpdate={handleUpdate}
                   onDelete={(id) => deleteMutation.mutate(id)}
                   onEdit={handleEdit}

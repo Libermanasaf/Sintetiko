@@ -1,6 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { BarChart3, Users, Crown, Zap, ListOrdered, Search, X } from 'lucide-react';
+import MvpBadge from '@/components/MvpBadge';
+import { useMvpCounts } from '@/lib/useMvpCounts';
 import { useQuery } from '@tanstack/react-query';
 import { Player } from '@/api/entities';
 import PlayerStatsModal from '@/components/statistics/PlayerStatsModal';
@@ -85,6 +87,7 @@ function MiniPodium({ title, icon: Icon, players, tone, statFn }) {
 export default function Statistics() {
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [search, setSearch] = useState('');
+  const mvpCounts = useMvpCounts();
   const { data: players = [], isLoading } = useQuery({
     queryKey: ['players'],
     queryFn: () => Player.list('-appearances'),
@@ -199,6 +202,7 @@ export default function Statistics() {
                     >
                       {player.name}
                     </button>
+                    <MvpBadge count={mvpCounts[player.id]} />
                   </div>
                   <div className="flex justify-center">
                     <span className="tnum bg-sky-500/12 text-sky-300 font-black text-sm px-2.5 py-1 rounded-lg ring-1 ring-sky-500/25">
