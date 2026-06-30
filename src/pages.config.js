@@ -72,6 +72,7 @@ import DayListThursday from './pages/DayListThursday';
 import LoginActivity from './pages/LoginActivity';
 import Professionals from './pages/Professionals';
 import Debts from './pages/Debts';
+import ResetPassword from './pages/ResetPassword';
 import __Layout from './Layout.jsx';
 
 export const PAGES = {
@@ -100,6 +101,7 @@ export const PAGES = {
     "LoginActivity": LoginActivity,
     "Professionals": Professionals,
     "Debts": Debts,
+    "ResetPassword": ResetPassword,
 }
 
 export const pagesConfig = {

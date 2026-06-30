@@ -68,7 +68,11 @@ export default function Layout({ children, currentPageName }) {
     return <div className="min-h-screen st-stage" aria-hidden="true" />;
   }
 
-  if (!role) {
+  // The password-reset page must render for a not-yet-signed-in user arriving
+  // from the email link (they have only a temporary recovery session, no role).
+  const isResetRoute = typeof window !== 'undefined' && window.location.pathname.startsWith('/ResetPassword');
+
+  if (!role && !isResetRoute) {
     return <LandingPage />;
   }
 

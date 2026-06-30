@@ -141,13 +141,24 @@ function LuxInput({ icon: Icon, accent = 'emerald', type, value, onChange, place
 //  Main LandingPage
 // ═══════════════════════════════════════════════════════════════════
 export default function LandingPage() {
-  const { login, register } = useAuth();
+  const { login, register, resetPassword } = useAuth();
   const navigate = useNavigate();
   const [view, setView] = useState('selection');
   const [selectedRole, setSelectedRole] = useState(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
+
+  const handleForgotPassword = async () => {
+    if (!email) { setError('הזן את כתובת המייל שלך כדי לאפס סיסמה'); return; }
+    setIsLoading(true);
+    setError('');
+    const { error: resetErr } = await resetPassword(email);
+    setIsLoading(false);
+    if (resetErr) { setError(resetErr.message || 'שליחת מייל האיפוס נכשלה'); return; }
+    setResetSent(true);
+  };
   const [error, setError] = useState('');
   const [squadPlayers, setSquadPlayers] = useState([]);
   const [selectedPlayerId, setSelectedPlayerId] = useState('');
@@ -485,6 +496,20 @@ export default function LandingPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
                   />
+                  {resetSent ? (
+                    <p className="text-emerald-300 text-xs font-bold mt-1.5 mr-1">
+                      ✓ נשלח מייל לאיפוס סיסמה ל-{email}. בדוק את תיבת הדואר (וגם ספאם).
+                    </p>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleForgotPassword}
+                      disabled={isLoading}
+                      className="text-xs font-bold text-ink-3 hover:text-amber-300 transition-colors mt-1.5 mr-1 disabled:opacity-50"
+                    >
+                      שכחת סיסמה?
+                    </button>
+                  )}
                 </div>
 
                 <button

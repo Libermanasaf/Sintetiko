@@ -248,6 +248,23 @@ export const AuthProvider = ({ children }) => {
     return { data, error: null };
   };
 
+  // Sends a password-reset email. The link returns the user to /ResetPassword
+  // with a recovery token, where updatePassword() sets the new password.
+  const resetPassword = async (email) => {
+    if (!supabase) return { error: { message: 'Supabase לא מוגדר' } };
+    const redirectTo = `${window.location.origin}/ResetPassword`;
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), { redirectTo });
+    return { error };
+  };
+
+  // Sets a new password for the currently-recovering session (after the user
+  // clicked the email link — Supabase signs them into a temporary session).
+  const updatePassword = async (newPassword) => {
+    if (!supabase) return { error: { message: 'Supabase לא מוגדר' } };
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    return { error };
+  };
+
   const logout = async () => {
     localStorage.removeItem('sintetiko_login_mode');
     setLoginMode(null);
@@ -263,7 +280,7 @@ export const AuthProvider = ({ children }) => {
   const isPlayer = role === 'player';
 
   return (
-    <AuthContext.Provider value={{ user, role, loginMode, login, register, logout, isAdmin, isPlayer, isInitializing }}>
+    <AuthContext.Provider value={{ user, role, loginMode, login, register, logout, resetPassword, updatePassword, isAdmin, isPlayer, isInitializing }}>
       {children}
     </AuthContext.Provider>
   );
