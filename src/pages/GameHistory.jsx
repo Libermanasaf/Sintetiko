@@ -9,8 +9,10 @@ import { he } from 'date-fns/locale';
 import { Calendar } from '@/components/ui/calendar';
 import { toast } from 'sonner';
 import TeamPlayerMover from '@/components/history/TeamPlayerMover';
+import MvpGateOverlay from '@/components/history/MvpGateOverlay';
 import { PageHeader, SectionTitle, EmptyState, Skeleton } from '@/components/ui/lux';
 import { useAuth } from '@/lib/AuthContext';
+import { supabase } from '@/lib/supabase';
 
 const TEAM_COLORS = [
   { name: 'הצהובים', text: 'text-yellow-300' },
@@ -165,9 +167,10 @@ const TEAM = [
 const teamOf = (i) => TEAM[i % 3];
 
 export default function GameHistory() {
-  const { loginMode, role } = useAuth();
+  const { loginMode, role, user } = useAuth();
   const isAdmin = loginMode ? loginMode === 'admin' : role === 'admin';
   const [selectedDate, setSelectedDate] = useState(null);
+  const [gateDismissed, setGateDismissed] = useState(false); // user backed out of the MVP gate
   const [editingRound, setEditingRound] = useState(null);
   const [tempWins, setTempWins] = useState({});
   const [showMover, setShowMover] = useState(false);
@@ -205,6 +208,17 @@ export default function GameHistory() {
     queryFn: () => Player.list(),
   });
 
+  // The logged-in player (to gate the MVP vote). Admins have no linked player.
+  const { data: currentPlayer } = useQuery({
+    queryKey: ['my-player', user?.id],
+    queryFn: async () => {
+      if (!supabase || !user) return null;
+      const { data } = await supabase.from('players').select('id, name').eq('user_id', user.id).maybeSingle();
+      return data;
+    },
+    enabled: !!user && !isAdmin,
+  });
+
   const updateRoundMutation = useMutation({
     mutationFn: ({ roundId, teamWins, winningTeam }) =>
       Round.update(roundId, { teamWins, winningTeam }),
@@ -239,7 +253,20 @@ export default function GameHistory() {
     ? rounds.find(round => isSameDay(new Date(round.date), selectedDate))
     : null;
 
+  // MVP gate: block the round's content for a player who PLAYED in it but hasn't
+  // voted yet, until they pick an MVP (or back out). Admins and non-participants
+  // are never gated.
+  const mvpGateActive = (() => {
+    if (isAdmin || gateDismissed || !currentPlayer || !selectedRound) return false;
+    const teamIds = (selectedRound.teams || []).flat();
+    const played = teamIds.includes(currentPlayer.id);
+    const voters = Array.isArray(selectedRound.mvpVoters) ? selectedRound.mvpVoters : [];
+    const alreadyVoted = voters.includes(currentPlayer.id);
+    return played && !alreadyVoted;
+  })();
+
   const handleDateSelect = (date) => {
+    setGateDismissed(false); // re-arm the gate for each newly opened round
     setSelectedDate(date);
     setEditingPlayer(null);
     setEditingRound(null);
@@ -413,7 +440,12 @@ export default function GameHistory() {
 
             {/* Round details */}
             {selectedRound && (
-              <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+              <motion.div
+                initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
+                className="space-y-4 transition-all"
+                style={mvpGateActive ? { filter: 'blur(10px)', pointerEvents: 'none', userSelect: 'none' } : undefined}
+                aria-hidden={mvpGateActive}
+              >
                 {/* Admin-only: edit results + photo */}
                 {isAdmin && (
                   <>
@@ -660,6 +692,23 @@ export default function GameHistory() {
         onChange={handleGoalChange}
         saving={savingGoals}
       />
+
+      <AnimatePresence>
+        {mvpGateActive && (
+          <MvpGateOverlay
+            round={selectedRound}
+            players={players}
+            currentPlayer={currentPlayer}
+            onVoted={() => {
+              // Reveal the round and refresh so the vote (and any MVP tally) shows.
+              queryClient.invalidateQueries({ queryKey: ['rounds'] });
+              setGateDismissed(true);
+              toast.success('הקול שלך נספר! 🌟');
+            }}
+            onClose={() => { setGateDismissed(true); setSelectedDate(null); }}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
