@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ClipboardList, ClipboardPaste, RotateCcw, Pencil, Check, CheckCircle2, X as XIcon, Clock, AlertTriangle, Copy, Send } from 'lucide-react';
+import { ClipboardList, ClipboardPaste, RotateCcw, Pencil, Check, CheckCircle2, X as XIcon, Clock, AlertTriangle, Copy, Send, BellRing } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/ui/lux';
 import { Signup, Player } from '@/api/entities';
@@ -125,6 +125,7 @@ export default function Lists() {
   const [diag, setDiag] = useState({ status: 'checking', error: null, count: null });
   const [hydrated, setHydrated] = useState(false);
   const [publishingDay, setPublishingDay] = useState(null);
+  const [nudgingDay, setNudgingDay] = useState(null);
   const [viewersByDay, setViewersByDay] = useState({}); // { day: Set<name> } — who opened the published list
 
   // Load who has viewed each day's published list (since its last publish), and
@@ -503,6 +504,74 @@ export default function Lists() {
     }
   }, [persistAll, queryClient]);
 
+  // Nudge everyone ON the roster who hasn't opened the published list yet.
+  // "Seen" is tracked by NAME (list_viewers), but push needs an EMAIL — so we map
+  // each un-seen roster name to a player to get their email, then send one personal
+  // push per player. Skips names we can't resolve to a player/email (e.g. guests).
+  const handleNudgeUnseen = useCallback(async (day) => {
+    if (!supabase) { toast.error('Supabase לא מחובר'); return; }
+    const seen = viewersByDay[day] || new Set();
+    const rosterNames = (data.rows[day] || [])
+      .map(n => (n || '').trim())
+      .filter(Boolean);
+    const unseenNames = rosterNames.filter(n => !seen.has(n));
+
+    if (unseenNames.length === 0) {
+      toast.info('כולם כבר ראו את הרשימה 🎉');
+      return;
+    }
+
+    // Resolve names → emails via the players table (case-insensitive, trimmed).
+    const byName = new Map(players.map(p => [(p.name || '').trim(), p]));
+    const targets = [];
+    const unresolved = [];
+    for (const name of unseenNames) {
+      const player = byName.get(name);
+      const email = player?.email;
+      if (email && email !== 'unknown') targets.push({ name, email });
+      else unresolved.push(name);
+    }
+
+    if (targets.length === 0) {
+      toast.error('לא נמצאו מיילים לשחקנים שלא ראו', {
+        description: unresolved.length ? `ללא חשבון: ${unresolved.join(', ')}` : undefined,
+      });
+      return;
+    }
+
+    setNudgingDay(day);
+    let sent = 0;
+    let noSub = 0;
+    try {
+      for (const { name, email } of targets) {
+        try {
+          const res = await callApi('/api/send-notification', {
+            targetEmail: email,
+            title: 'סינתטיקו חולון 👀',
+            body: `${name}, הרשימה ל${DAY_LABELS[day]} פורסמה ועדיין לא הצצת — אתה בפנים היום! בוא לראות מי איתך`,
+            url: { sunday: '/DayListSunday', wednesday: '/DayListWednesday', thursday: '/DayListThursday' }[day] || '/',
+          });
+          const pd = await res.json().catch(() => ({}));
+          if (!res.ok) { console.warn('[nudge] failed', name, pd.error); continue; }
+          if ((pd.sent || 0) > 0) sent += 1; else noSub += 1; // resolved but has no push subscription
+        } catch (e) {
+          console.warn('[nudge] error', name, e);
+        }
+      }
+
+      if (sent > 0) {
+        const extra = noSub > 0 ? ` (${noSub} ללא מנוי פוש)` : '';
+        toast.success(`נשלחה תזכורת ל-${sent} שחקנים שלא ראו${extra} 🔔`);
+      } else {
+        toast.warning('אף אחד מהשחקנים שלא ראו אינו מנוי להתראות', {
+          description: 'לא ניתן להזכיר להם בפוש',
+        });
+      }
+    } finally {
+      setNudgingDay(null);
+    }
+  }, [viewersByDay, data.rows, players]);
+
   // Confirm a signup: send push to player + add name to first empty main row + delete signup
   const handleConfirmSignup = async (signup) => {
     setBusyId(signup.id);
@@ -624,6 +693,26 @@ export default function Lists() {
                     ) : null;
                   })()}
                   <div className="flex items-center gap-1.5 shrink-0">
+                    {(() => {
+                      // How many named players on the roster haven't opened the list yet.
+                      const seen = viewersByDay[key] || new Set();
+                      const unseenCount = (data.rows[key] || [])
+                        .filter(n => n.trim() && !seen.has(n.trim())).length;
+                      // Only offer the nudge once at least one player HAS viewed — that's
+                      // the signal the list is published and "seen" tracking is live.
+                      const anyoneSeen = (seen?.size || 0) > 0;
+                      if (!anyoneSeen || unseenCount === 0) return null;
+                      return (
+                        <button onClick={() => handleNudgeUnseen(key)} disabled={nudgingDay === key}
+                          title={`הזכר ל-${unseenCount} שברשימה שעוד לא נכנסו לראות`}
+                          className="grid place-items-center h-8 px-2.5 gap-1 rounded-lg bg-sky-500/15 ring-1 ring-sky-500/30 text-sky-300 font-black text-xs hover:bg-sky-500/25 active:scale-95 transition-all disabled:opacity-50">
+                          {nudgingDay === key
+                            ? <div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                            : <BellRing className="w-3.5 h-3.5" />}
+                          <span>הזכר ({unseenCount})</span>
+                        </button>
+                      );
+                    })()}
                     <button onClick={() => handlePublishDay(key)} disabled={publishingDay === key}
                       title="פרסם לשחקנים ושלח התראה — הרשימה תופיע להם ותישלח הודעת פוש"
                       className="grid place-items-center h-8 px-2.5 gap-1 rounded-lg bg-amber-500/15 ring-1 ring-amber-500/30 text-amber-300 font-black text-xs hover:bg-amber-500/25 active:scale-95 transition-all disabled:opacity-50">
