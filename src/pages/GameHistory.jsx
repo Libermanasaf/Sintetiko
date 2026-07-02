@@ -208,7 +208,9 @@ export default function GameHistory() {
     queryFn: () => Player.list(),
   });
 
-  // The logged-in player (to gate the MVP vote). Admins have no linked player.
+  // The logged-in player (to gate the MVP vote). We load this for the admin too:
+  // the admin has a real linked player row, so the gate can tell whether they've
+  // already voted (by their real id) and can rate rounds they didn't play in.
   const { data: currentPlayer } = useQuery({
     queryKey: ['my-player', user?.id],
     queryFn: async () => {
@@ -216,7 +218,7 @@ export default function GameHistory() {
       const { data } = await supabase.from('players').select('id, name').eq('user_id', user.id).maybeSingle();
       return data;
     },
-    enabled: !!user && !isAdmin,
+    enabled: !!user,
   });
 
   const updateRoundMutation = useMutation({
@@ -253,16 +255,28 @@ export default function GameHistory() {
     ? rounds.find(round => isSameDay(new Date(round.date), selectedDate))
     : null;
 
-  // MVP gate: block the round's content for a player who PLAYED in it but hasn't
-  // voted yet, until they pick an MVP (or back out). Admins and non-participants
-  // are never gated.
+  // "already voted" ids to check against mvpVoters: the real player id, plus the
+  // admin fallback id used by cast_mvp_vote when there's no linked player row.
+  const myVoterIds = [currentPlayer?.id, isAdmin && user?.id ? `admin:${user.id}` : null]
+    .filter(Boolean);
+
+  // MVP gate: block the round's content until you pick an MVP (or back out).
+  //  • Regular player: gated if they PLAYED in the round and haven't voted.
+  //  • Admin: gated on any round with a roster they haven't voted on yet — they
+  //    may rate even a round they didn't play in. This is what makes the pick
+  //    pop up for the admin.
+  //  • Non-participants (regular players who didn't play) are never gated.
   const mvpGateActive = (() => {
-    if (isAdmin || gateDismissed || !currentPlayer || !selectedRound) return false;
-    const teamIds = (selectedRound.teams || []).flat();
-    const played = teamIds.includes(currentPlayer.id);
+    if (gateDismissed || !selectedRound) return false;
     const voters = Array.isArray(selectedRound.mvpVoters) ? selectedRound.mvpVoters : [];
-    const alreadyVoted = voters.includes(currentPlayer.id);
-    return played && !alreadyVoted;
+    const alreadyVoted = myVoterIds.some((id) => voters.includes(id));
+    if (alreadyVoted) return false;
+    if (isAdmin) {
+      return (selectedRound.teams || []).flat().length > 0; // needs a roster to pick from
+    }
+    if (!currentPlayer) return false;
+    const played = (selectedRound.teams || []).flat().includes(currentPlayer.id);
+    return played;
   })();
 
   const handleDateSelect = (date) => {
