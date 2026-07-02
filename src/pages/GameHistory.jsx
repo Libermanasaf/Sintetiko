@@ -10,6 +10,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { toast } from 'sonner';
 import TeamPlayerMover from '@/components/history/TeamPlayerMover';
 import MvpGateOverlay from '@/components/history/MvpGateOverlay';
+import MvpResultsCard from '@/components/history/MvpResultsCard';
 import { PageHeader, SectionTitle, EmptyState, Skeleton } from '@/components/ui/lux';
 import { useAuth } from '@/lib/AuthContext';
 import { supabase } from '@/lib/supabase';
@@ -552,6 +553,15 @@ export default function GameHistory() {
                     <img src={selectedRound.victoryPhoto} alt="תמונת ניצחון" loading="lazy" className="w-full object-contain bg-black max-h-72" />
                   </div>
                 )}
+
+                {/* MVP vote results — permanent, next to the victory photo. Built
+                    from the round's own mvpVotes/mvpChoices (no extra egress).
+                    Shows only players who received votes. */}
+                <MvpResultsCard
+                  round={selectedRound}
+                  players={players}
+                  myId={currentPlayer?.id || (isAdmin && user?.id ? `admin:${user.id}` : undefined)}
+                />
 
                 {/* Computed results summary — admin only */}
                 {isAdmin && <AnimatePresence>
