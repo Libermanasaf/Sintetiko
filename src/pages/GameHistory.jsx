@@ -507,61 +507,72 @@ export default function GameHistory() {
                       לחץ על שחקן לעריכת גולים
                     </p>
 
-                    <div className="rounded-2xl bg-slate-900/60 ring-1 ring-white/8 overflow-hidden">
-                      <div className="flex items-center gap-2 px-4 py-3 border-b border-white/8">
-                        <Camera className="w-4 h-4 text-amber-400" strokeWidth={2.4} />
-                        <span className="font-black text-white text-sm">תמונת ניצחון</span>
-                      </div>
-                      {selectedRound.victoryPhoto ? (
-                        <div className="relative">
-                          <img src={selectedRound.victoryPhoto} alt="תמונת ניצחון" loading="lazy" className="w-full object-contain bg-black max-h-72" />
-                          <button
-                            onClick={removePhoto}
-                            aria-label="הסר תמונה"
-                            className="absolute top-2 left-2 grid place-items-center w-9 h-9 bg-black/65 text-white rounded-full"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
+                    {/* Victory photo + MVP results side-by-side on wide screens,
+                        stacked on mobile (items-start so cards keep own height). */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
+                      <div className="rounded-2xl bg-slate-900/60 ring-1 ring-white/8 overflow-hidden">
+                        <div className="flex items-center gap-2 px-4 py-3 border-b border-white/8">
+                          <Camera className="w-4 h-4 text-amber-400" strokeWidth={2.4} />
+                          <span className="font-black text-white text-sm">תמונת ניצחון</span>
                         </div>
-                      ) : (
-                        <label className="flex flex-col items-center justify-center gap-2 py-8 cursor-pointer active:bg-white/5 transition-colors">
-                          <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} disabled={uploadingPhoto} />
-                          {uploadingPhoto ? (
-                            <div className="w-8 h-8 border-4 border-amber-400 border-t-transparent rounded-full animate-spin" />
-                          ) : (
-                            <>
-                              <div className="grid place-items-center w-12 h-12 rounded-full bg-amber-500/15 ring-1 ring-amber-500/30">
-                                <Upload className="w-5 h-5 text-amber-400" />
-                              </div>
-                              <p className="text-ink-3 text-sm font-bold">לחץ להעלאת תמונת ניצחון</p>
-                              <p className="text-slate-500 text-xs">בחר תמונה מהגלריה או צלם</p>
-                            </>
-                          )}
-                        </label>
-                      )}
+                        {selectedRound.victoryPhoto ? (
+                          <div className="relative">
+                            <img src={selectedRound.victoryPhoto} alt="תמונת ניצחון" loading="lazy" className="w-full object-contain bg-black max-h-72" />
+                            <button
+                              onClick={removePhoto}
+                              aria-label="הסר תמונה"
+                              className="absolute top-2 left-2 grid place-items-center w-9 h-9 bg-black/65 text-white rounded-full"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ) : (
+                          <label className="flex flex-col items-center justify-center gap-2 py-8 cursor-pointer active:bg-white/5 transition-colors">
+                            <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} disabled={uploadingPhoto} />
+                            {uploadingPhoto ? (
+                              <div className="w-8 h-8 border-4 border-amber-400 border-t-transparent rounded-full animate-spin" />
+                            ) : (
+                              <>
+                                <div className="grid place-items-center w-12 h-12 rounded-full bg-amber-500/15 ring-1 ring-amber-500/30">
+                                  <Upload className="w-5 h-5 text-amber-400" />
+                                </div>
+                                <p className="text-ink-3 text-sm font-bold">לחץ להעלאת תמונת ניצחון</p>
+                                <p className="text-slate-500 text-xs">בחר תמונה מהגלריה או צלם</p>
+                              </>
+                            )}
+                          </label>
+                        )}
+                      </div>
+
+                      <MvpResultsCard
+                        round={selectedRound}
+                        players={players}
+                        myId={currentPlayer?.id || (isAdmin && user?.id ? `admin:${user.id}` : undefined)}
+                      />
                     </div>
                   </>
                 )}
 
-                {/* Victory photo — players see it read-only if it exists */}
-                {!isAdmin && selectedRound.victoryPhoto && (
-                  <div className="rounded-2xl bg-slate-900/60 ring-1 ring-white/8 overflow-hidden">
-                    <div className="flex items-center gap-2 px-4 py-3 border-b border-white/8">
-                      <Camera className="w-4 h-4 text-amber-400" strokeWidth={2.4} />
-                      <span className="font-black text-white text-sm">תמונת ניצחון</span>
-                    </div>
-                    <img src={selectedRound.victoryPhoto} alt="תמונת ניצחון" loading="lazy" className="w-full object-contain bg-black max-h-72" />
+                {/* Victory photo + MVP results — players (read-only). Side-by-side
+                    on wide screens, stacked on mobile. */}
+                {!isAdmin && (
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
+                    {selectedRound.victoryPhoto && (
+                      <div className="rounded-2xl bg-slate-900/60 ring-1 ring-white/8 overflow-hidden">
+                        <div className="flex items-center gap-2 px-4 py-3 border-b border-white/8">
+                          <Camera className="w-4 h-4 text-amber-400" strokeWidth={2.4} />
+                          <span className="font-black text-white text-sm">תמונת ניצחון</span>
+                        </div>
+                        <img src={selectedRound.victoryPhoto} alt="תמונת ניצחון" loading="lazy" className="w-full object-contain bg-black max-h-72" />
+                      </div>
+                    )}
+                    <MvpResultsCard
+                      round={selectedRound}
+                      players={players}
+                      myId={currentPlayer?.id}
+                    />
                   </div>
                 )}
-
-                {/* MVP vote results — permanent, next to the victory photo. Built
-                    from the round's own mvpVotes/mvpChoices (no extra egress).
-                    Shows only players who received votes. */}
-                <MvpResultsCard
-                  round={selectedRound}
-                  players={players}
-                  myId={currentPlayer?.id || (isAdmin && user?.id ? `admin:${user.id}` : undefined)}
-                />
 
                 {/* Computed results summary — admin only */}
                 {isAdmin && <AnimatePresence>
