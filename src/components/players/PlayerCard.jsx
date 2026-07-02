@@ -16,7 +16,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 
-export default function PlayerCard({ player, onUpdate, onDelete, onEdit, mvpCount }) {
+export default function PlayerCard({ player, onUpdate, onDelete, onEdit, mvpCount, onNameClick }) {
   const [isEditingRating, setIsEditingRating] = useState(false);
   const [tempRating, setTempRating] = useState(player.rating || 3);
 
@@ -39,35 +39,44 @@ export default function PlayerCard({ player, onUpdate, onDelete, onEdit, mvpCoun
       className="group relative bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 hover:border-emerald-600/40 rounded-2xl p-4 shadow-sm hover:shadow-lg hover:shadow-emerald-900/20 transition-all duration-200"
     >
       <div className="flex items-center gap-4">
-        {/* Avatar */}
-        <div className="relative shrink-0">
-          {player.image ? (
-            <img src={player.image} alt={player.name} className="w-12 h-12 rounded-xl object-cover border border-slate-600 group-hover:border-emerald-600/60 transition-colors" />
-          ) : (
-            <div className="w-12 h-12 rounded-xl bg-slate-700 flex items-center justify-center border border-slate-600 group-hover:border-emerald-600/60 transition-colors">
-              <span className="text-lg font-black text-slate-400">{player.name.charAt(0)}</span>
-            </div>
-          )}
-        </div>
+        {/* Avatar + Name — tap to open this player's stats */}
+        <button
+          type="button"
+          onClick={onNameClick}
+          disabled={!onNameClick}
+          aria-label={onNameClick ? `הצג סטטיסטיקות של ${player.name}` : undefined}
+          className="flex items-center gap-4 flex-1 min-w-0 text-right disabled:cursor-default"
+        >
+          {/* Avatar */}
+          <div className="relative shrink-0">
+            {player.image ? (
+              <img src={player.image} alt={player.name} className="w-12 h-12 rounded-xl object-cover border border-slate-600 group-hover:border-emerald-600/60 transition-colors" />
+            ) : (
+              <div className="w-12 h-12 rounded-xl bg-slate-700 flex items-center justify-center border border-slate-600 group-hover:border-emerald-600/60 transition-colors">
+                <span className="text-lg font-black text-slate-400">{player.name.charAt(0)}</span>
+              </div>
+            )}
+          </div>
 
-        {/* Name */}
-        <div className="flex-1 min-w-0">
-          <h3 className="font-bold text-white text-lg leading-tight truncate flex items-center gap-1.5">
-            <span className="truncate">{player.name}</span>
-            <MvpBadge count={mvpCount} />
-          </h3>
-          <div className="flex items-center gap-3 mt-1">
-            <div className="flex items-center gap-1">
-              <Trophy className="w-3.5 h-3.5 text-amber-500" />
-              <span className="text-xs text-slate-400">{player.wins || 0} נצחונות</span>
-            </div>
-            <div className="w-px h-3 bg-slate-700" />
-            <div className="flex items-center gap-1">
-              <Users className="w-3.5 h-3.5 text-blue-400" />
-              <span className="text-xs text-slate-400">{player.appearances || 0} הופעות</span>
+          {/* Name */}
+          <div className="flex-1 min-w-0">
+            <h3 className="font-bold text-white text-lg leading-tight truncate flex items-center gap-1.5">
+              <span className="truncate group-hover:text-emerald-300 transition-colors">{player.name}</span>
+              <MvpBadge count={mvpCount} />
+            </h3>
+            <div className="flex items-center gap-3 mt-1">
+              <div className="flex items-center gap-1">
+                <Trophy className="w-3.5 h-3.5 text-amber-500" />
+                <span className="text-xs text-slate-400">{player.wins || 0} נצחונות</span>
+              </div>
+              <div className="w-px h-3 bg-slate-700" />
+              <div className="flex items-center gap-1">
+                <Users className="w-3.5 h-3.5 text-blue-400" />
+                <span className="text-xs text-slate-400">{player.appearances || 0} הופעות</span>
+              </div>
             </div>
           </div>
-        </div>
+        </button>
 
         {/* Rating */}
         <button

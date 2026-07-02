@@ -6,11 +6,31 @@ import { AnimatePresence } from 'framer-motion';
 import PlayerCard from '@/components/players/PlayerCard';
 import { useMvpCounts } from '@/lib/useMvpCounts';
 import PlayerForm from '@/components/players/PlayerForm';
+import PlayerStatsModal from '@/components/statistics/PlayerStatsModal';
 import { PageHeader, EmptyState, Skeleton } from '@/components/ui/lux';
+
+// Forgiving Hebrew search: normalize so small spelling variations still match.
+// Kept conservative so it doesn't create wrong matches:
+// - strip spaces, geresh/gershayim, quotes and niqqud
+// - fold the "silent"/interchangeable matres lectionis א/ע/ה and ו/י that people
+//   add or drop (ראאם/ראם, יוסי/יוסף-start, שמעון/שימעון)
+// - collapse consecutive duplicate letters (ראאם → ראם) so a single vs double
+//   letter doesn't matter
+// Example: "ראם" and "ראאם כהן" both normalize to a common prefix, so typing
+// "ראם" (or "ראאם") finds "ראאם כהן".
+function normalizeHebrew(s = '') {
+  return s
+    .toLowerCase()
+    .replace(/[֑-ׇ'"׳״\s]/g, '') // niqqud, geresh/gershayim, quotes, spaces
+    .replace(/[אעה]/g, 'א')      // silent/interchangeable gutturals
+    .replace(/[וי]/g, 'ו')       // vav/yod as vowels people add or drop
+    .replace(/(.)\1+/g, '$1');   // collapse consecutive duplicates
+}
 
 export default function Players() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState(null);
+  const [statsPlayer, setStatsPlayer] = useState(null); // player whose stats modal is open
   const [searchQuery, setSearchQuery] = useState('');
   const mvpCounts = useMvpCounts();
   const queryClient = useQueryClient();
@@ -53,9 +73,19 @@ export default function Players() {
     updateMutation.mutate({ id, data });
   };
 
-  const filteredPlayers = players.filter((player) =>
-    player.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Match on either the raw substring (fast, exact) OR the forgiving normalized
+  // form, so "ראש" finds "ראאם כהן" while normal typing still works as expected.
+  const q = searchQuery.trim();
+  const qNorm = normalizeHebrew(q);
+  const filteredPlayers = !q
+    ? players
+    : players.filter((player) => {
+        const name = player.name || '';
+        return (
+          name.toLowerCase().includes(q.toLowerCase()) ||
+          normalizeHebrew(name).includes(qNorm)
+        );
+      });
 
   return (
     <div className="pb-10">
@@ -109,6 +139,7 @@ export default function Players() {
                   onUpdate={handleUpdate}
                   onDelete={(id) => deleteMutation.mutate(id)}
                   onEdit={handleEdit}
+                  onNameClick={() => setStatsPlayer(player)}
                 />
               ))}
             </AnimatePresence>
@@ -121,6 +152,16 @@ export default function Players() {
           onSubmit={handleSubmit}
           player={editingPlayer}
         />
+
+        {/* Tapping a player's name/avatar opens their stats — same modal as the
+            Statistics screen, so you don't have to leave the squad list. */}
+        {statsPlayer && (
+          <PlayerStatsModal
+            player={statsPlayer}
+            allPlayers={players}
+            onClose={() => setStatsPlayer(null)}
+          />
+        )}
       </div>
     </div>
   );
