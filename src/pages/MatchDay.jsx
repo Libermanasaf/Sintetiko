@@ -448,13 +448,16 @@ export default function MatchDay() {
       // filter checks; is_published:false keeps it out of player-facing views too.
       // If the is_closed column hasn't been migrated yet, fall back to is_published
       // alone so closing still succeeds instead of 400ing on the whole update.
+      // closed_at stamps the moment of closing — the MVP voting window is 48h
+      // from here (see mvp_voting_open / cast_mvp_vote).
+      const closedAt = new Date().toISOString();
       try {
-        await Round.update(round.id, { is_closed: true, is_published: false, ...winnerUpdate });
+        await Round.update(round.id, { is_closed: true, is_published: false, closed_at: closedAt, ...winnerUpdate });
       } catch (err) {
         const msg = String(err?.message || '');
-        const missingCol = err?.code === '42703' || /is_closed/.test(msg) || /column/.test(msg);
+        const missingCol = err?.code === '42703' || /is_closed/.test(msg) || /closed_at/.test(msg) || /column/.test(msg);
         if (!missingCol) throw err;
-        console.warn('[CloseRound] is_closed column missing — closing via is_published only', msg);
+        console.warn('[CloseRound] is_closed/closed_at column missing — closing via is_published only', msg);
         await Round.update(round.id, { is_published: false, ...winnerUpdate });
       }
       queryClient.invalidateQueries({ queryKey: ['latest-round'] });

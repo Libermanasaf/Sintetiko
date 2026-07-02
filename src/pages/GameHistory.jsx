@@ -260,7 +260,18 @@ export default function GameHistory() {
   const myVoterIds = [currentPlayer?.id, isAdmin && user?.id ? `admin:${user.id}` : null]
     .filter(Boolean);
 
+  // MVP voting window: 48h from the round's close. Open while not-yet-closed, or
+  // while closed but within 48h of closed_at. Once it elapses the gate no longer
+  // pops — the round (and its results) are just shown. Mirrors mvp_voting_open().
+  const votingWindowOpen = (() => {
+    if (!selectedRound) return false;
+    if (!selectedRound.is_closed) return true;
+    if (!selectedRound.closed_at) return true; // fail-safe: treat as open
+    return Date.now() < new Date(selectedRound.closed_at).getTime() + 48 * 60 * 60 * 1000;
+  })();
+
   // MVP gate: block the round's content until you pick an MVP (or back out).
+  //  • Only while the 48h voting window is open — after it closes, no gate.
   //  • Regular player: gated if they PLAYED in the round and haven't voted.
   //  • Admin: gated on any round with a roster they haven't voted on yet — they
   //    may rate even a round they didn't play in. This is what makes the pick
@@ -268,6 +279,7 @@ export default function GameHistory() {
   //  • Non-participants (regular players who didn't play) are never gated.
   const mvpGateActive = (() => {
     if (gateDismissed || !selectedRound) return false;
+    if (!votingWindowOpen) return false; // voting closed → reveal, no gate
     const voters = Array.isArray(selectedRound.mvpVoters) ? selectedRound.mvpVoters : [];
     const alreadyVoted = myVoterIds.some((id) => voters.includes(id));
     if (alreadyVoted) return false;
