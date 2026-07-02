@@ -2,7 +2,6 @@
   "rewrites": [
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ],
-  "_comment_crons": "09:00 UTC = 12:00 Israel (summer, UTC+3). The endpoint also guards to only send around Israel noon, so DST drift can't fire it at the wrong local time.",
   "crons": [
     { "path": "/api/mvp-reminder", "schedule": "0 9 * * *" }
   ],
