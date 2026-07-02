@@ -22,6 +22,19 @@ export default async function handler(req, res) {
     console.warn('[mvp-reminder] CRON_SECRET not set — endpoint is unauthenticated');
   }
 
+  // Only send around noon Israel time. The cron fires at 09:00 UTC (= 12:00 in
+  // summer, 11:00 in winter); this guard keeps it near local noon year-round and
+  // stops a manual/mis-timed hit from pushing at 3am. Bypass with ?force=1.
+  const israelHour = Number(
+    new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Asia/Jerusalem', hour: 'numeric', hour12: false,
+    }).format(new Date())
+  );
+  const forced = req.query?.force === '1';
+  if (!forced && (israelHour < 11 || israelHour > 13)) {
+    return res.status(200).json({ ok: true, skipped: 'outside Israel noon window', israelHour });
+  }
+
   const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY;
   if (!VAPID_PRIVATE) {
     return res.status(500).json({ error: 'VAPID_PRIVATE_KEY not configured' });
