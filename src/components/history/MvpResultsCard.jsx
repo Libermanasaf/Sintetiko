@@ -23,6 +23,15 @@ export default function MvpResultsCard({ round, players, myId }) {
   const imgOf = (id) => players.find((p) => p.id === id)?.image;
   const totalVotes = entries.reduce((s, e) => s + e.count, 0);
 
+  // Invert mvpChoices ({voter -> candidate}) into {candidate -> [voter names]},
+  // so we can list who voted for each player. Admin voter ids ('admin:<uid>')
+  // won't resolve to a player name — label them "מנהל".
+  const votersByCandidate = {};
+  for (const [voterId, candidateId] of Object.entries(choices)) {
+    const label = voterId.startsWith('admin:') ? 'מנהל' : nameOf(voterId);
+    (votersByCandidate[candidateId] = votersByCandidate[candidateId] || []).push(label);
+  }
+
   return (
     <div className="rounded-2xl bg-slate-900/60 ring-1 ring-amber-400/20 overflow-hidden">
       <div className="flex items-center gap-2 px-4 py-3 border-b border-white/8">
@@ -35,15 +44,16 @@ export default function MvpResultsCard({ round, players, myId }) {
         {entries.map(({ pid, count }) => {
           const isLeader = count === maxVotes;
           const isMine = pid === myPick;
+          const voters = votersByCandidate[pid] || [];
           return (
             <div
               key={pid}
-              className={`flex items-center gap-3 px-3 py-2.5 ${isMine ? 'bg-amber-500/10' : ''}`}
+              className={`flex items-start gap-3 px-3 py-2.5 ${isMine ? 'bg-amber-500/10' : ''}`}
             >
               {imgOf(pid) ? (
-                <img src={imgOf(pid)} alt="" loading="lazy" className="w-9 h-9 rounded-lg object-cover ring-1 ring-white/10 shrink-0" />
+                <img src={imgOf(pid)} alt="" loading="lazy" className="w-9 h-9 rounded-lg object-cover ring-1 ring-white/10 shrink-0 mt-0.5" />
               ) : (
-                <div className="grid place-items-center w-9 h-9 rounded-lg bg-slate-700 text-slate-300 shrink-0">
+                <div className="grid place-items-center w-9 h-9 rounded-lg bg-slate-700 text-slate-300 shrink-0 mt-0.5">
                   <User className="w-4 h-4" />
                 </div>
               )}
@@ -57,8 +67,18 @@ export default function MvpResultsCard({ round, players, myId }) {
                     <Check className="w-3 h-3" strokeWidth={3} />הבחירה שלך
                   </span>
                 )}
+                {/* Who voted for this player */}
+                {voters.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-1.5">
+                    {voters.map((vName, i) => (
+                      <span key={i} className="text-[0.62rem] font-bold text-ink-2 bg-slate-800/70 ring-1 ring-white/8 rounded-md px-1.5 py-0.5">
+                        {vName}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
-              <span className="grid place-items-center min-w-[2rem] h-7 px-2 rounded-lg bg-slate-900/70 ring-1 ring-white/10 text-white font-black text-sm tnum shrink-0">
+              <span className="grid place-items-center min-w-[2rem] h-7 px-2 rounded-lg bg-slate-900/70 ring-1 ring-white/10 text-white font-black text-sm tnum shrink-0 mt-0.5">
                 {count}
               </span>
             </div>
