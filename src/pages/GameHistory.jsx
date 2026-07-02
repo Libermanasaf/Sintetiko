@@ -699,11 +699,14 @@ export default function GameHistory() {
             round={selectedRound}
             players={players}
             currentPlayer={currentPlayer}
-            onVoted={() => {
-              // Reveal the round and refresh so the vote (and any MVP tally) shows.
+            onVoted={(opts) => {
+              // keepOpen: the overlay is showing its own results table. Do NOT
+              // refresh rounds yet — invalidating would flip mvpGateActive to
+              // false (the player is now in mvpVoters) and unmount the overlay
+              // mid-results. Defer the refresh + reveal to "ראה את המחזור".
+              if (opts?.keepOpen) return;
               queryClient.invalidateQueries({ queryKey: ['rounds'] });
               setGateDismissed(true);
-              toast.success('הקול שלך נספר! 🌟');
             }}
             onClose={() => { setGateDismissed(true); setSelectedDate(null); }}
           />
