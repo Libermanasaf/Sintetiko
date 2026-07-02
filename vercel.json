@@ -2,6 +2,9 @@
   "rewrites": [
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ],
+  "crons": [
+    { "path": "/api/mvp-reminder", "schedule": "0 9 * * *" }
+  ],
   "headers": [
     {
       "source": "/",
