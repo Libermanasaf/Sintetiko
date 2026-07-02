@@ -2,6 +2,9 @@ import webpush from 'web-push';
 import { getSupabaseAdmin } from './_supabaseAdmin.js';
 import { VAPID_PUBLIC_KEY } from '../src/lib/vapidPublic.js';
 
+// Lowercased to match subsByEmail keys (which are lowercased on insert below).
+const ADMIN_EMAIL = 'libermanasaf@gmail.com';
+
 // Daily cron: remind players who PLAYED in a just-closed round but haven't yet
 // voted for the MVP, to go pick tonight's best player. Sends exactly ONE push
 // per player per round (tracked in rounds.mvpReminded) — never nags again.
@@ -131,6 +134,27 @@ export default async function handler(req, res) {
     if (newlyReminded.length > 0) {
       const merged = Array.from(new Set([...(round.mvpReminded || []), ...newlyReminded]));
       await supabase.from('rounds').update({ mvpReminded: merged }).eq('id', round.id);
+    }
+  }
+
+  // Admin health-check copy: whenever the cron actually reminded someone, send
+  // the admin a summary push so they can confirm the automation ran — without
+  // being on any roster. Only fires on days there was something to send (no spam).
+  if (totalTargets > 0) {
+    const adminSubs = subsByEmail.get(ADMIN_EMAIL) || [];
+    const adminPayload = JSON.stringify({
+      title: 'תזכורת מצטיין נשלחה ✅',
+      body: `נשלחו תזכורות ל-${totalTargets} שחקנים שעדיין לא בחרו מצטיין.`,
+      url: '/GameHistory',
+    });
+    for (const row of adminSubs) {
+      try {
+        await webpush.sendNotification(row.subscription, adminPayload);
+      } catch (err) {
+        if (err.statusCode === 404 || err.statusCode === 410) {
+          await supabase.from('push_subscriptions').delete().eq('endpoint', row.endpoint);
+        }
+      }
     }
   }
 
