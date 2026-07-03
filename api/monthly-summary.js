@@ -116,8 +116,11 @@ export default async function handler(req, res) {
     const email = (p.email || '').toLowerCase();
     if (!email || email === 'unknown') continue;
 
-    const parts = [`${s.appearances} הופעות`, `${s.wins} ניצחונות`];
-    if (s.goals > 0) parts.push(`${s.goals} שערים`);
+    // Positive-only, grammatical Hebrew: singular forms for 1, zeros omitted
+    // (except appearances, which gate inclusion anyway).
+    const parts = [s.appearances === 1 ? 'הופעה אחת' : `${s.appearances} הופעות`];
+    if (s.wins > 0) parts.push(s.wins === 1 ? 'ניצחון אחד' : `${s.wins} ניצחונות`);
+    if (s.goals > 0) parts.push(s.goals === 1 ? 'שער אחד' : `${s.goals} שערים`);
     if (s.mvp > 0) parts.push(`MVP ×${s.mvp}`);
     const body = `${p.name}, סיכום ${monthName} שלך: ${parts.join(' · ')} 💪`;
     messages.push({ name: p.name, email, body, hasSub: subsByEmail.has(email) });
