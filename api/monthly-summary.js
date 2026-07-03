@@ -16,8 +16,9 @@ export default async function handler(req, res) {
   const cronSecret = process.env.CRON_SECRET;
   const auth = req.headers?.authorization || '';
   const dry = req.query?.dry === '1';
-  // Dry runs are read-only and safe; real sends require the cron secret when set.
-  if (cronSecret && !dry && auth !== `Bearer ${cronSecret}`) {
+  // When a cron secret is configured, EVERY call (dry included — it exposes
+  // player data) must present it.
+  if (cronSecret && auth !== `Bearer ${cronSecret}`) {
     return res.status(401).json({ error: 'unauthorized' });
   }
 
@@ -131,7 +132,8 @@ export default async function handler(req, res) {
       ok: true, dry: true, month: monthKey, rounds: (rounds || []).length,
       wouldSend: messages.filter((m) => m.hasSub).length,
       noSubscription: messages.filter((m) => !m.hasSub).length,
-      messages,
+      // No emails in the preview — the push body already carries the name.
+      messages: messages.map(({ name, body, hasSub }) => ({ name, body, hasSub })),
     });
   }
 

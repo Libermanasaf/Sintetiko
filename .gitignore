@@ -2,6 +2,9 @@
 .env
 .env.*
 
+# DB backups — contain player emails/subscriptions, must never reach GitHub
+backups/
+
 # Logs
 logs
 *.log
