@@ -12,4 +12,19 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        // Big, rarely-changing vendors get their own chunks so a code deploy
+        // doesn't invalidate them in the browser cache. Pages themselves are
+        // split per-route via React.lazy (see pages.config.js).
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-motion': ['framer-motion'],
+          'vendor-supabase': ['@supabase/supabase-js'],
+          'vendor-query': ['@tanstack/react-query'],
+        },
+      },
+    },
+  },
 });

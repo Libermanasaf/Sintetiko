@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
@@ -12,9 +13,17 @@ const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
 const MainPage = mainPageKey ? Pages[mainPageKey] : <></>;
 
+// Shown while a lazy page chunk downloads. Inside the Layout, so the header and
+// bottom nav stay put — only the content area blinks a small spinner.
+const PageFallback = () => (
+  <div className="min-h-[50vh] grid place-items-center" aria-busy="true">
+    <div className="w-8 h-8 border-4 border-amber-400/70 border-t-transparent rounded-full animate-spin" />
+  </div>
+);
+
 const LayoutWrapper = ({ children, currentPageName }) => Layout
-  ? <Layout currentPageName={currentPageName}>{children}</Layout>
-  : <>{children}</>;
+  ? <Layout currentPageName={currentPageName}><Suspense fallback={<PageFallback />}>{children}</Suspense></Layout>
+  : <Suspense fallback={<PageFallback />}>{children}</Suspense>;
 
 // Blocks a page if the signed-in role isn't allowed to see it (per navConfig).
 // This is a UX guard only — the real protection is RLS on the server. While auth

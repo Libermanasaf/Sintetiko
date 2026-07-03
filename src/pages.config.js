@@ -47,33 +47,38 @@
  *
  * The mainPage value must match a key in the PAGES object exactly.
  */
-import CreateRound from './pages/CreateRound';
-import GameHistory from './pages/GameHistory';
-import Home from './pages/Home';
-import Players from './pages/Players';
-import Podium from './pages/Podium';
-import Statistics from './pages/Statistics';
-import Payments from './pages/Payments';
-import Backup from './pages/Backup';
-import PlayerHome from './pages/PlayerHome';
-import UserApprovals from './pages/UserApprovals';
-import RatePlayers from './pages/RatePlayers';
-import MatchDay from './pages/MatchDay';
-import InstallApp from './pages/InstallApp';
-import RegisteredUsers from './pages/RegisteredUsers';
-import PushDiagnostics from './pages/PushDiagnostics';
-import SendNotification from './pages/SendNotification';
-import Notifications from './pages/Notifications';
-import Lists from './pages/Lists';
-import SignupPage from './pages/SignupPage';
-import DayListSunday from './pages/DayListSunday';
-import DayListWednesday from './pages/DayListWednesday';
-import DayListThursday from './pages/DayListThursday';
-import LoginActivity from './pages/LoginActivity';
-import Professionals from './pages/Professionals';
-import Debts from './pages/Debts';
-import ResetPassword from './pages/ResetPassword';
+// Pages are lazy-loaded (React.lazy) so each screen ships as its own chunk and
+// the initial bundle stays small — critical for mobile load time. The Layout
+// stays static: it renders on every page anyway.
+import { lazy } from 'react';
 import __Layout from './Layout.jsx';
+
+const CreateRound = lazy(() => import('./pages/CreateRound'));
+const GameHistory = lazy(() => import('./pages/GameHistory'));
+const Home = lazy(() => import('./pages/Home'));
+const Players = lazy(() => import('./pages/Players'));
+const Podium = lazy(() => import('./pages/Podium'));
+const Statistics = lazy(() => import('./pages/Statistics'));
+const Payments = lazy(() => import('./pages/Payments'));
+const Backup = lazy(() => import('./pages/Backup'));
+const PlayerHome = lazy(() => import('./pages/PlayerHome'));
+const UserApprovals = lazy(() => import('./pages/UserApprovals'));
+const RatePlayers = lazy(() => import('./pages/RatePlayers'));
+const MatchDay = lazy(() => import('./pages/MatchDay'));
+const InstallApp = lazy(() => import('./pages/InstallApp'));
+const RegisteredUsers = lazy(() => import('./pages/RegisteredUsers'));
+const PushDiagnostics = lazy(() => import('./pages/PushDiagnostics'));
+const SendNotification = lazy(() => import('./pages/SendNotification'));
+const Notifications = lazy(() => import('./pages/Notifications'));
+const Lists = lazy(() => import('./pages/Lists'));
+const SignupPage = lazy(() => import('./pages/SignupPage'));
+const DayListSunday = lazy(() => import('./pages/DayListSunday'));
+const DayListWednesday = lazy(() => import('./pages/DayListWednesday'));
+const DayListThursday = lazy(() => import('./pages/DayListThursday'));
+const LoginActivity = lazy(() => import('./pages/LoginActivity'));
+const Professionals = lazy(() => import('./pages/Professionals'));
+const Debts = lazy(() => import('./pages/Debts'));
+const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 
 export const PAGES = {
     "CreateRound": CreateRound,
