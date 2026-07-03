@@ -3,7 +3,8 @@
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ],
   "crons": [
-    { "path": "/api/mvp-reminder", "schedule": "0 9 * * *" }
+    { "path": "/api/mvp-reminder", "schedule": "0 9 * * *" },
+    { "path": "/api/monthly-summary", "schedule": "0 9 1 * *" }
   ],
   "headers": [
     {
