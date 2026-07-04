@@ -434,10 +434,14 @@ export default function Podium() {
     queryFn: () => Player.list('-wins'),
   });
 
-  // Stable ordering: wins desc → appearances desc → name asc (Hebrew)
+  // Ordering: wins desc → EFFICIENCY (win rate desc — same trophies with fewer
+  // appearances ranks higher) → appearances desc (among 0%-rate players,
+  // veterans stay above never-played) → name asc (Hebrew).
   const ranked = useMemo(() => {
+    const rate = (p) => ((p.appearances || 0) > 0 ? (p.wins || 0) / p.appearances : 0);
     return [...players].sort((a, b) => {
       if ((b.wins || 0) !== (a.wins || 0)) return (b.wins || 0) - (a.wins || 0);
+      if (rate(b) !== rate(a)) return rate(b) - rate(a);
       if ((b.appearances || 0) !== (a.appearances || 0)) return (b.appearances || 0) - (a.appearances || 0);
       return (a.name || '').localeCompare(b.name || '', 'he');
     });
