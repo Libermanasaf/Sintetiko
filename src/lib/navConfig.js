@@ -2,6 +2,7 @@ import {
   Home, Users, BarChart3, Shuffle, History, Trophy,
   CreditCard, Shield, UserCheck, Star, Download, UsersRound,
   BellRing, Bell, Send, ClipboardList, ClipboardCheck, LogIn, Briefcase, Coins,
+  MessageSquare,
 } from 'lucide-react';
 
 // Single source of truth for navigation + access control.
@@ -32,6 +33,7 @@ export const menuItems = [
   { name: 'רשימה יום רביעי',  page: 'DayListWednesday', icon: ClipboardList, player: true },
   { name: 'רשימה יום חמישי',  page: 'DayListThursday',  icon: ClipboardList, player: true },
   { name: 'התראות',            page: 'Notifications', icon: Bell,     player: true },
+  { name: 'תיבת התלונות',      page: 'ComplaintsBox', icon: MessageSquare, admin: true, player: true },
   { name: 'הורד את האפליקציה', page: 'InstallApp', icon: Download, admin: true, player: true },
 ];
 

@@ -79,6 +79,7 @@ const LoginActivity = lazy(() => import('./pages/LoginActivity'));
 const Professionals = lazy(() => import('./pages/Professionals'));
 const Debts = lazy(() => import('./pages/Debts'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
+const ComplaintsBox = lazy(() => import('./pages/ComplaintsBox'));
 
 export const PAGES = {
     "CreateRound": CreateRound,
@@ -107,6 +108,7 @@ export const PAGES = {
     "Professionals": Professionals,
     "Debts": Debts,
     "ResetPassword": ResetPassword,
+    "ComplaintsBox": ComplaintsBox,
 }
 
 export const pagesConfig = {
