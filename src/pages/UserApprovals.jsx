@@ -112,7 +112,7 @@ export default function UserApprovals() {
         icon={UserCheck}
         title="אישור משתמשים"
         subtitle={pendingPlayers.length ? `${pendingPlayers.length} בקשות ממתינות` : 'בקשות הרשמה לסגל'}
-        accent="emerald"
+        accent="sky"
       />
 
       <div className="p-4">

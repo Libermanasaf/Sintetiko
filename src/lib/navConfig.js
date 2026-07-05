@@ -2,7 +2,7 @@ import {
   Home, Users, BarChart3, Shuffle, History, Trophy,
   CreditCard, Shield, UserCheck, Star, Download, UsersRound,
   BellRing, Bell, Send, ClipboardList, ClipboardCheck, LogIn, Briefcase, Coins,
-  MessageSquare,
+  MessageSquare, Crown,
 } from 'lucide-react';
 
 // Single source of truth for navigation + access control.
@@ -13,6 +13,7 @@ export const menuItems = [
   { name: 'עמוד הבית', page: 'Home',         icon: Home,      admin: true },
   { name: 'עמוד הבית', page: 'PlayerHome',   icon: Home,      player: true },
   { name: 'הפודיום',    page: 'Podium',       icon: Trophy,    admin: true, player: true },
+  { name: 'היכל התהילה', page: 'HallOfFame',  icon: Crown,     admin: true, player: true },
   { name: 'סגל שחקנים', page: 'Players',      icon: Users,     admin: true },
   { name: 'סטטיסטיקות', page: 'Statistics',   icon: BarChart3, admin: true, player: true },
   { name: 'יצירת מחזור', page: 'CreateRound', icon: Shuffle,   admin: true },

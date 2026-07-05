@@ -102,7 +102,7 @@ export default function Payments() {
 
   return (
     <div className="pb-10">
-      <PageHeader icon={CreditCard} title="תשלומים" subtitle="גביית דמי השתתפות" accent="emerald" />
+      <PageHeader icon={CreditCard} title="תשלומים" subtitle="גביית דמי השתתפות" accent="amber" />
 
       <div className="p-4 space-y-4">
         {/* Calendar */}

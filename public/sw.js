@@ -104,15 +104,21 @@ self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const url = (event.notification.data && event.notification.data.url) || '/';
 
+  // External links (e.g. a Bit payment page) can't be navigated to inside the
+  // PWA window (cross-origin navigate() is rejected) — always open a new window.
+  const isExternal = /^https?:\/\//.test(url) && !url.startsWith(self.location.origin);
+
   event.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      for (const client of clientList) {
-        if ('focus' in client) {
-          client.navigate(url);
-          return client.focus();
-        }
-      }
-      if (self.clients.openWindow) return self.clients.openWindow(url);
-    })
+    isExternal
+      ? self.clients.openWindow(url)
+      : self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+          for (const client of clientList) {
+            if ('focus' in client) {
+              client.navigate(url);
+              return client.focus();
+            }
+          }
+          if (self.clients.openWindow) return self.clients.openWindow(url);
+        })
   );
 });

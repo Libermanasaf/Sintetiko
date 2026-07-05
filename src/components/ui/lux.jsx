@@ -12,6 +12,7 @@ const ACCENT_BORDER = {
   emerald: 'from-emerald-400/45 via-slate-700/25 to-slate-800/10',
   pitch:   'from-emerald-400/45 via-slate-700/25 to-slate-800/10',
   blue:    'from-sky-400/40 via-slate-700/25 to-slate-800/10',
+  sky:     'from-sky-400/40 via-slate-700/25 to-slate-800/10',
   slate:   'from-slate-400/30 via-slate-700/20 to-slate-800/10',
 };
 
@@ -21,6 +22,7 @@ const ACCENT_GLOW = {
   emerald: 'bg-emerald-500/15',
   pitch:   'bg-emerald-500/15',
   blue:    'bg-sky-500/15',
+  sky:     'bg-sky-500/15',
   slate:   'bg-slate-500/10',
 };
 
@@ -48,6 +50,7 @@ const ICON_ACCENT = {
   emerald: 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300',
   pitch:   'bg-emerald-500/15 border-emerald-500/30 text-emerald-300',
   blue:    'bg-sky-500/15 border-sky-500/30 text-sky-300',
+  sky:     'bg-sky-500/15 border-sky-500/30 text-sky-300',
   slate:   'bg-slate-500/15 border-slate-500/30 text-slate-300',
 };
 

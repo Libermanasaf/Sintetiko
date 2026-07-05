@@ -137,26 +137,69 @@ export default async function handler(req, res) {
     }
   }
 
-  // Admin health-check copy: whenever the cron actually reminded someone, send
-  // the admin a summary push so they can confirm the automation ran — without
-  // being on any roster. Only fires on days there was something to send (no spam).
-  if (totalTargets > 0) {
-    const adminSubs = subsByEmail.get(ADMIN_EMAIL) || [];
-    const adminPayload = JSON.stringify({
-      title: 'תזכורת מצטיין נשלחה ✅',
-      body: `נשלחו תזכורות ל-${totalTargets} שחקנים שעדיין לא בחרו מצטיין.`,
-      url: '/GameHistory',
-    });
-    for (const row of adminSubs) {
+  // ── Admin noon push ─────────────────────────────────────────────────────
+  // On GAME DAYS (Sun/Wed/Thu) the admin gets a match-day digest: roster fill,
+  // how many viewed the list, standby waiting — plus today's MVP-reminder stats
+  // folded in. On other days, only the health-check fires (and only when
+  // reminders actually went out), so there's never noon spam.
+  const sendToAdmin = async (title, body, url) => {
+    const payload = JSON.stringify({ title, body, url });
+    for (const row of subsByEmail.get(ADMIN_EMAIL) || []) {
       try {
-        await webpush.sendNotification(row.subscription, adminPayload);
+        await webpush.sendNotification(row.subscription, payload);
       } catch (err) {
         if (err.statusCode === 404 || err.statusCode === 410) {
           await supabase.from('push_subscriptions').delete().eq('endpoint', row.endpoint);
         }
       }
     }
+  };
+
+  const israelDow = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Jerusalem', weekday: 'short' })
+    .format(new Date());
+  const dayKey = { Sun: 'sunday', Wed: 'wednesday', Thu: 'thursday' }[israelDow];
+  const dayLabel = { sunday: 'ראשון', wednesday: 'רביעי', thursday: 'חמישי' }[dayKey];
+
+  let digest = null;
+  if (dayKey) {
+    try {
+      const { data: ls } = await supabase.from('lists_state').select('data').eq('id', 'main').maybeSingle();
+      const d = ls?.data || {};
+      const roster = (d.rows?.[dayKey] || []).filter((n) => n && n.trim());
+
+      // Viewers of the CURRENT list only — same window list_viewers() uses:
+      // views after the later of last publish / weekly reset.
+      const publishedAt = d.publishedLists?.[dayKey]?.publishedAt;
+      const lastReset = d.lastReset?.[dayKey];
+      const threshold = [publishedAt, lastReset].filter(Boolean).sort().pop();
+      let viewers = 0;
+      if (threshold) {
+        const { count } = await supabase
+          .from('list_views').select('*', { count: 'exact', head: true })
+          .eq('day', dayKey).gte('viewed_at', threshold);
+        viewers = count || 0;
+      }
+
+      const { count: waiting } = await supabase
+        .from('signups').select('*', { count: 'exact', head: true }).eq('day', dayKey);
+
+      if (roster.length > 0) {
+        const parts = [`רשימת ${dayLabel}: ${roster.length}/18`, `${viewers} ראו`];
+        if ((waiting || 0) > 0) parts.push(`${waiting} ממתינים`);
+        if (totalTargets > 0) parts.push(`תזכורות MVP: ${totalTargets}`);
+        digest = parts.join(' · ');
+      }
+    } catch (e) {
+      console.warn('[digest]', e);
+    }
   }
 
-  return res.status(200).json({ ok: true, rounds: openRounds.length, targets: totalTargets, sent: totalSent });
+  if (digest) {
+    await sendToAdmin('תקציר יום המשחק 📋', digest, '/Lists');
+  } else if (totalTargets > 0) {
+    await sendToAdmin('תזכורת מצטיין נשלחה ✅',
+      `נשלחו תזכורות ל-${totalTargets} שחקנים שעדיין לא בחרו מצטיין.`, '/GameHistory');
+  }
+
+  return res.status(200).json({ ok: true, rounds: openRounds.length, targets: totalTargets, sent: totalSent, digest });
 }

@@ -151,7 +151,7 @@ export default function Backup() {
 
   return (
     <div className="pb-10">
-      <PageHeader icon={Shield} title="גיבוי ושחזור" subtitle="ייצוא ושחזור נתוני המועדון" accent="emerald" />
+      <PageHeader icon={Shield} title="גיבוי ושחזור" subtitle="ייצוא ושחזור נתוני המועדון" accent="sky" />
 
       <div className="p-4 space-y-5">
         {/* Current data */}

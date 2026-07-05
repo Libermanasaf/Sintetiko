@@ -9,6 +9,11 @@ import { PageHeader, EmptyState, Skeleton } from '@/components/ui/lux';
 
 const DAY_FMT = (d) => new Date(d).toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
+// The admin's personal payment page (Bit/PayBox link). When set, the debt
+// reminder becomes one-tap-to-pay: tapping the push opens this link directly
+// (sw.js opens external URLs in a new window). Empty = plain reminder.
+const PAYMENT_LINK = '';
+
 export default function Debts() {
   const queryClient = useQueryClient();
   const [remindingId, setRemindingId] = useState(null); // `${round_id}_${player_id}` being reminded
@@ -50,8 +55,10 @@ export default function Debts() {
       const res = await callApi('/api/send-notification', {
         targetEmail: debt.email,
         title: 'תזכורת תשלום — סינתטיקו חולון 💰',
-        body: `היי ${debt.player_name}, טרם שילמת עבור המשחק בתאריך ${DAY_FMT(debt.round_date)}`,
-        url: '/',
+        body: PAYMENT_LINK
+          ? `היי ${debt.player_name}, טרם שילמת עבור המשחק בתאריך ${DAY_FMT(debt.round_date)} — לחץ לתשלום מהיר 💳`
+          : `היי ${debt.player_name}, טרם שילמת עבור המשחק בתאריך ${DAY_FMT(debt.round_date)}`,
+        url: PAYMENT_LINK || '/',
       });
       const pd = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(pd.error || `שגיאת שרת ${res.status}`);
