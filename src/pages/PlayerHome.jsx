@@ -87,7 +87,7 @@ function StatTile({ icon: Icon, value, suffix, label, delay, iconClass, valueCla
 
 // ─── Main page ─────────────────────────────────────────────────────────────
 export default function PlayerHome() {
-  const { user } = useAuth();
+  const { user, isRestricted } = useAuth();
   const [notifPermission, setNotifPermission] = useState(
     typeof Notification !== 'undefined' ? Notification.permission : 'denied'
   );
@@ -225,8 +225,9 @@ export default function PlayerHome() {
 
   return (
     <div className="flex flex-col items-center px-6 pt-6 pb-10 gap-6" dir="rtl">
-      {/* ── Active round CTA — shown whenever there's an unfinished round ── */}
-      {activeRound && (
+      {/* ── Active round CTA — hidden for restricted players (MatchDay is
+           blocked for them anyway) ── */}
+      {activeRound && !isRestricted && (
         <motion.div
           initial={{ opacity: 0, y: -12, scale: 0.96 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}

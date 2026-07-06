@@ -7,7 +7,7 @@ import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-d
 import PageNotFound from './lib/PageNotFound';
 import { ThemeProvider } from '@/lib/ThemeContext';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
-import { canAccessPage } from '@/lib/navConfig';
+import { canAccessPage, RESTRICTED_ALLOWED_PAGES } from '@/lib/navConfig';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -30,11 +30,16 @@ const LayoutWrapper = ({ children, currentPageName }) => Layout
 // is still initializing we render nothing to avoid a flash of denied content.
 // Players hitting an admin-only page are bounced to their home; admins to theirs.
 function RouteGuard({ pageKey, children }) {
-  const { role, isInitializing } = useAuth();
+  const { role, isInitializing, isRestricted } = useAuth();
   if (isInitializing) return null;
   if (!canAccessPage(pageKey, role)) {
     const home = role === 'player' ? '/PlayerHome' : '/Home';
     return <Navigate to={home} replace />;
+  }
+  // Restricted players are locked down to the personal area + signup
+  // (+ day lists, which themselves only show a roster they appear in).
+  if (role === 'player' && isRestricted && !RESTRICTED_ALLOWED_PAGES.has(pageKey)) {
+    return <Navigate to="/PlayerHome" replace />;
   }
   return children;
 }

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Trophy, Shuffle, History, BarChart3, Star, Swords } from 'lucide-react';
+import { Home, Trophy, Shuffle, History, BarChart3, Star, Swords, ClipboardCheck } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { useQuery } from '@tanstack/react-query';
 import { Round } from '@/api/entities';
@@ -21,12 +21,20 @@ const playerNavItems = [
   { label: 'דירוג', path: '/RatePlayers', icon: Star },
 ];
 
+// Restricted players keep only the personal area + signup.
+const restrictedNavItems = [
+  { label: 'בית', path: '/PlayerHome', icon: Home },
+  { label: 'רישום', path: '/SignupPage', icon: ClipboardCheck },
+];
+
 export default function BottomNav({ hidden = false }) {
   const location = useLocation();
-  const { role, loginMode } = useAuth();
+  const { role, loginMode, isRestricted } = useAuth();
   const isAdmin = role === 'admin';
   const showPlayerMenu = loginMode ? loginMode === 'player' : !isAdmin;
-  const visibleItems = showPlayerMenu ? playerNavItems : adminNavItems;
+  const visibleItems = showPlayerMenu
+    ? (isRestricted ? restrictedNavItems : playerNavItems)
+    : adminNavItems;
 
   // Shared cache — same key as MatchDay/PlayerHome, no extra fetch
   const { data: activeRound } = useQuery({
@@ -45,7 +53,7 @@ export default function BottomNav({ hidden = false }) {
         r.is_published === true
       ) || null;
     },
-    enabled: showPlayerMenu,
+    enabled: showPlayerMenu && !isRestricted,
     // BottomNav is mounted on every screen, so this poll runs the whole time the
     // app is open — the single biggest idle-month egress term. A published round
     // arrives via push + invalidateQueries, so 5 min is a safe fallback cadence.

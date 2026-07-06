@@ -10,6 +10,9 @@ export const AuthProvider = ({ children }) => {
   const [role, setRole] = useState(null);
   const [loginMode, setLoginMode] = useState(() => localStorage.getItem('sintetiko_login_mode') || null);
   const [isInitializing, setIsInitializing] = useState(true);
+  // Admin-imposed "restricted mode" (players.is_restricted): the player only
+  // gets the personal area + signup; the route guard and sidebar enforce it.
+  const [isRestricted, setIsRestricted] = useState(false);
 
   useEffect(() => {
     if (!supabase) {
@@ -43,7 +46,7 @@ export const AuthProvider = ({ children }) => {
         try {
           const res = await supabase
             .from('players')
-            .select('is_approved, name')
+            .select('is_approved, is_restricted, name')
             .eq('user_id', session.user.id)
             .maybeSingle();
           player = res.data;
@@ -71,16 +74,19 @@ export const AuthProvider = ({ children }) => {
           // Server answered: this user is genuinely not approved → log them out.
           setUser(null);
           setRole(null);
+          setIsRestricted(false);
           await supabase.auth.signOut();
         } else {
           // Approved player
           setUser(session.user);
           setRole('player');
+          setIsRestricted(!!player.is_restricted);
           recordDailyPresence(session.user, player.name);
         }
       } else {
         setUser(null);
         setRole(null);
+        setIsRestricted(false);
       }
       setIsInitializing(false);
     };
@@ -159,7 +165,7 @@ export const AuthProvider = ({ children }) => {
     if (userEmail !== 'libermanasaf@gmail.com') {
       const { data: player, error: playerError } = await supabase
         .from('players')
-        .select('is_approved, name')
+        .select('is_approved, is_restricted, name')
         .eq('user_id', user.id)
         .maybeSingle();
 
@@ -168,6 +174,7 @@ export const AuthProvider = ({ children }) => {
         return { error: { message: 'החשבון שלך ממתין לאישור מנהל המערכת (יו"ר ההתאחדות).' } };
       }
       playerName = player.name;
+      setIsRestricted(!!player.is_restricted);
     }
 
     const detectedRole = userEmail === 'libermanasaf@gmail.com' ? selectedRole : 'player';
@@ -284,7 +291,7 @@ export const AuthProvider = ({ children }) => {
   const isPlayer = role === 'player';
 
   return (
-    <AuthContext.Provider value={{ user, role, loginMode, login, register, logout, resetPassword, updatePassword, isAdmin, isPlayer, isInitializing }}>
+    <AuthContext.Provider value={{ user, role, loginMode, login, register, logout, resetPassword, updatePassword, isAdmin, isPlayer, isInitializing, isRestricted }}>
       {children}
     </AuthContext.Provider>
   );

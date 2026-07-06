@@ -37,9 +37,22 @@ function loadDay(day) {
 
 export default function DayListView({ day }) {
   const cfg = DAY_CONFIG[day];
-  const { role, loginMode, user } = useAuth();
+  const { role, loginMode, user, isRestricted } = useAuth();
   const isAdmin = role === 'admin' && loginMode !== 'player';
   const myEmail = (user?.email || '').toLowerCase();
+
+  // Restricted player: needs own name to verify they appear in the published
+  // roster (shared my-player cache — usually already fetched by PlayerHome).
+  const { data: myPlayer, isFetched: myPlayerFetched } = useQuery({
+    queryKey: ['my-player', user?.id, user?.email],
+    queryFn: async () => {
+      if (!supabase || !user) return null;
+      const { data } = await supabase
+        .from('players').select('*').eq('user_id', user.id).maybeSingle();
+      return data;
+    },
+    enabled: !isAdmin && isRestricted && !!user,
+  });
   const [waitingSignups, setWaitingSignups] = useState([]);
   const [loadingSignups, setLoadingSignups] = useState(true);
   const [viewers, setViewers] = useState(new Set()); // normalized names that viewed (admin)
@@ -144,6 +157,37 @@ export default function DayListView({ day }) {
     const id = setInterval(load, 60_000);
     return () => { cancelled = true; clearInterval(id); };
   }, [day, isAdmin]);
+
+  // Restricted player: the roster is visible ONLY if the admin approved them
+  // into it (their name in the published rows / extraConfirmed). Direct-URL
+  // defense — the sidebar already hides unapproved days.
+  const restrictedBlocked = (() => {
+    if (isAdmin || !isRestricted) return false;
+    if (cloudLoading || !myPlayerFetched) return false;      // still deciding
+    if (!listData || notPublished) return false;             // normal empty state covers it
+    const myName = (myPlayer?.name || '').trim();
+    return !(myName && listData.rows.some((n) => (n || '').trim() === myName));
+  })();
+
+  if (restrictedBlocked) {
+    return (
+      <div className="pb-10">
+        <PageHeader icon={ClipboardList} title={cfg.label} subtitle="רשימה"
+          accent={day === 'sunday' ? 'amber' : day === 'wednesday' ? 'sky' : 'emerald'} />
+        <div className="p-4">
+          <div className="rounded-2xl bg-slate-900/50 ring-1 ring-white/8 px-6 py-12 text-center">
+            <div className={`mx-auto mb-4 grid place-items-center w-14 h-14 rounded-2xl ${cfg.bg} ring-1 ${cfg.ring}`}>
+              <Clock className={`w-7 h-7 ${cfg.color}`} strokeWidth={2} />
+            </div>
+            <p className="text-white font-black text-lg">הרשימה אינה זמינה עבורך</p>
+            <p className="text-slate-400 text-sm font-bold mt-2 leading-relaxed">
+              אם תאושר לרשימת {cfg.label} — היא תופיע כאן.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Player hasn't been shown a published list yet (or it's still loading from
   // cloud). Show a clear "not published" state instead of leaking/empty-crashing.

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 import { motion } from 'framer-motion';
-import { UsersRound, Mail, Clock, Search, User, ShieldCheck, Bell, BellOff, X } from 'lucide-react';
+import { UsersRound, Mail, Clock, Search, User, ShieldCheck, Bell, BellOff, X, Ban, ShieldOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageHeader, EmptyState, Skeleton } from '@/components/ui/lux';
 
@@ -11,6 +11,31 @@ export default function RegisteredUsers() {
   const [isLoading, setIsLoading] = useState(true);
   const [query, setQuery] = useState('');
   const [pushFilter, setPushFilter] = useState('all'); // 'all' | 'subscribed' | 'unsubscribed'
+  const [togglingId, setTogglingId] = useState(null);
+
+  // Restricted mode: the player only keeps the personal area + signup; day
+  // lists appear for them only once they're in the published roster.
+  const toggleRestrict = async (u) => {
+    const next = !u.is_restricted;
+    setTogglingId(u.id);
+    try {
+      const { error } = await supabase
+        .from('players')
+        .update({ is_restricted: next })
+        .eq('id', u.id);
+      if (error) throw error;
+      setUsers((prev) => prev.map((x) => (x.id === u.id ? { ...x, is_restricted: next } : x)));
+      toast.success(
+        next
+          ? `${u.name} הוגבל — יראה רק את האזור האישי והרישום`
+          : `ההגבלה על ${u.name} הוסרה`
+      );
+    } catch (e) {
+      toast.error('שמירת ההגבלה נכשלה', { description: e.message });
+    } finally {
+      setTogglingId(null);
+    }
+  };
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -19,7 +44,7 @@ export default function RegisteredUsers() {
         const [{ data: playerData, error: playerErr }, { data: subData }] = await Promise.all([
           supabase
             .from('players')
-            .select('id, name, email, created_date, is_approved')
+            .select('id, name, email, created_date, is_approved, is_restricted')
             .not('user_id', 'is', null)
             .order('name', { ascending: true }),
           supabase
@@ -183,6 +208,12 @@ export default function RegisteredUsers() {
                             ממתין
                           </span>
                         )}
+                        {u.is_restricted && (
+                          <span className="inline-flex items-center gap-1 text-[0.6rem] font-black px-1.5 py-0.5 rounded-full bg-rose-500/15 ring-1 ring-rose-400/40 text-rose-300">
+                            <Ban className="w-2.5 h-2.5" strokeWidth={3} />
+                            מוגבל
+                          </span>
+                        )}
                       </div>
                       <div className="flex flex-col gap-1 mt-1.5 text-xs font-medium text-ink-2">
                         <span className="flex items-center gap-1.5">
@@ -214,6 +245,29 @@ export default function RegisteredUsers() {
                       }
                       {isSubscribed ? 'מנוי' : 'לא מנוי'}
                     </div>
+                  </div>
+
+                  {/* Restriction toggle */}
+                  <div className="mt-3 pt-3 border-t border-white/5 flex items-center justify-between gap-2">
+                    <span className="text-[0.62rem] font-bold text-ink-3 leading-tight">
+                      {u.is_restricted
+                        ? 'רואה רק את האזור האישי, הרישום ורשימות שאושר אליהן'
+                        : 'גישה מלאה לכל האפליקציה'}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => toggleRestrict(u)}
+                      disabled={togglingId === u.id}
+                      className={`flex items-center gap-1.5 shrink-0 min-h-[36px] px-3 rounded-lg text-[0.7rem] font-black ring-1 active:scale-95 disabled:opacity-50 transition-transform touch-manipulation ${
+                        u.is_restricted
+                          ? 'bg-emerald-500/15 ring-emerald-500/30 text-emerald-300'
+                          : 'bg-rose-500/12 ring-rose-500/30 text-rose-300'
+                      }`}
+                    >
+                      {u.is_restricted
+                        ? <><ShieldCheck className="w-3.5 h-3.5" strokeWidth={2.6} /> הסר הגבלה</>
+                        : <><ShieldOff className="w-3.5 h-3.5" strokeWidth={2.6} /> הגבל שימוש</>}
+                    </button>
                   </div>
                 </motion.div>
               );

@@ -48,6 +48,16 @@ export const adminGroups = [
   { key: 'system', name: 'ניהול המערכת', icon: Settings },
 ];
 
+// Pages a RESTRICTED player may still open: personal area + signup + the day
+// lists (the day-list page itself only shows a roster the player appears in)
+// + harmless utility pages. Everything else — Podium, MatchDay, history,
+// stats, ratings, complaints — is blocked by the RouteGuard and hidden from
+// the sidebar.
+export const RESTRICTED_ALLOWED_PAGES = new Set([
+  'PlayerHome', 'SignupPage', 'Notifications', 'InstallApp',
+  'DayListSunday', 'DayListWednesday', 'DayListThursday',
+]);
+
 // Pages reachable by a player (player flag set). Pages that exist in the router
 // but aren't listed here at all (e.g. MatchDay) are treated as allowed-for-all,
 // so internal navigation targets never get falsely blocked.
