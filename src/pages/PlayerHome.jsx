@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase';
 import { useQuery } from '@tanstack/react-query';
 import { motion, animate, useReducedMotion } from 'framer-motion';
 import GoldBurst from '@/components/GoldBurst';
-import { Star, Trophy, Zap, Activity, TrendingUp, ShieldQuestion, Users, Lock, ChevronLeft, Flame, Bell } from 'lucide-react';
+import { Star, Trophy, Zap, Activity, TrendingUp, ShieldQuestion, ShieldOff, Users, Lock, ChevronLeft, Flame, Bell } from 'lucide-react';
 import { Player, Round } from '@/api/entities';
 import { SectionTitle, EmptyState, Skeleton } from '@/components/ui/lux';
 import InstallBanner from '@/components/InstallBanner';
@@ -264,6 +264,27 @@ export default function PlayerHome() {
               <ChevronLeft className="w-5 h-5 text-amber-300 shrink-0" strokeWidth={2.6} />
             </div>
           </Link>
+        </motion.div>
+      )}
+
+      {/* ── Restricted-account notice — shown above the player card ── */}
+      {isRestricted && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full max-w-xs"
+        >
+          <div className="flex items-start gap-3 px-4 py-3 rounded-2xl bg-amber-500/10 ring-1 ring-amber-400/30">
+            <div className="grid place-items-center w-9 h-9 rounded-xl bg-amber-500/15 shrink-0">
+              <ShieldOff className="w-4 h-4 text-amber-300" strokeWidth={2.4} />
+            </div>
+            <div className="flex-1 min-w-0 text-right">
+              <p className="text-amber-200 font-black text-sm leading-tight">החשבון שלך הוגבל</p>
+              <p className="text-amber-200/70 text-[0.68rem] font-bold leading-relaxed mt-0.5">
+                החשבון הוגבל לפעולות מסוימות עקב חוסר שימוש. לפרטים נוספים פנה למנהל המועדון.
+              </p>
+            </div>
+          </div>
         </motion.div>
       )}
 
