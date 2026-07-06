@@ -12,6 +12,33 @@ import InstallBanner from '@/components/InstallBanner';
 import { pushSupported, subscribeToPush } from '@/lib/push';
 import { toast } from 'sonner';
 
+// ─── Gold soccer ball for the pack ceremony ────────────────────────────────
+// The pentagon pattern is what makes the fast spin actually visible —
+// a plain radial glow is rotation-symmetric and reads as static.
+function GoldBall({ size = 96 }) {
+  return (
+    <svg viewBox="0 0 100 100" width={size} height={size} aria-hidden="true">
+      <defs>
+        <radialGradient id="pkBall" cx="38%" cy="30%" r="75%">
+          <stop offset="0%" stopColor="#fff7d6" />
+          <stop offset="45%" stopColor="#fbbf24" />
+          <stop offset="100%" stopColor="#8a5208" />
+        </radialGradient>
+      </defs>
+      <circle cx="50" cy="50" r="47" fill="url(#pkBall)" />
+      <circle cx="50" cy="50" r="47" fill="none" stroke="#fde68a" strokeWidth="1.5" strokeOpacity="0.8" />
+      <g fill="#7c4a06" opacity="0.9">
+        {/* center pentagon */}
+        <path d="M50,36 L60.5,43.6 L56.5,55.9 L43.5,55.9 L39.5,43.6 Z" />
+        {/* five edge patches */}
+        {[0, 72, 144, 216, 288].map((a) => (
+          <path key={a} transform={`rotate(${a} 50 50)`} d="M50,4 L58,10 L55,19 L45,19 L42,10 Z" />
+        ))}
+      </g>
+    </svg>
+  );
+}
+
 // ─── Count-up number animation ─────────────────────────────────────────────
 function CountUp({ to, duration = 1.1, suffix = '' }) {
   const [val, setVal] = useState(0);
@@ -342,20 +369,29 @@ export default function PlayerHome() {
 
         {playCeremony && (
           <>
-            {/* the pack orb — charges up, then implodes just before the flash */}
+            {/* the gold ball — spins up fast, then the card bursts out of it */}
             <motion.div
               aria-hidden
-              className="absolute left-1/2 top-1/2 z-10 w-24 h-24 rounded-full pointer-events-none"
+              className="absolute left-1/2 top-1/2 z-10 w-24 h-24 pointer-events-none rounded-full"
               style={{
                 marginLeft: -48,
                 marginTop: -48,
-                background: 'radial-gradient(circle at 42% 36%, #fffbe8 0%, #fcd34d 38%, #b06f0a 68%, transparent 78%)',
                 boxShadow: '0 0 70px 28px rgba(251,191,36,0.55)',
               }}
               initial={{ opacity: 0, scale: 0.2 }}
-              animate={{ opacity: [0, 1, 1, 0], scale: [0.2, 0.85, 1.1, 0.4] }}
-              transition={{ duration: 1.15, times: [0, 0.25, 0.8, 1], ease: 'easeInOut' }}
-            />
+              animate={{ opacity: [0, 1, 1, 0], scale: [0.2, 0.95, 1.08, 0.4] }}
+              transition={{ duration: 1.15, times: [0, 0.22, 0.85, 1], ease: 'easeInOut' }}
+            >
+              {/* accelerating spin — a few full turns before the reveal */}
+              <motion.div
+                initial={{ rotate: 0 }}
+                animate={{ rotate: 1440 }}
+                transition={{ duration: 1.2, ease: [0.5, 0, 0.9, 0.4] }}
+                className="w-full h-full"
+              >
+                <GoldBall size={96} />
+              </motion.div>
+            </motion.div>
             {/* white-gold flash exactly as the card unfolds */}
             <motion.div
               aria-hidden
@@ -386,17 +422,17 @@ export default function PlayerHome() {
 
         <motion.div
           initial={playCeremony
-            ? { opacity: 0, rotateY: 90, scale: 1.14 }
+            ? { opacity: 0, rotateY: 90, scale: 0.55 }
             : { opacity: 0, y: 36, scale: 0.84 }}
           animate={{ opacity: 1, y: 0, scale: 1, rotateY: 0 }}
           transition={playCeremony
             ? {
-                // The card unfolds IN PLACE out of the light: a single clean
-                // 90°→0 sweep (no edge-on flicker), scale settling with a
-                // gentle spring — everything lands together.
+                // The card grows OUT of the spinning ball: a single clean
+                // 90°→0 unfold (no edge-on flicker) while scaling up from
+                // the ball's size — everything lands together.
                 opacity: { delay: 1.15, duration: 0.1 },
                 rotateY: { delay: 1.15, duration: 0.55, ease: [0.22, 1, 0.36, 1] },
-                scale: { delay: 1.15, type: 'spring', damping: 14, stiffness: 160 },
+                scale: { delay: 1.15, type: 'spring', damping: 14, stiffness: 170 },
               }
             : { duration: 0.7, type: 'spring', bounce: 0.3 }}
           style={{ transformPerspective: 900 }}
