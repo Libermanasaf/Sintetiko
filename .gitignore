@@ -31,3 +31,10 @@ dist-ssr
 *.sw?
 
 .env
+# Local tooling & one-off maintenance scripts — never push (public repo;
+# the one-offs contain player names/emails)
+.claude/
+premium-web-architect.skill
+scripts/open-round-*.cjs
+scripts/send-standby-push.cjs
+scripts/test-publish-*.mjs
