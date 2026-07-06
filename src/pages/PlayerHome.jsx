@@ -342,7 +342,7 @@ export default function PlayerHome() {
 
         {playCeremony && (
           <>
-            {/* the glowing pack orb */}
+            {/* the pack orb — charges up, then implodes just before the flash */}
             <motion.div
               aria-hidden
               className="absolute left-1/2 top-1/2 z-10 w-24 h-24 rounded-full pointer-events-none"
@@ -353,40 +353,61 @@ export default function PlayerHome() {
                 boxShadow: '0 0 70px 28px rgba(251,191,36,0.55)',
               }}
               initial={{ opacity: 0, scale: 0.2 }}
-              animate={{ opacity: [0, 1, 1, 0], scale: [0.2, 1, 1.2, 2.8] }}
-              transition={{ duration: 1.3, times: [0, 0.3, 0.75, 1], ease: 'easeInOut' }}
+              animate={{ opacity: [0, 1, 1, 0], scale: [0.2, 0.85, 1.1, 0.4] }}
+              transition={{ duration: 1.15, times: [0, 0.25, 0.8, 1], ease: 'easeInOut' }}
             />
-            {/* white-gold flash at the moment of reveal */}
+            {/* white-gold flash exactly as the card unfolds */}
             <motion.div
               aria-hidden
               className="fixed inset-0 z-20 pointer-events-none"
               style={{ background: 'radial-gradient(circle at 50% 45%, rgba(255,250,225,0.95), rgba(251,191,36,0.35) 40%, transparent 72%)' }}
               initial={{ opacity: 0 }}
               animate={{ opacity: [0, 0, 1, 0] }}
-              transition={{ duration: 1.5, times: [0, 0.7, 0.82, 1], ease: 'easeOut' }}
+              transition={{ duration: 1.45, times: [0, 0.72, 0.82, 1], ease: 'easeOut' }}
             />
-            {/* confetti as the card lands */}
+            {/* afterglow behind the revealed card, cooling off */}
+            <motion.div
+              aria-hidden
+              className="absolute left-1/2 top-1/2 pointer-events-none w-72 h-72 rounded-full"
+              style={{
+                marginLeft: -144,
+                marginTop: -144,
+                background: 'radial-gradient(circle, rgba(251,191,36,0.5), transparent 65%)',
+                filter: 'blur(30px)',
+              }}
+              initial={{ opacity: 0, scale: 0.4 }}
+              animate={{ opacity: [0, 0, 0.9, 0], scale: [0.4, 0.4, 1.25, 1.8] }}
+              transition={{ duration: 2.2, times: [0, 0.5, 0.62, 1], ease: 'easeOut' }}
+            />
+            {/* confetti as the card settles */}
             <GoldBurst delay={1.7} count={30} className="absolute inset-x-0 top-1/2 z-30" />
           </>
         )}
 
         <motion.div
           initial={playCeremony
-            ? { opacity: 0, y: 170, scale: 0.3, rotateY: 540 }
+            ? { opacity: 0, rotateY: 90, scale: 1.14 }
             : { opacity: 0, y: 36, scale: 0.84 }}
           animate={{ opacity: 1, y: 0, scale: 1, rotateY: 0 }}
           transition={playCeremony
             ? {
-                delay: 1.05, type: 'spring', damping: 15, stiffness: 90,
-                opacity: { delay: 1.05, duration: 0.25 },
-                rotateY: { delay: 1.05, duration: 1.0, ease: [0.16, 1, 0.3, 1] },
+                // The card unfolds IN PLACE out of the light: a single clean
+                // 90°→0 sweep (no edge-on flicker), scale settling with a
+                // gentle spring — everything lands together.
+                opacity: { delay: 1.15, duration: 0.1 },
+                rotateY: { delay: 1.15, duration: 0.55, ease: [0.22, 1, 0.36, 1] },
+                scale: { delay: 1.15, type: 'spring', damping: 14, stiffness: 160 },
               }
             : { duration: 0.7, type: 'spring', bounce: 0.3 }}
           style={{ transformPerspective: 900 }}
         >
         <motion.div
           animate={{ y: [0, -9, 0] }}
-          transition={{ duration: 4.6, repeat: Infinity, ease: 'easeInOut' }}
+          transition={{
+            duration: 4.6, repeat: Infinity, ease: 'easeInOut',
+            // Hold the idle float until the ceremony fully settles.
+            delay: playCeremony ? 2.3 : 0,
+          }}
           style={{ filter: 'drop-shadow(0 24px 56px rgba(200,150,25,0.5))' }}
         >
           <div
