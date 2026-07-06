@@ -34,6 +34,21 @@ export const AuthProvider = ({ children }) => {
           setUser(session.user);
           const savedMode = localStorage.getItem('sintetiko_login_mode');
           setRole(savedMode === 'player' ? 'player' : 'admin');
+          // Admin browsing in player mode honors their linked player's
+          // restriction — so the admin can preview exactly what a restricted
+          // player sees. Admin mode itself is never restricted.
+          if (savedMode === 'player') {
+            try {
+              const { data: p } = await supabase
+                .from('players')
+                .select('is_restricted')
+                .eq('user_id', session.user.id)
+                .maybeSingle();
+              setIsRestricted(!!p?.is_restricted);
+            } catch { setIsRestricted(false); }
+          } else {
+            setIsRestricted(false);
+          }
           recordDailyPresence(session.user, 'מנהל המערכת');
           setIsInitializing(false);
           return;
@@ -175,6 +190,21 @@ export const AuthProvider = ({ children }) => {
       }
       playerName = player.name;
       setIsRestricted(!!player.is_restricted);
+    }
+
+    // Admin logging in as a player: apply their linked player's restriction
+    // (preview parity with real restricted players); admin mode stays free.
+    if (userEmail === 'libermanasaf@gmail.com') {
+      if (selectedRole === 'player') {
+        const { data: p } = await supabase
+          .from('players')
+          .select('is_restricted')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        setIsRestricted(!!p?.is_restricted);
+      } else {
+        setIsRestricted(false);
+      }
     }
 
     const detectedRole = userEmail === 'libermanasaf@gmail.com' ? selectedRole : 'player';
