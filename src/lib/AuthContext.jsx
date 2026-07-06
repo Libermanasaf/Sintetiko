@@ -174,6 +174,8 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem('sintetiko_login_mode', selectedRole);
     setLoginMode(selectedRole);
     setRole(detectedRole);
+    // A deliberate login re-arms the player-card pack-opening ceremony.
+    localStorage.removeItem('sintetiko_card_ceremony_at');
     // Record this deliberate login (best-effort) for the admin activity screen.
     recordLogin(user, playerName);
     return { error: null };
@@ -267,6 +269,8 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     localStorage.removeItem('sintetiko_login_mode');
+    // Logging out re-arms the pack-opening ceremony for the next login.
+    localStorage.removeItem('sintetiko_card_ceremony_at');
     setLoginMode(null);
     if (supabase) {
       await supabase.auth.signOut();
