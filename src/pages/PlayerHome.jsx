@@ -147,16 +147,22 @@ export default function PlayerHome() {
     refetchOnWindowFocus: true,
   });
 
-  // ── Pack-opening ceremony — plays once per session, skipped under
-  // reduced motion. Re-entering the page later gets the regular entry.
+  // ── Pack-opening ceremony — replays after 30+ minutes away, so every
+  // real "app open" gets the show but in-session navigation doesn't.
+  // (sessionStorage was wrong here: installed PWAs restore the session
+  // after exit, so the ceremony never replayed.) Skipped under reduced motion.
+  const CEREMONY_COOLDOWN_MS = 30 * 60 * 1000;
   const reduceMotion = useReducedMotion();
   const [ceremonyArmed] = useState(() => {
-    try { return !sessionStorage.getItem('sintetiko_card_ceremony'); } catch { return true; }
+    try {
+      const last = Number(localStorage.getItem('sintetiko_card_ceremony_at') || 0);
+      return Date.now() - last > CEREMONY_COOLDOWN_MS;
+    } catch { return true; }
   });
   const playCeremony = ceremonyArmed && !reduceMotion && !!player;
   useEffect(() => {
     if (playCeremony) {
-      try { sessionStorage.setItem('sintetiko_card_ceremony', '1'); } catch { /* private mode */ }
+      try { localStorage.setItem('sintetiko_card_ceremony_at', String(Date.now())); } catch { /* private mode */ }
     }
   }, [playCeremony]);
 
