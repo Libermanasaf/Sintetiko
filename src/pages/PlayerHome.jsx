@@ -281,7 +281,10 @@ export default function PlayerHome() {
             <div className="flex-1 min-w-0 text-right">
               <p className="text-amber-200 font-black text-sm leading-tight">החשבון שלך הוגבל</p>
               <p className="text-amber-200/70 text-[0.68rem] font-bold leading-relaxed mt-0.5">
-                החשבון הוגבל לפעולות מסוימות עקב חוסר שימוש. לפרטים נוספים פנה למנהל המועדון.
+                החשבון הוגבל לפעולות מסוימות עקב חוסר שימוש.
+              </p>
+              <p className="text-amber-300/90 text-[0.68rem] font-black leading-relaxed mt-1">
+                להסרת ההגבלה אנא פנה למנהל המערכת.
               </p>
             </div>
           </div>
