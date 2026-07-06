@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Trophy, Shuffle, History, BarChart3, Star, Swords, ClipboardCheck } from 'lucide-react';
+import { Home, Trophy, Shuffle, History, BarChart3, Star, Swords, ClipboardCheck, Briefcase } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { useQuery } from '@tanstack/react-query';
 import { Round } from '@/api/entities';
@@ -21,10 +21,11 @@ const playerNavItems = [
   { label: 'דירוג', path: '/RatePlayers', icon: Star },
 ];
 
-// Restricted players keep only the personal area + signup.
+// Restricted players keep only the personal area + signup + professionals.
 const restrictedNavItems = [
   { label: 'בית', path: '/PlayerHome', icon: Home },
   { label: 'רישום', path: '/SignupPage', icon: ClipboardCheck },
+  { label: 'בעלי מקצוע', path: '/Professionals', icon: Briefcase },
 ];
 
 export default function BottomNav({ hidden = false }) {
