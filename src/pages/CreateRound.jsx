@@ -21,6 +21,9 @@ export default function CreateRound() {
   const [goalkeepers, setGoalkeepers] = useState({});
   const [openingTeams, setOpeningTeams] = useState(null);
   const [showQuickModal, setShowQuickModal] = useState(false);
+  // Bumped on every reshuffle so the preview re-runs its entry animation —
+  // visible feedback even when the optimizer lands on a similar arrangement.
+  const [shuffleTick, setShuffleTick] = useState(0);
 
   const { data: players = [], isLoading } = useQuery({
     queryKey: ['players'],
@@ -123,9 +126,10 @@ export default function CreateRound() {
   };
 
   const handleReshufflePreview = () => {
-    // Pass the current arrangement so the reshuffle visibly differs from it.
-    const newTeams = balanceTeams(teams.flat(), teams.map((t) => [...t].sort().join(',')).sort().join('|'));
-    setTeams(newTeams);
+    // Pass the current arrangement (as id arrays — sameAs expects team arrays,
+    // not a precomputed key) so the reshuffle visibly differs from it.
+    setTeams(balanceTeams(teams.flat(), teams));
+    setShuffleTick((t) => t + 1);
   };
 
   const handleSaveTeams = () => {
@@ -281,6 +285,7 @@ export default function CreateRound() {
               key="preview"
               teams={teams}
               players={players}
+              shuffleTick={shuffleTick}
               onSave={handleSaveTeams}
               onReshuffle={handleReshufflePreview}
               onTeamsChange={setTeams}

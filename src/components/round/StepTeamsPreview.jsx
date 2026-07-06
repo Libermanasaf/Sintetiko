@@ -15,7 +15,7 @@ const TEAM_COLORS = [
 
 const TEAM_NAMES = ['הצהובים', 'הכחולים', 'הכתומים', 'הצהובים', 'הכחולים', 'הכתומים'];
 
-export default function StepTeamsPreview({ teams, players, onSave, onReshuffle, onTeamsChange }) {
+export default function StepTeamsPreview({ teams, players, shuffleTick = 0, onSave, onReshuffle, onTeamsChange }) {
 
   const handleDragEnd = (result) => {
     const { source, destination } = result;
@@ -49,7 +49,14 @@ export default function StepTeamsPreview({ teams, players, onSave, onReshuffle, 
 
       {/* Teams Grid — always one column per team, but everything scales down on mobile */}
       <DragDropContext onDragEnd={handleDragEnd}>
-        <div className={`grid gap-1.5 sm:gap-4 ${teams.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+        {/* keyed by shuffleTick — each reshuffle re-runs the entry animation */}
+        <motion.div
+          key={shuffleTick}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.28, ease: 'easeOut' }}
+          className={`grid gap-1.5 sm:gap-4 ${teams.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}
+        >
           {teams.map((teamPlayerIds, teamIndex) => {
             const color = TEAM_COLORS[teamIndex % TEAM_COLORS.length];
             const teamRating = teamPlayerIds.reduce((sum, playerId) => {
@@ -121,7 +128,7 @@ export default function StepTeamsPreview({ teams, players, onSave, onReshuffle, 
               </div>
             );
           })}
-        </div>
+        </motion.div>
       </DragDropContext>
 
       {/* Action Buttons */}

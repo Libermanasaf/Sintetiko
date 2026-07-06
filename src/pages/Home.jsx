@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { Trophy, Users, Shuffle, History, Sun, Moon, Send, ChevronLeft, Plus, Check, CheckCircle2, Flame } from 'lucide-react';
+import { Trophy, Users, History, Sun, Moon, Send, ChevronLeft, Plus, Check, CheckCircle2, Flame, UserCheck, MessageSquare, Coins } from 'lucide-react';
 import InstallBanner from '@/components/InstallBanner';
 import { useTheme } from '@/lib/ThemeContext';
 import { useAuth } from '@/lib/AuthContext';
@@ -12,10 +12,12 @@ import { Round } from '@/api/entities';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { toast } from 'sonner';
-import { LuxCard, Eyebrow, GoldButton } from '@/components/ui/lux';
+import { LuxCard, Eyebrow, GoldButton, StatTile } from '@/components/ui/lux';
+import { supabase } from '@/lib/supabase';
 
 const TEAM_NAMES = ['הצהובים', 'הכחולים', 'הכתומים'];
 const TEAM_DOT = ['bg-yellow-400', 'bg-blue-400', 'bg-orange-400'];
+const TEAM_TEXT = ['text-yellow-300', 'text-blue-300', 'text-orange-300'];
 
 const QUICK_ACCENT = {
   amber:   { tile: 'bg-amber-500/15 text-amber-300 ring-amber-500/30', glow: 'bg-amber-500/15', sub: 'text-amber-300/70' },
@@ -45,6 +47,37 @@ function QuickCard({ to, icon: Icon, title, subtitle, accent = 'amber', delay })
           <p className={`relative text-[0.7rem] mt-0.5 font-bold ${a.sub}`}>{subtitle}</p>
         </Link>
       </LuxCard>
+    </motion.div>
+  );
+}
+
+const TASK_TONE = {
+  sky:   'bg-sky-500/15 text-sky-300 ring-sky-500/30',
+  rose:  'bg-rose-500/15 text-rose-300 ring-rose-500/30',
+  amber: 'bg-amber-500/15 text-amber-300 ring-amber-500/30',
+};
+
+// One actionable "needs your attention" row on the admin dashboard.
+function TaskRow({ to, icon: Icon, label, sub, count, tone = 'amber', delay = 0 }) {
+  const t = TASK_TONE[tone];
+  return (
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay }}>
+      <Link
+        to={to}
+        className="flex items-center gap-3 rounded-xl bg-slate-900/70 ring-1 ring-white/8 px-3.5 py-3 active:scale-[0.98] transition-transform touch-manipulation"
+      >
+        <span className={`grid place-items-center w-10 h-10 rounded-xl ring-1 shrink-0 ${t}`}>
+          <Icon className="w-5 h-5" strokeWidth={2.3} />
+        </span>
+        <div className="flex-1 min-w-0">
+          <p className="text-white text-sm font-black leading-tight">{label}</p>
+          {sub && <p className="text-ink-3 text-[0.68rem] font-bold mt-0.5">{sub}</p>}
+        </div>
+        <span className={`grid place-items-center min-w-[28px] h-7 px-1.5 rounded-lg ring-1 font-black text-sm tnum shrink-0 ${t}`}>
+          {count}
+        </span>
+        <ChevronLeft className="w-4 h-4 text-slate-600 shrink-0" strokeWidth={2.5} />
+      </Link>
     </motion.div>
   );
 }
@@ -178,6 +211,62 @@ export default function Home() {
     refetchOnWindowFocus: true,
     refetchInterval: 5 * 60_000,
   });
+
+  // ── Admin dashboard data ─────────────────────────────────────────────
+  // Egress-safe: head-count queries return zero rows, the champion select is a
+  // single 2-column row, and complaints/debts share the exact cache of their
+  // own pages. No refetchInterval anywhere.
+  const { data: complaints = [], isFetched: complaintsReady } = useQuery({
+    queryKey: ['complaints'],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('admin_complaints');
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: isAdmin && !!supabase,
+    staleTime: 30_000,
+  });
+
+  const { data: debts = [], isFetched: debtsReady } = useQuery({
+    queryKey: ['debts'],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('unpaid_debts');
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: isAdmin && !!supabase,
+    staleTime: 60_000,
+  });
+
+  const { data: snapshot, isFetched: snapshotReady } = useQuery({
+    queryKey: ['admin-home-snapshot'],
+    queryFn: async () => {
+      const [pending, squad, rounds, champ] = await Promise.all([
+        supabase.from('players').select('id', { count: 'exact', head: true })
+          .eq('is_approved', false).not('email', 'is', null),
+        supabase.from('players').select('id', { count: 'exact', head: true }),
+        supabase.from('rounds').select('id', { count: 'exact', head: true }),
+        supabase.from('rounds').select('winningTeam,date')
+          .not('winningTeam', 'is', null).order('date', { ascending: false }).limit(1),
+      ]);
+      return {
+        pendingApprovals: pending.count || 0,
+        squadSize: squad.count || 0,
+        totalRounds: rounds.count || 0,
+        lastChampion: champ.data?.[0] || null,
+      };
+    },
+    enabled: isAdmin && !!supabase,
+    staleTime: 120_000,
+    refetchOnWindowFocus: true,
+  });
+
+  const openComplaints = complaints.filter((c) => !c.reply).length;
+  const openDebts = debts.length;
+  const debtsTotal = debts.reduce((s, d) => s + (d.amount || 0), 0);
+  const pendingApprovals = snapshot?.pendingApprovals || 0;
+  const dashReady = complaintsReady && debtsReady && snapshotReady;
+  const allClear = dashReady && pendingApprovals === 0 && openComplaints === 0 && openDebts === 0;
 
   const handlePublish = async () => {
     if (publishing || published) return;
@@ -443,17 +532,82 @@ export default function Home() {
           </AnimatePresence>
         )}
 
-        {/* ── Quick access grid ─────────────────────────────────────── */}
-        <div className="mt-7 grid grid-cols-2 gap-3" dir="rtl">
-          <QuickCard to={createPageUrl('Podium')} icon={Trophy} title="הפודיום" subtitle="טבלת המובילים" accent="amber" delay={0.85} />
-          {isAdmin && (
-            <QuickCard to={createPageUrl('Players')} icon={Users} title="סגל שחקנים" subtitle="ניהול הסגל" accent="emerald" delay={0.92} />
-          )}
-          {isAdmin && (
-            <QuickCard to={createPageUrl('CreateRound')} icon={Shuffle} title="יצירת מחזור" subtitle="הגרלת קבוצות" accent="blue" delay={0.99} />
-          )}
-          <QuickCard to={createPageUrl('GameHistory')} icon={History} title="יומן משחקים" subtitle="היסטוריה ותוצאות" accent="slate" delay={1.06} />
-        </div>
+        {/* ── Admin dashboard — live club status (nav lives in the sidebar
+             and bottom bar; no duplicated link cards here) ── */}
+        {isAdmin ? (
+          <div className="mt-7 space-y-3" dir="rtl">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.85 }}>
+              <Eyebrow>מרכז הבקרה</Eyebrow>
+            </motion.div>
+
+            {/* Actionable alerts — rendered only when something needs attention */}
+            {pendingApprovals > 0 && (
+              <TaskRow
+                to={createPageUrl('UserApprovals')} icon={UserCheck} tone="sky" delay={0.9}
+                label="בקשות הרשמה ממתינות" sub="שחקנים מחכים לאישור שלך" count={pendingApprovals}
+              />
+            )}
+            {openComplaints > 0 && (
+              <TaskRow
+                to={createPageUrl('ComplaintsBox')} icon={MessageSquare} tone="rose" delay={0.95}
+                label="פניות ללא מענה" sub="בתיבת התלונות" count={openComplaints}
+              />
+            )}
+            {openDebts > 0 && (
+              <TaskRow
+                to={createPageUrl('Debts')} icon={Coins} tone="amber" delay={1.0}
+                label="חובות פתוחים" sub={`סה״כ ${debtsTotal} ₪`} count={openDebts}
+              />
+            )}
+            {allClear && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9 }}
+                className="flex items-center gap-3 rounded-xl bg-emerald-500/8 ring-1 ring-emerald-500/25 px-3.5 py-3"
+              >
+                <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" strokeWidth={2.4} />
+                <p className="text-emerald-200/90 text-sm font-bold">אין משימות פתוחות — הכול תחת שליטה</p>
+              </motion.div>
+            )}
+
+            {/* Club snapshot */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.05 }}
+              className="grid grid-cols-2 gap-2.5"
+            >
+              <StatTile value={snapshot?.squadSize ?? '—'} label="שחקנים בסגל" icon={Users} tone="white" />
+              <StatTile value={snapshot?.totalRounds ?? '—'} label="מחזורים עד היום" icon={History} tone="gold" />
+            </motion.div>
+
+            {snapshot?.lastChampion && (
+              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.12 }}>
+                <Link
+                  to={createPageUrl('GameHistory')}
+                  className="flex items-center gap-3 rounded-xl bg-slate-900/70 ring-1 ring-white/8 px-3.5 py-3 active:scale-[0.98] transition-transform touch-manipulation"
+                >
+                  <span className="grid place-items-center w-10 h-10 rounded-xl st-foil shrink-0">
+                    <Trophy className="w-5 h-5" strokeWidth={2.4} />
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-ink-3 text-[0.68rem] font-bold">אלופת המחזור האחרון</p>
+                    <p className={`font-black text-base leading-tight ${TEAM_TEXT[snapshot.lastChampion.winningTeam] || 'text-white'}`}>
+                      {TEAM_NAMES[snapshot.lastChampion.winningTeam] ?? `קבוצה ${snapshot.lastChampion.winningTeam + 1}`}
+                    </p>
+                  </div>
+                  <span className="text-ink-3 text-xs font-bold tnum shrink-0">
+                    {format(new Date(snapshot.lastChampion.date), 'd/M', { locale: he })}
+                  </span>
+                  <ChevronLeft className="w-4 h-4 text-slate-600 shrink-0" strokeWidth={2.5} />
+                </Link>
+              </motion.div>
+            )}
+          </div>
+        ) : (
+          /* Player fallback — Home is admin-guarded in nav; kept for safety */
+          <div className="mt-7 grid grid-cols-2 gap-3" dir="rtl">
+            <QuickCard to={createPageUrl('Podium')} icon={Trophy} title="הפודיום" subtitle="טבלת המובילים" accent="amber" delay={0.85} />
+            <QuickCard to={createPageUrl('GameHistory')} icon={History} title="יומן משחקים" subtitle="היסטוריה ותוצאות" accent="slate" delay={1.06} />
+          </div>
+        )}
       </div>
     </div>
   );

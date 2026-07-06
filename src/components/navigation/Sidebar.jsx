@@ -1,10 +1,12 @@
-import React from 'react'; // v2
+import React, { useState, useEffect } from 'react'; // v2
 import { Link, useLocation } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { X, LogOut } from 'lucide-react';
+import { X, LogOut, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/lib/AuthContext';
-import { menuItems } from '@/lib/navConfig';
+import { menuItems, adminGroups } from '@/lib/navConfig';
+
+const GROUPS_STORAGE_KEY = 'sb_admin_groups';
 
 function SidebarCrest() {
   return (
@@ -43,6 +45,79 @@ export default function Sidebar({ isOpen, onClose }) {
   const visibleItems = menuItems.filter((item) =>
     showPlayerView ? item.player : item.admin
   );
+
+  // Admin view only: collapse grouped items under section headers. Player view
+  // stays a flat list. Open/closed state survives reloads via localStorage.
+  const grouped = !showPlayerView;
+  const coreItems = grouped ? visibleItems.filter((i) => !i.group) : visibleItems;
+  const [openGroups, setOpenGroups] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(GROUPS_STORAGE_KEY) || 'null');
+      if (saved && typeof saved === 'object') return saved;
+    } catch { /* corrupt storage — fall back to defaults */ }
+    return { club: true, money: false, system: false };
+  });
+
+  const toggleGroup = (key) => {
+    setOpenGroups((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      try { localStorage.setItem(GROUPS_STORAGE_KEY, JSON.stringify(next)); } catch { /* private mode */ }
+      return next;
+    });
+  };
+
+  // When the drawer opens, make sure the current page's section is expanded so
+  // the highlighted item is never hidden inside a closed group.
+  useEffect(() => {
+    if (!isOpen || !grouped) return;
+    const active = visibleItems.find(
+      (i) => i.group && location.pathname === createPageUrl(i.page)
+    );
+    if (active && !openGroups[active.group]) {
+      setOpenGroups((prev) => ({ ...prev, [active.group]: true }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
+
+  const renderNavItem = (item) => {
+    const Icon = item.icon;
+    const to = createPageUrl(item.page);
+    const isActive = location.pathname === to;
+
+    return (
+      <Link
+        key={item.page}
+        to={to}
+        onClick={onClose}
+        aria-current={isActive ? 'page' : undefined}
+        className={`relative flex items-center gap-3.5 px-3.5 py-3 rounded-xl transition-colors duration-150 ${
+          isActive
+            ? 'bg-gradient-to-l from-amber-500/20 to-amber-500/5 ring-1 ring-amber-400/30'
+            : 'ring-1 ring-transparent active:bg-white/5'
+        }`}
+      >
+        {isActive && (
+          <span className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-7 rounded-full bg-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.7)]" />
+        )}
+        <span
+          className={`grid place-items-center w-9 h-9 rounded-lg shrink-0 ${
+            isActive
+              ? 'bg-amber-400/15 text-amber-300 ring-1 ring-amber-400/30'
+              : 'bg-slate-800/80 text-slate-400'
+          }`}
+        >
+          <Icon className="w-[18px] h-[18px]" strokeWidth={2.2} />
+        </span>
+        <span
+          className={`text-[0.95rem] ${
+            isActive ? 'text-white font-black' : 'text-slate-300 font-bold'
+          }`}
+        >
+          {item.name}
+        </span>
+      </Link>
+    );
+  };
 
   return (
     <AnimatePresence>
@@ -104,43 +179,56 @@ export default function Sidebar({ isOpen, onClose }) {
               className="relative flex-1 overflow-y-auto st-no-scrollbar px-3.5 pb-3 space-y-1"
               aria-label="ניווט ראשי"
             >
-              {visibleItems.map((item) => {
-                const Icon = item.icon;
-                const to = createPageUrl(item.page);
-                const isActive = location.pathname === to;
+              {coreItems.map(renderNavItem)}
+
+              {grouped && adminGroups.map((g) => {
+                const items = visibleItems.filter((i) => i.group === g.key);
+                if (items.length === 0) return null;
+                const open = !!openGroups[g.key];
+                const GIcon = g.icon;
+                const hasActive = items.some(
+                  (i) => location.pathname === createPageUrl(i.page)
+                );
 
                 return (
-                  <Link
-                    key={item.page}
-                    to={to}
-                    onClick={onClose}
-                    aria-current={isActive ? 'page' : undefined}
-                    className={`relative flex items-center gap-3.5 px-3.5 py-3 rounded-xl transition-colors duration-150 ${
-                      isActive
-                        ? 'bg-gradient-to-l from-amber-500/20 to-amber-500/5 ring-1 ring-amber-400/30'
-                        : 'ring-1 ring-transparent active:bg-white/5'
-                    }`}
-                  >
-                    {isActive && (
-                      <span className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-7 rounded-full bg-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.7)]" />
-                    )}
-                    <span
-                      className={`grid place-items-center w-9 h-9 rounded-lg shrink-0 ${
-                        isActive
-                          ? 'bg-amber-400/15 text-amber-300 ring-1 ring-amber-400/30'
-                          : 'bg-slate-800/80 text-slate-400'
-                      }`}
+                  <div key={g.key}>
+                    <button
+                      type="button"
+                      onClick={() => toggleGroup(g.key)}
+                      aria-expanded={open}
+                      className="w-full flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl ring-1 ring-transparent active:bg-white/5 transition-colors duration-150"
                     >
-                      <Icon className="w-[18px] h-[18px]" strokeWidth={2.2} />
-                    </span>
-                    <span
-                      className={`text-[0.95rem] ${
-                        isActive ? 'text-white font-black' : 'text-slate-300 font-bold'
-                      }`}
-                    >
-                      {item.name}
-                    </span>
-                  </Link>
+                      <span className="grid place-items-center w-9 h-9 rounded-lg shrink-0 bg-slate-800/80 text-amber-300/80">
+                        <GIcon className="w-[18px] h-[18px]" strokeWidth={2.2} />
+                      </span>
+                      <span className="flex-1 text-right text-[0.82rem] font-black tracking-wide text-amber-300/90">
+                        {g.name}
+                      </span>
+                      {!open && hasActive && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.8)] shrink-0" />
+                      )}
+                      <span className="text-ink-3 text-[0.62rem] font-bold tnum shrink-0">{items.length}</span>
+                      <ChevronDown
+                        className={`w-4 h-4 text-slate-500 shrink-0 transition-transform duration-200 ${open ? '' : 'rotate-90'}`}
+                        strokeWidth={2.4}
+                      />
+                    </button>
+                    <AnimatePresence initial={false}>
+                      {open && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.22, ease: 'easeInOut' }}
+                          className="overflow-hidden"
+                        >
+                          <div className="space-y-1 pt-0.5 pb-1 mr-6 pr-1.5 border-r border-white/8">
+                            {items.map(renderNavItem)}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
                 );
               })}
             </nav>

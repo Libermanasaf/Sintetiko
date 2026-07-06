@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, ArrowRight, Trophy, Target, Plus, Minus, X, Star, Lock, Check } from 'lucide-react';
+import { User, ArrowRight, Trophy, Target, Plus, Minus, X, Star, Lock, Check, Crown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
@@ -528,6 +528,14 @@ export default function MatchDay() {
 
   const openingIdx = round.openingTeams || [];
 
+  // Leading team (unique max wins > 0) gets a crown on its lineup header.
+  const winsByTeam = round.teams.map((_, i) => round.teamWins?.[i] ?? 0);
+  const maxTeamWins = Math.max(...winsByTeam);
+  const leadingTeam =
+    maxTeamWins > 0 && winsByTeam.filter((w) => w === maxTeamWins).length === 1
+      ? winsByTeam.indexOf(maxTeamWins)
+      : -1;
+
   return (
     <div className="pb-28" dir="rtl">
       {/* Sticky header */}
@@ -598,20 +606,29 @@ export default function MatchDay() {
         {openingIdx.length >= 2 && (
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
             <SectionTitle icon={Trophy} className="mb-3">משחק פותח</SectionTitle>
-            <LuxCard accent="amber">
-              <div className="p-3.5">
-                <div className="flex items-center gap-3">
-                  <div className={`flex-1 py-3.5 rounded-xl ring-1 text-center ${teamOf(openingIdx[0]).tint}`}>
-                    <span className={`font-black text-lg ${teamOf(openingIdx[0]).text}`}>
-                      {teamOf(openingIdx[0]).name}
-                    </span>
-                  </div>
-                  <span className="st-gold-text font-black text-base shrink-0">VS</span>
-                  <div className={`flex-1 py-3.5 rounded-xl ring-1 text-center ${teamOf(openingIdx[1]).tint}`}>
-                    <span className={`font-black text-lg ${teamOf(openingIdx[1]).text}`}>
-                      {teamOf(openingIdx[1]).name}
-                    </span>
-                  </div>
+            <LuxCard accent="amber" clip glow>
+              <div className="p-4">
+                <div className="flex items-center gap-2.5">
+                  {[openingIdx[0], openingIdx[1]].map((tIdx, side) => {
+                    const t = teamOf(tIdx);
+                    return (
+                      <React.Fragment key={side}>
+                        {side === 1 && (
+                          <div className="relative grid place-items-center w-11 h-11 rounded-full st-foil ring-2 ring-slate-950 shadow-[0_6px_18px_-6px_rgba(212,160,40,0.7)] shrink-0">
+                            <span className="font-black text-xs tracking-widest">VS</span>
+                          </div>
+                        )}
+                        <div
+                          className={`flex-1 min-w-0 py-4 px-2 rounded-xl ring-1 bg-gradient-to-b ${t.hdr} ${t.tint.split(' ')[1]} flex flex-col items-center gap-1.5`}
+                        >
+                          <span className={`w-2.5 h-2.5 rounded-full ${t.dot}`} />
+                          <span className={`font-black text-lg leading-none truncate max-w-full ${t.text}`}>
+                            {t.name}
+                          </span>
+                        </div>
+                      </React.Fragment>
+                    );
+                  })}
                 </div>
               </div>
             </LuxCard>
@@ -635,7 +652,11 @@ export default function MatchDay() {
               return (
                 <div key={`h-${teamIdx}`} className={`rounded-t-2xl px-1.5 py-2 bg-gradient-to-b ${t.hdr} flex flex-col items-center gap-0.5 ring-1 ${t.tint.split(' ')[1]}`}>
                   <div className="flex items-center gap-1 justify-center min-w-0 w-full">
-                    <span className={`w-2 h-2 rounded-full shrink-0 ${t.dot}`} />
+                    {teamIdx === leadingTeam ? (
+                      <Crown className="w-3.5 h-3.5 text-amber-300 shrink-0" strokeWidth={2.6} />
+                    ) : (
+                      <span className={`w-2 h-2 rounded-full shrink-0 ${t.dot}`} />
+                    )}
                     <p className={`font-black text-sm leading-tight truncate ${t.text}`}>{t.name}</p>
                   </div>
                   <span className={`text-[0.5rem] font-bold leading-none ${isOpening ? 'text-emerald-300' : 'invisible'}`}>פותחת</span>
@@ -664,6 +685,7 @@ export default function MatchDay() {
                   const t = teamOf(teamIdx);
                   const pid = playerIds[rowIdx];
                   const p = pid ? allPlayers.find(x => x.id === pid) : null;
+                  const playerGoals = pid ? (goals[pid] || 0) : 0;
                   const isLast = rowIdx === maxLen - 1;
                   const RowTag = isAdmin && p ? 'button' : 'div';
                   return (
@@ -671,7 +693,7 @@ export default function MatchDay() {
                       key={`${teamIdx}-${rowIdx}`}
                       type={isAdmin && p ? 'button' : undefined}
                       onClick={isAdmin && p ? () => setEditingPlayer({ player: p, teamIndex: teamIdx }) : undefined}
-                      className={`h-11 flex items-center justify-center gap-1.5 px-2 bg-slate-900/70 border-t border-white/5 ring-1 ${t.tint.split(' ')[1]} ${isLast ? 'rounded-b-2xl' : ''} ${isAdmin && p ? 'cursor-pointer hover:bg-white/8 active:bg-white/5 transition-colors touch-manipulation' : ''}`}
+                      className={`h-11 flex items-center justify-center gap-1.5 px-2 ${rowIdx % 2 ? 'bg-slate-900/50' : 'bg-slate-900/75'} border-t border-white/5 ring-1 ${t.tint.split(' ')[1]} ${isLast ? 'rounded-b-2xl' : ''} ${isAdmin && p ? 'cursor-pointer hover:bg-white/8 active:bg-white/5 transition-colors touch-manipulation' : ''}`}
                     >
                       {/* circle + name centered as one group, aligned with team title above */}
                       {p && (p.image ? (
@@ -682,6 +704,12 @@ export default function MatchDay() {
                         </div>
                       ))}
                       <p className="min-w-0 text-white text-sm font-bold truncate leading-tight">{p?.name ?? ''}</p>
+                      {playerGoals > 0 && (
+                        <span className="flex items-center gap-0.5 shrink-0 text-amber-300 text-[0.62rem] font-black tnum">
+                          <Target className="w-3 h-3" strokeWidth={2.8} />
+                          {playerGoals}
+                        </span>
+                      )}
                     </RowTag>
                   );
                 })
