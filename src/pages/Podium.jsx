@@ -102,8 +102,10 @@ function CountUp({ value, delay = 0, duration = 0.8, className }) {
 /* ─── One-shot gold confetti burst above the champion ──────────── */
 const BURST_COLORS = ['#fbbf24', '#fde68a', '#f59e0b', '#ffffff', '#fcd34d'];
 
-function GoldBurst({ delay = 0, count = 26 }) {
-  const reduce = useReducedMotion();
+// `force` bypasses reduced-motion: a tap-triggered burst is user-initiated,
+// so it plays even when the OS asks to minimize automatic animations.
+function GoldBurst({ delay = 0, count = 26, force = false }) {
+  const reduce = useReducedMotion() && !force;
   const pieces = useMemo(
     () =>
       Array.from({ length: count }, (_, i) => ({
@@ -364,7 +366,11 @@ function PodiumColumn({ player, place }) {
         <Pedestal place={place} tier={tier} />
       </motion.div>
       {isChampion && (
-        <GoldBurst key={burstKey} delay={burstKey === 0 ? tier.delay + 0.75 : 0.05} />
+        <GoldBurst
+          key={burstKey}
+          delay={burstKey === 0 ? tier.delay + 0.75 : 0.05}
+          force={burstKey > 0}
+        />
       )}
     </div>
   );
