@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../lib/AuthContext';
 import { supabase } from '../lib/supabase';
 import { useQuery } from '@tanstack/react-query';
-import { motion, animate } from 'framer-motion';
+import { motion, animate, useReducedMotion } from 'framer-motion';
+import GoldBurst from '@/components/GoldBurst';
 import { Star, Trophy, Zap, Activity, TrendingUp, ShieldQuestion, Users, Lock, ChevronLeft, Flame, Bell } from 'lucide-react';
 import { Player, Round } from '@/api/entities';
 import { SectionTitle, EmptyState, Skeleton } from '@/components/ui/lux';
@@ -146,6 +147,19 @@ export default function PlayerHome() {
     refetchOnWindowFocus: true,
   });
 
+  // ── Pack-opening ceremony — plays once per session, skipped under
+  // reduced motion. Re-entering the page later gets the regular entry.
+  const reduceMotion = useReducedMotion();
+  const [ceremonyArmed] = useState(() => {
+    try { return !sessionStorage.getItem('sintetiko_card_ceremony'); } catch { return true; }
+  });
+  const playCeremony = ceremonyArmed && !reduceMotion && !!player;
+  useEffect(() => {
+    if (playCeremony) {
+      try { sessionStorage.setItem('sintetiko_card_ceremony', '1'); } catch { /* private mode */ }
+    }
+  }, [playCeremony]);
+
   // Active round indicator — same key as MatchDay so cache is shared
   const { data: activeRound } = useQuery({
     queryKey: ['latest-round'],
@@ -279,15 +293,66 @@ export default function PlayerHome() {
         </motion.div>
       )}
 
-      {/* ── Hero: FIFA gold card, floating ── */}
-      <motion.div
-        initial={{ opacity: 0, y: 36, scale: 0.84 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.7, type: 'spring', bounce: 0.3 }}
-        className="relative w-full flex justify-center"
-      >
+      {/* ── Pack-opening darkness — everything dims while the pack glows ── */}
+      {playCeremony && (
+        <motion.div
+          aria-hidden
+          className="fixed inset-0 z-40 bg-slate-950/85 pointer-events-none"
+          initial={{ opacity: 1 }}
+          animate={{ opacity: 0 }}
+          transition={{ delay: 1.55, duration: 0.55, ease: 'easeOut' }}
+        />
+      )}
+
+      {/* ── Hero: FIFA gold card — pack-opening reveal, then floating ── */}
+      <div className={`relative w-full flex justify-center ${playCeremony ? 'z-50' : ''}`}>
         {/* stadium light behind the card */}
         <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-60 h-60 bg-amber-500/20 rounded-full blur-[80px] pointer-events-none" />
+
+        {playCeremony && (
+          <>
+            {/* the glowing pack orb */}
+            <motion.div
+              aria-hidden
+              className="absolute left-1/2 top-1/2 z-10 w-24 h-24 rounded-full pointer-events-none"
+              style={{
+                marginLeft: -48,
+                marginTop: -48,
+                background: 'radial-gradient(circle at 42% 36%, #fffbe8 0%, #fcd34d 38%, #b06f0a 68%, transparent 78%)',
+                boxShadow: '0 0 70px 28px rgba(251,191,36,0.55)',
+              }}
+              initial={{ opacity: 0, scale: 0.2 }}
+              animate={{ opacity: [0, 1, 1, 0], scale: [0.2, 1, 1.2, 2.8] }}
+              transition={{ duration: 1.3, times: [0, 0.3, 0.75, 1], ease: 'easeInOut' }}
+            />
+            {/* white-gold flash at the moment of reveal */}
+            <motion.div
+              aria-hidden
+              className="fixed inset-0 z-20 pointer-events-none"
+              style={{ background: 'radial-gradient(circle at 50% 45%, rgba(255,250,225,0.95), rgba(251,191,36,0.35) 40%, transparent 72%)' }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: [0, 0, 1, 0] }}
+              transition={{ duration: 1.5, times: [0, 0.7, 0.82, 1], ease: 'easeOut' }}
+            />
+            {/* confetti as the card lands */}
+            <GoldBurst delay={1.7} count={30} className="absolute inset-x-0 top-1/2 z-30" />
+          </>
+        )}
+
+        <motion.div
+          initial={playCeremony
+            ? { opacity: 0, y: 170, scale: 0.3, rotateY: 540 }
+            : { opacity: 0, y: 36, scale: 0.84 }}
+          animate={{ opacity: 1, y: 0, scale: 1, rotateY: 0 }}
+          transition={playCeremony
+            ? {
+                delay: 1.05, type: 'spring', damping: 15, stiffness: 90,
+                opacity: { delay: 1.05, duration: 0.25 },
+                rotateY: { delay: 1.05, duration: 1.0, ease: [0.16, 1, 0.3, 1] },
+              }
+            : { duration: 0.7, type: 'spring', bounce: 0.3 }}
+          style={{ transformPerspective: 900 }}
+        >
         <motion.div
           animate={{ y: [0, -9, 0] }}
           transition={{ duration: 4.6, repeat: Infinity, ease: 'easeInOut' }}
@@ -351,7 +416,8 @@ export default function PlayerHome() {
             </div>
           </div>
         </motion.div>
-      </motion.div>
+        </motion.div>
+      </div>
 
       {/* ── Stats panel ── */}
       <div className="w-full max-w-xs">
