@@ -1,7 +1,7 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Player } from '@/api/entities';
 import { useQuery } from '@tanstack/react-query';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion, animate } from 'framer-motion';
 import { Trophy, Crown, ListOrdered } from 'lucide-react';
 import MvpBadge from '@/components/MvpBadge';
 import { useMvpCounts } from '@/lib/useMvpCounts';
@@ -33,7 +33,7 @@ const TIERS = {
     bevelShadow: 'inset 2px 0 0 rgba(254, 240, 138, 0.6), inset -2px 0 0 rgba(146, 64, 14, 0.5)',
     engrave: '0 1.5px 0 rgba(255, 220, 130, 0.5), 0 -1px 0 rgba(0, 0, 0, 0.4)',
     labelColor: 'text-amber-950/70',
-    delay: 0.05,
+    delay: 0.55,                                              // ceremony order: bronze → silver → GOLD last
     crown: true,
   },
   2: {
@@ -56,7 +56,7 @@ const TIERS = {
     bevelShadow: 'inset 2px 0 0 rgba(241, 245, 249, 0.6), inset -2px 0 0 rgba(51, 65, 85, 0.5)',
     engrave: '0 1.5px 0 rgba(255, 255, 255, 0.55), 0 -1px 0 rgba(0, 0, 0, 0.4)',
     labelColor: 'text-slate-700/80',
-    delay: 0.18,
+    delay: 0.3,
     crown: false,
   },
   3: {
@@ -79,10 +79,71 @@ const TIERS = {
     bevelShadow: 'inset 2px 0 0 rgba(254, 215, 170, 0.6), inset -2px 0 0 rgba(120, 53, 15, 0.55)',
     engrave: '0 1.5px 0 rgba(255, 200, 130, 0.5), 0 -1px 0 rgba(0, 0, 0, 0.55)',
     labelColor: 'text-orange-950/80',
-    delay: 0.30,
+    delay: 0.1,
     crown: false,
   },
 };
+
+/* ─── Count-up number — trophies tick from 0 to the real value ──── */
+function CountUp({ value, delay = 0, duration = 0.8, className }) {
+  const reduce = useReducedMotion();
+  const [n, setN] = useState(reduce ? value : 0);
+  useEffect(() => {
+    if (reduce) { setN(value); return undefined; }
+    const controls = animate(0, value, {
+      delay, duration, ease: 'easeOut',
+      onUpdate: (v) => setN(Math.round(v)),
+    });
+    return () => controls.stop();
+  }, [value, delay, duration, reduce]);
+  return <span className={className}>{n}</span>;
+}
+
+/* ─── One-shot gold confetti burst above the champion ──────────── */
+const BURST_COLORS = ['#fbbf24', '#fde68a', '#f59e0b', '#ffffff', '#fcd34d'];
+
+function GoldBurst({ delay = 0, count = 18 }) {
+  const reduce = useReducedMotion();
+  const pieces = useMemo(
+    () =>
+      Array.from({ length: count }, (_, i) => ({
+        angle: (i / count) * Math.PI * 2 + Math.random() * 0.5,
+        dist: 48 + Math.random() * 62,
+        size: 3 + Math.random() * 4,
+        color: BURST_COLORS[i % BURST_COLORS.length],
+        rot: Math.random() * 260 - 130,
+        dur: 0.9 + Math.random() * 0.7,
+        round: Math.random() > 0.5,
+      })),
+    [count],
+  );
+  if (reduce) return null;
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-x-0 top-8 z-20 flex justify-center">
+      {pieces.map((p, i) => (
+        <motion.span
+          key={i}
+          initial={{ x: 0, y: 0, opacity: 0, rotate: 0 }}
+          animate={{
+            x: Math.cos(p.angle) * p.dist,
+            y: Math.sin(p.angle) * p.dist * 0.8 + 34,   // outward, then a slight fall
+            opacity: [0, 1, 1, 0],
+            rotate: p.rot,
+            scale: [1, 1, 0.6],
+          }}
+          transition={{ delay: delay + Math.random() * 0.15, duration: p.dur, ease: 'easeOut' }}
+          className="absolute"
+          style={{
+            width: p.size,
+            height: p.size * (p.round ? 1 : 1.8),
+            background: p.color,
+            borderRadius: p.round ? '9999px' : '1px',
+          }}
+        />
+      ))}
+    </div>
+  );
+}
 
 /* ─── Avatar — gold-foil initial fallback ──────────────────────── */
 function Avatar({ player, size, textSize, ring, glow }) {
@@ -125,9 +186,11 @@ function TopCard({ player, tier }) {
         </p>
         <div className="mt-1 sm:mt-1.5 flex items-center gap-1 sm:gap-1.5">
           <Trophy className={`w-3 h-3 sm:w-4 sm:h-4 ${tier.winTone}`} strokeWidth={2.5} fill="currentColor" />
-          <span className={`tnum font-black text-sm sm:text-lg leading-none ${tier.winTone}`}>
-            {player.wins || 0}
-          </span>
+          <CountUp
+            value={player.wins || 0}
+            delay={tier.delay + 0.5}
+            className={`tnum font-black text-sm sm:text-lg leading-none ${tier.winTone}`}
+          />
         </div>
         {winRate != null && (
           <span className="mt-0.5 sm:mt-1 text-[0.55rem] sm:text-[0.65rem] font-black tnum text-ink-3 tracking-wide">
@@ -246,29 +309,40 @@ function Pedestal({ place, tier }) {
   );
 }
 
-/* ─── Full podium column (card + pedestal stack) ───────────────── */
+/* ─── Full podium column — ceremony choreography ────────────────
+   pedestal grows from the floor → card lands from above → crown
+   bounces in → gold burst over the champion. */
 function PodiumColumn({ player, place }) {
   const tier = TIERS[place];
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 36 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: tier.delay, type: 'spring', damping: 20, stiffness: 180 }}
-      className={`flex flex-col items-center ${place === 1 ? 'relative z-10' : ''}`}
-    >
+    <div className={`relative flex flex-col items-center ${place === 1 ? 'z-10' : ''}`}>
       {tier.crown && (
         <motion.div
-          initial={{ y: -12, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: tier.delay + 0.3, type: 'spring', stiffness: 240 }}
+          initial={{ y: -26, opacity: 0, scale: 0.6 }}
+          animate={{ y: 0, opacity: 1, scale: 1 }}
+          transition={{ delay: tier.delay + 0.45, type: 'spring', damping: 12, stiffness: 260 }}
           className="mb-2 sm:mb-2.5 st-float drop-shadow-[0_0_18px_rgba(251,191,36,0.65)] sm:drop-shadow-[0_0_22px_rgba(251,191,36,0.7)]"
         >
           <Crown className="w-9 h-9 sm:w-14 sm:h-14 text-amber-300" strokeWidth={1.7} fill="currentColor" />
         </motion.div>
       )}
-      <TopCard player={player} tier={tier} />
-      <Pedestal place={place} tier={tier} />
-    </motion.div>
+      <motion.div
+        initial={{ opacity: 0, y: -28, scale: 0.92 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ delay: tier.delay + 0.26, type: 'spring', damping: 16, stiffness: 220 }}
+      >
+        <TopCard player={player} tier={tier} />
+      </motion.div>
+      <motion.div
+        initial={{ scaleY: 0, opacity: 0 }}
+        animate={{ scaleY: 1, opacity: 1 }}
+        transition={{ delay: tier.delay, type: 'spring', damping: 19, stiffness: 150 }}
+        style={{ transformOrigin: 'bottom center' }}
+      >
+        <Pedestal place={place} tier={tier} />
+      </motion.div>
+      {place === 1 && <GoldBurst delay={tier.delay + 0.75} />}
+    </div>
   );
 }
 
@@ -302,9 +376,9 @@ function StageLight({ side }) {
           }}
         />
 
-        {/* Light beam */}
+        {/* Light beam — st-breathe gives it a slow live pulse */}
         <div
-          className="-mt-2 sm:-mt-2.5 w-36 h-72 sm:w-52 sm:h-96 opacity-75"
+          className="-mt-2 sm:-mt-2.5 w-36 h-72 sm:w-52 sm:h-96 opacity-75 st-breathe"
           style={{
             background:
               'linear-gradient(to bottom, rgba(251,191,36,0.55) 0%, rgba(251,191,36,0.3) 35%, rgba(251,191,36,0.12) 70%, rgba(251,191,36,0) 100%)',
