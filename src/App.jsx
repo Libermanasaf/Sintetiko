@@ -8,6 +8,11 @@ import PageNotFound from './lib/PageNotFound';
 import { ThemeProvider } from '@/lib/ThemeContext';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import { canAccessPage, RESTRICTED_ALLOWED_PAGES } from '@/lib/navConfig';
+import { initAudioUnlock } from '@/lib/packSound';
+
+// First tap anywhere unlocks Web Audio (iOS requirement) so the pack-opening
+// ceremony can sound when it fires seconds later.
+initAudioUnlock();
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
