@@ -12,30 +12,44 @@ import InstallBanner from '@/components/InstallBanner';
 import { pushSupported, subscribeToPush } from '@/lib/push';
 import { toast } from 'sonner';
 
-// ─── Gold soccer ball for the pack ceremony ────────────────────────────────
-// The pentagon pattern is what makes the fast spin actually visible —
-// a plain radial glow is rotation-symmetric and reads as static.
-function GoldBall({ size = 96 }) {
+// ─── Spinning gold orb for the pack ceremony ───────────────────────────────
+// The body is the original soft glowing orb; only a faint seam pattern spins
+// on top of it, under a FIXED specular highlight — so it reads as a glossy
+// 3D ball rotating under a light, not a flat sticker.
+function SpinningGoldBall() {
   return (
-    <svg viewBox="0 0 100 100" width={size} height={size} aria-hidden="true">
-      <defs>
-        <radialGradient id="pkBall" cx="38%" cy="30%" r="75%">
-          <stop offset="0%" stopColor="#fff7d6" />
-          <stop offset="45%" stopColor="#fbbf24" />
-          <stop offset="100%" stopColor="#8a5208" />
-        </radialGradient>
-      </defs>
-      <circle cx="50" cy="50" r="47" fill="url(#pkBall)" />
-      <circle cx="50" cy="50" r="47" fill="none" stroke="#fde68a" strokeWidth="1.5" strokeOpacity="0.8" />
-      <g fill="#7c4a06" opacity="0.9">
-        {/* center pentagon */}
-        <path d="M50,36 L60.5,43.6 L56.5,55.9 L43.5,55.9 L39.5,43.6 Z" />
-        {/* five edge patches */}
-        {[0, 72, 144, 216, 288].map((a) => (
-          <path key={a} transform={`rotate(${a} 50 50)`} d="M50,4 L58,10 L55,19 L45,19 L42,10 Z" />
-        ))}
-      </g>
-    </svg>
+    <>
+      {/* ball body — the original soft glowing gold orb */}
+      <div
+        className="absolute inset-0 rounded-full"
+        style={{ background: 'radial-gradient(circle at 42% 36%, #fffbe8 0%, #fcd34d 38%, #b06f0a 68%, transparent 78%)' }}
+      />
+      {/* rotating seam pattern — subtle enough to keep the glow look */}
+      <motion.div
+        initial={{ rotate: 0 }}
+        animate={{ rotate: 1440 }}
+        transition={{ duration: 1.2, ease: [0.5, 0, 0.9, 0.4] }}
+        className="absolute inset-0"
+      >
+        <svg viewBox="0 0 100 100" className="w-full h-full" aria-hidden="true">
+          <path d="M50,38 L59.5,44.9 L55.9,56.1 L44.1,56.1 L40.5,44.9 Z" fill="rgba(139,86,8,0.30)" />
+          <g fill="none" stroke="rgba(139,86,8,0.32)" strokeWidth="2" strokeLinejoin="round">
+            {[0, 72, 144, 216, 288].map((a) => (
+              <path
+                key={a}
+                transform={`rotate(${a} 50 50)`}
+                d="M50,15 L57.6,20.5 L54.7,29.5 L45.3,29.5 L42.4,20.5 Z"
+              />
+            ))}
+          </g>
+        </svg>
+      </motion.div>
+      {/* fixed specular highlight — the light source stays put while it spins */}
+      <div
+        className="absolute inset-0 rounded-full pointer-events-none"
+        style={{ background: 'radial-gradient(circle at 38% 28%, rgba(255,255,255,0.7), rgba(255,255,255,0) 40%)' }}
+      />
+    </>
   );
 }
 
@@ -382,15 +396,7 @@ export default function PlayerHome() {
               animate={{ opacity: [0, 1, 1, 0], scale: [0.2, 0.95, 1.08, 0.4] }}
               transition={{ duration: 1.15, times: [0, 0.22, 0.85, 1], ease: 'easeInOut' }}
             >
-              {/* accelerating spin — a few full turns before the reveal */}
-              <motion.div
-                initial={{ rotate: 0 }}
-                animate={{ rotate: 1440 }}
-                transition={{ duration: 1.2, ease: [0.5, 0, 0.9, 0.4] }}
-                className="w-full h-full"
-              >
-                <GoldBall size={96} />
-              </motion.div>
+              <SpinningGoldBall />
             </motion.div>
             {/* white-gold flash exactly as the card unfolds */}
             <motion.div
