@@ -17,7 +17,7 @@ import { toast } from 'sonner';
 // what circles AROUND it: a swirling golden light ring plus counter-orbiting
 // sparks — energy charging up, not a patterned ball.
 const SPIN_EASE = [0.45, 0, 0.9, 0.35];  // accelerating wind-up
-const SPIN_DURATION = 1.9;               // ~7 turns before the reveal
+const SPIN_DURATION = 2.0;               // ~7 turns before the reveal
 
 function SpinningGoldBall() {
   return (
@@ -118,6 +118,73 @@ function RevealRays({ delay = 0 }) {
           initial={{ rotate: a, scaleY: 0, opacity: 0 }}
           animate={{ rotate: a, scaleY: [0, 1.05, 1], opacity: [0, 0.9, 0] }}
           transition={{ delay: delay + (a % 90 === 0 ? 0 : 0.05), duration: 0.7, ease: 'easeOut' }}
+        />
+      ))}
+    </div>
+  );
+}
+
+// ─── Soft out-of-focus gold bokeh drifting in the dark stage ───────────────
+function StageBokeh({ count = 8 }) {
+  const dots = React.useMemo(
+    () =>
+      Array.from({ length: count }, () => ({
+        left: 8 + Math.random() * 84,
+        top: 8 + Math.random() * 84,
+        size: 5 + Math.random() * 9,
+        delay: Math.random() * 0.6,
+        drift: -(14 + Math.random() * 18),
+      })),
+    [count],
+  );
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+      {dots.map((d, i) => (
+        <motion.span
+          key={i}
+          className="absolute rounded-full"
+          style={{
+            left: `${d.left}%`, top: `${d.top}%`,
+            width: d.size, height: d.size,
+            background: 'rgba(251,191,36,0.55)', filter: 'blur(5px)',
+          }}
+          initial={{ opacity: 0, y: 0 }}
+          animate={{ opacity: [0, 0.6, 0.6, 0], y: d.drift }}
+          transition={{ delay: d.delay, duration: 3.1, times: [0, 0.2, 0.75, 1], ease: 'linear' }}
+        />
+      ))}
+    </div>
+  );
+}
+
+// ─── Embers drifting up around the freshly landed card ─────────────────────
+function RisingEmbers({ delay = 0, count = 8 }) {
+  const sparks = React.useMemo(
+    () =>
+      Array.from({ length: count }, () => ({
+        left: 22 + Math.random() * 56,
+        size: 2 + Math.random() * 2.5,
+        delay: delay + Math.random() * 0.9,
+        rise: -(60 + Math.random() * 70),
+        drift: Math.random() * 24 - 12,
+        dur: 1.4 + Math.random() * 0.8,
+      })),
+    [delay, count],
+  );
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-0">
+      {sparks.map((s, i) => (
+        <motion.span
+          key={i}
+          className="absolute rounded-full"
+          style={{
+            left: `${s.left}%`, top: '62%',
+            width: s.size, height: s.size,
+            background: '#fde68a', boxShadow: '0 0 6px 1px rgba(251,191,36,0.8)',
+          }}
+          initial={{ opacity: 0, x: 0, y: 0 }}
+          animate={{ opacity: [0, 1, 0], x: s.drift, y: s.rise }}
+          transition={{ delay: s.delay, duration: s.dur, ease: 'easeOut' }}
         />
       ))}
     </div>
@@ -436,26 +503,77 @@ export default function PlayerHome() {
         </motion.div>
       )}
 
-      {/* ── Pack-opening darkness — everything dims while the pack glows ── */}
+      {/* ── Pack-opening full-screen layers (outside the shaking stage, so
+           their fixed positioning stays viewport-anchored) ── */}
       {playCeremony && (
-        <motion.div
-          aria-hidden
-          className="fixed inset-0 z-40 pointer-events-none"
-          style={{ background: 'radial-gradient(circle at 50% 42%, rgba(2,6,23,0.72), rgba(2,6,23,0.94) 70%)' }}
-          initial={{ opacity: 1 }}
-          animate={{ opacity: 0 }}
-          transition={{ delay: 2.25, duration: 0.55, ease: 'easeOut' }}
-        />
+        <>
+          {/* cinematic vignette — darker edges, the action stays lit */}
+          <motion.div
+            aria-hidden
+            className="fixed inset-0 z-40 pointer-events-none"
+            style={{ background: 'radial-gradient(circle at 50% 42%, rgba(2,6,23,0.72), rgba(2,6,23,0.94) 70%)' }}
+            initial={{ opacity: 1 }}
+            animate={{ opacity: 0 }}
+            transition={{ delay: 2.45, duration: 0.5, ease: 'easeOut' }}
+          />
+          {/* held breath — a quick dip to black right before the burst */}
+          <motion.div
+            aria-hidden
+            className="fixed inset-0 z-[45] bg-black pointer-events-none"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: [0, 0.65, 0] }}
+            transition={{ delay: 1.74, duration: 0.3, ease: 'easeInOut' }}
+          />
+          {/* camera-flash micro pop, then the gold bloom */}
+          <motion.div
+            aria-hidden
+            className="fixed inset-0 z-[45] pointer-events-none"
+            style={{ background: 'radial-gradient(circle at 50% 45%, rgba(255,255,255,0.95), rgba(255,255,255,0.4) 45%, transparent 75%)' }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: [0, 0.95, 0] }}
+            transition={{ delay: 2.0, duration: 0.16, ease: 'easeOut' }}
+          />
+          <motion.div
+            aria-hidden
+            className="fixed inset-0 z-[44] pointer-events-none"
+            style={{ background: 'radial-gradient(circle at 50% 45%, rgba(255,250,225,0.95), rgba(251,191,36,0.35) 40%, transparent 72%)' }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: [0, 1, 0] }}
+            transition={{ delay: 2.0, duration: 0.55, times: [0, 0.3, 1], ease: 'easeOut' }}
+          />
+        </>
       )}
 
-      {/* ── Hero: FIFA gold card — pack-opening reveal, then floating ── */}
-      <div className={`relative w-full flex justify-center ${playCeremony ? 'z-50' : ''}`}>
+      {/* ── Hero: FIFA gold card — pack-opening reveal, then floating.
+           The whole stage shakes for a beat at the burst (camera shake). ── */}
+      <motion.div
+        className={`relative w-full flex justify-center ${playCeremony ? 'z-50' : ''}`}
+        animate={playCeremony
+          ? { x: [0, -5, 4, -2.5, 1.5, 0], y: [0, 2.5, -2, 1, -0.5, 0] }
+          : undefined}
+        transition={playCeremony ? { delay: 2.02, duration: 0.42, ease: 'linear' } : undefined}
+      >
         {/* stadium light behind the card */}
         <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-60 h-60 bg-amber-500/20 rounded-full blur-[80px] pointer-events-none" />
 
         {playCeremony && (
           <>
-            {/* vertical light pillar building up behind the reveal (FUT walkout) */}
+            {/* faint gold bokeh drifting in the dark — the stage feels alive */}
+            <StageBokeh count={8} />
+            {/* floor glow — grounds the whole scene */}
+            <motion.div
+              aria-hidden
+              className="absolute left-1/2 top-1/2 pointer-events-none rounded-full"
+              style={{
+                width: 240, height: 64, marginLeft: -120, marginTop: 132,
+                background: 'radial-gradient(ellipse, rgba(251,191,36,0.5), transparent 70%)',
+                filter: 'blur(14px)',
+              }}
+              initial={{ opacity: 0, scaleX: 0.5 }}
+              animate={{ opacity: [0, 0.5, 0.95, 0], scaleX: [0.5, 0.8, 1.15, 1.2] }}
+              transition={{ duration: 3.2, times: [0, 0.35, 0.63, 1], ease: 'easeInOut' }}
+            />
+            {/* vertical light pillar building up behind the reveal (walkout) */}
             <motion.div
               aria-hidden
               className="absolute left-1/2 top-1/2 pointer-events-none"
@@ -469,13 +587,28 @@ export default function PlayerHome() {
               }}
               initial={{ opacity: 0, scaleY: 0.3 }}
               animate={{ opacity: [0, 0.35, 0.9, 0], scaleY: [0.3, 0.7, 1.15, 1.25] }}
-              transition={{ duration: 2.9, times: [0, 0.45, 0.68, 1], ease: 'easeInOut' }}
+              transition={{ duration: 3.1, times: [0, 0.42, 0.65, 1], ease: 'easeInOut' }}
             />
             {/* gold dust streaming INTO the ball while it charges */}
-            <GoldGather delay={0.25} window={1.3} count={16} />
+            <GoldGather delay={0.3} window={1.35} count={16} />
             {/* lens-flare rays at the instant the card breaks out */}
-            <RevealRays delay={1.82} />
-            {/* the gold ball — spins up fast, then the card rises out of it */}
+            <RevealRays delay={2.0} />
+            {/* shockwave rings ripping outward at the burst */}
+            {[0, 0.1].map((d, i) => (
+              <motion.span
+                key={i}
+                aria-hidden
+                className="absolute left-1/2 top-1/2 pointer-events-none rounded-full"
+                style={{
+                  width: 90, height: 90, marginLeft: -45, marginTop: -45,
+                  border: '2px solid rgba(253,230,138,0.8)',
+                }}
+                initial={{ opacity: 0, scale: 0.3 }}
+                animate={{ opacity: [0, 0.9, 0], scale: i ? 3.3 : 2.5 }}
+                transition={{ delay: 2.02 + d, duration: 0.75 + i * 0.15, ease: 'easeOut' }}
+              />
+            ))}
+            {/* the gold ball — charges, trembles with energy, then bursts */}
             <motion.div
               aria-hidden
               className="absolute left-1/2 top-1/2 z-10 w-24 h-24 pointer-events-none rounded-full"
@@ -485,20 +618,18 @@ export default function PlayerHome() {
                 boxShadow: '0 0 70px 28px rgba(251,191,36,0.55)',
               }}
               initial={{ opacity: 0, scale: 0.2 }}
-              animate={{ opacity: [0, 1, 1, 0], scale: [0.2, 0.92, 1.06, 0.42] }}
-              transition={{ duration: 1.9, times: [0, 0.14, 0.88, 1], ease: 'easeInOut' }}
+              animate={{ opacity: [0, 1, 1, 0], scale: [0.2, 0.92, 1.06, 0.4] }}
+              transition={{ duration: 2.0, times: [0, 0.13, 0.87, 1], ease: 'easeInOut' }}
             >
-              <SpinningGoldBall />
+              <motion.div
+                className="w-full h-full"
+                initial={{ x: 0 }}
+                animate={{ x: [0, -1.5, 2, -2.5, 2, 0] }}
+                transition={{ delay: 1.4, duration: 0.55, ease: 'linear' }}
+              >
+                <SpinningGoldBall />
+              </motion.div>
             </motion.div>
-            {/* white-gold flash exactly as the card emerges */}
-            <motion.div
-              aria-hidden
-              className="fixed inset-0 z-20 pointer-events-none"
-              style={{ background: 'radial-gradient(circle at 50% 45%, rgba(255,250,225,0.95), rgba(251,191,36,0.35) 40%, transparent 72%)' }}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: [0, 0, 1, 0] }}
-              transition={{ duration: 2.15, times: [0, 0.8, 0.885, 1], ease: 'easeOut' }}
-            />
             {/* afterglow behind the revealed card, cooling off */}
             <motion.div
               aria-hidden
@@ -510,28 +641,31 @@ export default function PlayerHome() {
                 filter: 'blur(30px)',
               }}
               initial={{ opacity: 0, scale: 0.4 }}
-              animate={{ opacity: [0, 0, 0.9, 0], scale: [0.4, 0.4, 1.25, 1.8] }}
-              transition={{ duration: 2.9, times: [0, 0.6, 0.73, 1], ease: 'easeOut' }}
+              animate={{ opacity: [0, 0.9, 0], scale: [0.4, 1.3, 1.85] }}
+              transition={{ delay: 1.98, duration: 1.25, times: [0, 0.35, 1], ease: 'easeOut' }}
             />
             {/* confetti as the card settles */}
-            <GoldBurst delay={2.4} count={30} className="absolute inset-x-0 top-1/2 z-30" />
+            <GoldBurst delay={2.6} count={30} className="absolute inset-x-0 top-1/2 z-30" />
+            {/* embers rising around the landed card */}
+            <RisingEmbers delay={2.7} count={8} />
           </>
         )}
 
         <motion.div
           initial={playCeremony
-            ? { opacity: 0, rotateY: 90, scale: 0.45, y: 26 }
+            ? { opacity: 0, rotateY: 90, rotateX: 16, scale: 0.45, y: 26 }
             : { opacity: 0, y: 36, scale: 0.84 }}
-          animate={{ opacity: 1, y: 0, scale: 1, rotateY: 0 }}
+          animate={{ opacity: 1, y: 0, scale: 1, rotateY: 0, rotateX: 0 }}
           transition={playCeremony
             ? {
                 // The card RISES out of the ball: grows from its size with a
                 // slight overshoot, floats up into place, one clean 90°→0
-                // unfold — everything lands together.
-                opacity: { delay: 1.85, duration: 0.12 },
-                rotateY: { delay: 1.85, duration: 0.6, ease: [0.22, 1, 0.36, 1] },
-                scale: { delay: 1.85, type: 'spring', damping: 12, stiffness: 150 },
-                y: { delay: 1.85, type: 'spring', damping: 15, stiffness: 140 },
+                // unfold plus a tilt-back settle (rotateX) for 3D presence.
+                opacity: { delay: 2.05, duration: 0.12 },
+                rotateY: { delay: 2.05, duration: 0.6, ease: [0.22, 1, 0.36, 1] },
+                rotateX: { delay: 2.05, duration: 0.7, ease: [0.22, 1, 0.36, 1] },
+                scale: { delay: 2.05, type: 'spring', damping: 12, stiffness: 150 },
+                y: { delay: 2.05, type: 'spring', damping: 15, stiffness: 140 },
               }
             : { duration: 0.7, type: 'spring', bounce: 0.3 }}
           style={{ transformPerspective: 900 }}
@@ -541,7 +675,7 @@ export default function PlayerHome() {
           transition={{
             duration: 4.6, repeat: Infinity, ease: 'easeInOut',
             // Hold the idle float until the ceremony fully settles.
-            delay: playCeremony ? 3.1 : 0,
+            delay: playCeremony ? 3.5 : 0,
           }}
           style={{ filter: 'drop-shadow(0 24px 56px rgba(200,150,25,0.5))' }}
         >
@@ -567,7 +701,7 @@ export default function PlayerHome() {
                   style={{ background: 'linear-gradient(105deg, transparent, rgba(255,255,255,0.35), transparent)' }}
                   initial={{ x: '-150%' }}
                   animate={{ x: '400%' }}
-                  transition={{ delay: 2.55, duration: 0.85, ease: 'easeInOut' }}
+                  transition={{ delay: 2.8, duration: 0.85, ease: 'easeInOut' }}
                 />
               </div>
             )}
@@ -620,7 +754,7 @@ export default function PlayerHome() {
           </div>
         </motion.div>
         </motion.div>
-      </div>
+      </motion.div>
 
       {/* ── Stats panel ── */}
       <div className="w-full max-w-xs">
