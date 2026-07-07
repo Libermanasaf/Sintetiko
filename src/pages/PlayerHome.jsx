@@ -10,6 +10,7 @@ import { Player, Round } from '@/api/entities';
 import { SectionTitle, EmptyState, Skeleton } from '@/components/ui/lux';
 import InstallBanner from '@/components/InstallBanner';
 import { pushSupported, subscribeToPush } from '@/lib/push';
+import { playPackSound } from '@/lib/packSound';
 import { toast } from 'sonner';
 
 // ─── Spinning gold orb for the pack ceremony ───────────────────────────────
@@ -342,6 +343,9 @@ export default function PlayerHome() {
   useEffect(() => {
     if (playCeremony) {
       try { localStorage.setItem('sintetiko_card_ceremony_at', String(Date.now())); } catch { /* private mode */ }
+      // Synced soundtrack — silently skipped if the browser blocks autoplay
+      // (no user gesture yet on a cold open).
+      playPackSound();
     }
   }, [playCeremony]);
 
