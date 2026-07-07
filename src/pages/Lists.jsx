@@ -56,6 +56,21 @@ const DAYS = [
 
 const STORAGE_KEY = 'sintetiko_lists_v3';
 
+// Forgiving name normalization for duplicate detection: trims, collapses
+// inner whitespace, lowercases (matters for latin-lettered names).
+const normName = (s) => (s || '').trim().replace(/\s+/g, ' ').toLowerCase();
+
+// Names appearing more than once in a day (main rows + manual waiting).
+const findDayDuplicates = (rows = [], waiting = []) => {
+  const counts = new Map();
+  for (const n of [...rows, ...waiting]) {
+    const k = normName(n);
+    if (!k) continue;
+    counts.set(k, (counts.get(k) || 0) + 1);
+  }
+  return new Set([...counts].filter(([, c]) => c > 1).map(([k]) => k));
+};
+
 // Day-of-week (0=Sun..6=Sat) when each list auto-resets (day AFTER the game).
 const RESET_RULES = {
   sunday:    1, // Mon → reset Sunday's list
@@ -680,10 +695,20 @@ export default function Lists() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {DAYS.map(({ key, color, ring, bg }) => {
             const daySignups = signups.filter(s => s.day === key);
+            const dayDups = findDayDuplicates(data.rows[key], data.waiting?.[key]);
             return (
               <div key={key} className={`rounded-2xl bg-slate-900/70 ring-1 ${ring} overflow-hidden`}>
                 <div className={`bg-gradient-to-l ${bg} px-4 py-3 flex items-center justify-between border-b border-white/8 gap-2`}>
                   <EditableHeader value={data.headers[key]} color={color} onChange={val => handleHeaderChange(key, val)} />
+                  {dayDups.size > 0 && (
+                    <span
+                      className="flex items-center gap-1 shrink-0 px-1.5 py-0.5 rounded-full bg-rose-500/15 ring-1 ring-rose-400/40 text-rose-300 text-[0.65rem] font-black"
+                      title="יש שם שמופיע פעמיים ברשימה"
+                    >
+                      <AlertTriangle className="w-3 h-3" strokeWidth={2.6} />
+                      שם כפול
+                    </span>
+                  )}
                   {(() => {
                     const seenCount = (data.rows[key] || []).filter(n => n.trim() && viewersByDay[key]?.has(n.trim())).length;
                     return seenCount > 0 ? (
@@ -740,13 +765,19 @@ export default function Lists() {
                 <div className="divide-y divide-white/5">
                   {data.rows[key].map((name, i) => {
                     const seen = name.trim() && viewersByDay[key]?.has(name.trim());
+                    const isDup = !!name.trim() && dayDups.has(normName(name));
                     return (
-                    <div key={i} className="flex items-center gap-3 px-3 py-1.5">
+                    <div key={i} className={`flex items-center gap-3 px-3 py-1.5 ${isDup ? 'bg-rose-500/15 ring-1 ring-inset ring-rose-400/40' : ''}`}>
                       <span className="text-ink-3 text-xs font-black tnum w-5 shrink-0 text-center">{i + 1}</span>
                       <input type="text" value={name} onChange={e => handleRowChange(key, i, e.target.value)}
                         onPaste={e => handleInputPaste(key, 'rows', e)}
                         placeholder="—"
-                        className="flex-1 bg-transparent text-white text-sm font-bold placeholder:text-white/15 outline-none py-1 min-w-0" dir="rtl" />
+                        className={`flex-1 bg-transparent text-sm font-bold placeholder:text-white/15 outline-none py-1 min-w-0 ${isDup ? 'text-rose-300' : 'text-white'}`} dir="rtl" />
+                      {isDup && (
+                        <span className="shrink-0 text-rose-400" title="שם כפול ברשימה">
+                          <AlertTriangle className="w-4 h-4" strokeWidth={2.6} />
+                        </span>
+                      )}
                       {seen && (
                         <span className="flex items-center gap-0.5 text-emerald-400 shrink-0" title="ראה את הרשימה">
                           <Check className="w-4 h-4" strokeWidth={3} />
@@ -808,15 +839,23 @@ export default function Lists() {
 
                   {/* Manual editable waiting rows */}
                   <div className="divide-y divide-white/5">
-                    {data.waiting[key].map((name, i) => (
-                      <div key={i} className="flex items-center gap-3 px-3 py-1.5">
+                    {data.waiting[key].map((name, i) => {
+                      const isDup = !!name.trim() && dayDups.has(normName(name));
+                      return (
+                      <div key={i} className={`flex items-center gap-3 px-3 py-1.5 ${isDup ? 'bg-rose-500/15 ring-1 ring-inset ring-rose-400/40' : ''}`}>
                         <span className="w-5 shrink-0" />
                         <input type="text" value={name} onChange={e => handleWaitingChange(key, i, e.target.value)}
                           onPaste={e => handleInputPaste(key, 'waiting', e)}
                           placeholder="—"
-                          className="flex-1 bg-transparent text-slate-300 text-sm font-bold placeholder:text-white/10 outline-none py-1 min-w-0" dir="rtl" />
+                          className={`flex-1 bg-transparent text-sm font-bold placeholder:text-white/10 outline-none py-1 min-w-0 ${isDup ? 'text-rose-300' : 'text-slate-300'}`} dir="rtl" />
+                        {isDup && (
+                          <span className="shrink-0 text-rose-400" title="שם כפול ברשימה">
+                            <AlertTriangle className="w-4 h-4" strokeWidth={2.6} />
+                          </span>
+                        )}
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               </div>
