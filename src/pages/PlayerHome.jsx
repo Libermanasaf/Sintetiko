@@ -13,42 +13,54 @@ import { pushSupported, subscribeToPush } from '@/lib/push';
 import { toast } from 'sonner';
 
 // ─── Spinning gold orb for the pack ceremony ───────────────────────────────
-// The body is the original soft glowing orb; only a faint seam pattern spins
-// on top of it, under a FIXED specular highlight — so it reads as a glossy
-// 3D ball rotating under a light, not a flat sticker.
+// The ball itself is a CLEAN glowing gold orb (no marks). The spin is told by
+// what circles AROUND it: a swirling golden light ring plus counter-orbiting
+// sparks — energy charging up, not a patterned ball.
+const SPIN_EASE = [0.45, 0, 0.9, 0.35];  // accelerating wind-up
+const SPIN_DURATION = 1.9;               // ~7 turns before the reveal
+
 function SpinningGoldBall() {
   return (
     <>
-      {/* ball body — the original soft glowing gold orb */}
+      {/* ball body — pure soft glowing gold orb */}
       <div
         className="absolute inset-0 rounded-full"
         style={{ background: 'radial-gradient(circle at 42% 36%, #fffbe8 0%, #fcd34d 38%, #b06f0a 68%, transparent 78%)' }}
       />
-      {/* rotating seam pattern — subtle enough to keep the glow look */}
-      <motion.div
-        initial={{ rotate: 0 }}
-        animate={{ rotate: 1440 }}
-        transition={{ duration: 1.2, ease: [0.5, 0, 0.9, 0.4] }}
-        className="absolute inset-0"
-      >
-        <svg viewBox="0 0 100 100" className="w-full h-full" aria-hidden="true">
-          <path d="M50,38 L59.5,44.9 L55.9,56.1 L44.1,56.1 L40.5,44.9 Z" fill="rgba(139,86,8,0.30)" />
-          <g fill="none" stroke="rgba(139,86,8,0.32)" strokeWidth="2" strokeLinejoin="round">
-            {[0, 72, 144, 216, 288].map((a) => (
-              <path
-                key={a}
-                transform={`rotate(${a} 50 50)`}
-                d="M50,15 L57.6,20.5 L54.7,29.5 L45.3,29.5 L42.4,20.5 Z"
-              />
-            ))}
-          </g>
-        </svg>
-      </motion.div>
-      {/* fixed specular highlight — the light source stays put while it spins */}
+      {/* fixed specular highlight */}
       <div
-        className="absolute inset-0 rounded-full pointer-events-none"
-        style={{ background: 'radial-gradient(circle at 38% 28%, rgba(255,255,255,0.7), rgba(255,255,255,0) 40%)' }}
+        className="absolute inset-0 rounded-full"
+        style={{ background: 'radial-gradient(circle at 38% 28%, rgba(255,255,255,0.65), rgba(255,255,255,0) 38%)' }}
       />
+      {/* swirling light ring around the ball */}
+      <motion.div
+        className="absolute -inset-2 rounded-full"
+        style={{
+          background: 'conic-gradient(from 0deg, transparent 0%, rgba(255,241,196,0.95) 12%, transparent 28%, transparent 52%, rgba(251,191,36,0.55) 66%, transparent 80%)',
+          filter: 'blur(3px)',
+          WebkitMaskImage: 'radial-gradient(circle, transparent 56%, black 63%, black 80%, transparent 86%)',
+          maskImage: 'radial-gradient(circle, transparent 56%, black 63%, black 80%, transparent 86%)',
+        }}
+        initial={{ rotate: 0 }}
+        animate={{ rotate: 2520 }}
+        transition={{ duration: SPIN_DURATION, ease: SPIN_EASE }}
+      />
+      {/* counter-orbiting sparks — depth without touching the ball */}
+      <motion.div
+        className="absolute inset-0"
+        initial={{ rotate: 0 }}
+        animate={{ rotate: -1800 }}
+        transition={{ duration: SPIN_DURATION, ease: SPIN_EASE }}
+      >
+        <span
+          className="absolute left-1/2 -top-3 -ml-1 w-2 h-2 rounded-full bg-amber-100"
+          style={{ boxShadow: '0 0 10px 3px rgba(253,230,138,0.9)' }}
+        />
+        <span
+          className="absolute left-1/2 -bottom-2.5 -ml-0.5 w-1.5 h-1.5 rounded-full bg-white"
+          style={{ boxShadow: '0 0 8px 2px rgba(255,255,255,0.8)' }}
+        />
+      </motion.div>
     </>
   );
 }
@@ -372,7 +384,7 @@ export default function PlayerHome() {
           className="fixed inset-0 z-40 bg-slate-950/85 pointer-events-none"
           initial={{ opacity: 1 }}
           animate={{ opacity: 0 }}
-          transition={{ delay: 1.55, duration: 0.55, ease: 'easeOut' }}
+          transition={{ delay: 2.25, duration: 0.55, ease: 'easeOut' }}
         />
       )}
 
@@ -383,7 +395,7 @@ export default function PlayerHome() {
 
         {playCeremony && (
           <>
-            {/* the gold ball — spins up fast, then the card bursts out of it */}
+            {/* the gold ball — spins up fast, then the card rises out of it */}
             <motion.div
               aria-hidden
               className="absolute left-1/2 top-1/2 z-10 w-24 h-24 pointer-events-none rounded-full"
@@ -393,19 +405,19 @@ export default function PlayerHome() {
                 boxShadow: '0 0 70px 28px rgba(251,191,36,0.55)',
               }}
               initial={{ opacity: 0, scale: 0.2 }}
-              animate={{ opacity: [0, 1, 1, 0], scale: [0.2, 0.95, 1.08, 0.4] }}
-              transition={{ duration: 1.15, times: [0, 0.22, 0.85, 1], ease: 'easeInOut' }}
+              animate={{ opacity: [0, 1, 1, 0], scale: [0.2, 0.92, 1.06, 0.42] }}
+              transition={{ duration: 1.9, times: [0, 0.14, 0.88, 1], ease: 'easeInOut' }}
             >
               <SpinningGoldBall />
             </motion.div>
-            {/* white-gold flash exactly as the card unfolds */}
+            {/* white-gold flash exactly as the card emerges */}
             <motion.div
               aria-hidden
               className="fixed inset-0 z-20 pointer-events-none"
               style={{ background: 'radial-gradient(circle at 50% 45%, rgba(255,250,225,0.95), rgba(251,191,36,0.35) 40%, transparent 72%)' }}
               initial={{ opacity: 0 }}
               animate={{ opacity: [0, 0, 1, 0] }}
-              transition={{ duration: 1.45, times: [0, 0.72, 0.82, 1], ease: 'easeOut' }}
+              transition={{ duration: 2.15, times: [0, 0.8, 0.885, 1], ease: 'easeOut' }}
             />
             {/* afterglow behind the revealed card, cooling off */}
             <motion.div
@@ -419,26 +431,27 @@ export default function PlayerHome() {
               }}
               initial={{ opacity: 0, scale: 0.4 }}
               animate={{ opacity: [0, 0, 0.9, 0], scale: [0.4, 0.4, 1.25, 1.8] }}
-              transition={{ duration: 2.2, times: [0, 0.5, 0.62, 1], ease: 'easeOut' }}
+              transition={{ duration: 2.9, times: [0, 0.6, 0.73, 1], ease: 'easeOut' }}
             />
             {/* confetti as the card settles */}
-            <GoldBurst delay={1.7} count={30} className="absolute inset-x-0 top-1/2 z-30" />
+            <GoldBurst delay={2.4} count={30} className="absolute inset-x-0 top-1/2 z-30" />
           </>
         )}
 
         <motion.div
           initial={playCeremony
-            ? { opacity: 0, rotateY: 90, scale: 0.55 }
+            ? { opacity: 0, rotateY: 90, scale: 0.45, y: 26 }
             : { opacity: 0, y: 36, scale: 0.84 }}
           animate={{ opacity: 1, y: 0, scale: 1, rotateY: 0 }}
           transition={playCeremony
             ? {
-                // The card grows OUT of the spinning ball: a single clean
-                // 90°→0 unfold (no edge-on flicker) while scaling up from
-                // the ball's size — everything lands together.
-                opacity: { delay: 1.15, duration: 0.1 },
-                rotateY: { delay: 1.15, duration: 0.55, ease: [0.22, 1, 0.36, 1] },
-                scale: { delay: 1.15, type: 'spring', damping: 14, stiffness: 170 },
+                // The card RISES out of the ball: grows from its size with a
+                // slight overshoot, floats up into place, one clean 90°→0
+                // unfold — everything lands together.
+                opacity: { delay: 1.85, duration: 0.12 },
+                rotateY: { delay: 1.85, duration: 0.6, ease: [0.22, 1, 0.36, 1] },
+                scale: { delay: 1.85, type: 'spring', damping: 12, stiffness: 150 },
+                y: { delay: 1.85, type: 'spring', damping: 15, stiffness: 140 },
               }
             : { duration: 0.7, type: 'spring', bounce: 0.3 }}
           style={{ transformPerspective: 900 }}
@@ -448,7 +461,7 @@ export default function PlayerHome() {
           transition={{
             duration: 4.6, repeat: Infinity, ease: 'easeInOut',
             // Hold the idle float until the ceremony fully settles.
-            delay: playCeremony ? 2.3 : 0,
+            delay: playCeremony ? 3.1 : 0,
           }}
           style={{ filter: 'drop-shadow(0 24px 56px rgba(200,150,25,0.5))' }}
         >
