@@ -65,6 +65,65 @@ function SpinningGoldBall() {
   );
 }
 
+// ─── Gold dust being SUCKED INTO the ball while it charges ─────────────────
+function GoldGather({ delay = 0, window = 1.5, count = 14 }) {
+  const pieces = React.useMemo(
+    () =>
+      Array.from({ length: count }, () => ({
+        angle: Math.random() * Math.PI * 2,
+        dist: 90 + Math.random() * 70,
+        size: 2.5 + Math.random() * 3,
+        delay: delay + Math.random() * window,
+        dur: 0.55 + Math.random() * 0.3,
+      })),
+    [delay, window, count],
+  );
+  return (
+    <div aria-hidden className="pointer-events-none absolute left-1/2 top-1/2 z-10">
+      {pieces.map((p, i) => (
+        <motion.span
+          key={i}
+          initial={{ x: Math.cos(p.angle) * p.dist, y: Math.sin(p.angle) * p.dist, opacity: 0, scale: 1 }}
+          animate={{ x: 0, y: 0, opacity: [0, 1, 0.9, 0], scale: [1, 1, 0.45, 0.2] }}
+          transition={{ delay: p.delay, duration: p.dur, ease: 'easeIn' }}
+          className="absolute rounded-full"
+          style={{
+            width: p.size,
+            height: p.size,
+            background: '#fde68a',
+            boxShadow: '0 0 8px 2px rgba(251,191,36,0.7)',
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+// ─── Lens-flare rays bursting out at the moment of reveal ──────────────────
+function RevealRays({ delay = 0 }) {
+  return (
+    <div aria-hidden className="pointer-events-none absolute left-1/2 top-1/2 z-20">
+      {[0, 45, 90, 135, 180, 225, 270, 315].map((a) => (
+        <motion.span
+          key={a}
+          className="absolute"
+          style={{
+            width: 2,
+            height: 130,
+            left: -1,
+            top: -130,
+            transformOrigin: '50% 100%',
+            background: 'linear-gradient(to top, rgba(253,230,138,0.95), rgba(253,230,138,0))',
+          }}
+          initial={{ rotate: a, scaleY: 0, opacity: 0 }}
+          animate={{ rotate: a, scaleY: [0, 1.05, 1], opacity: [0, 0.9, 0] }}
+          transition={{ delay: delay + (a % 90 === 0 ? 0 : 0.05), duration: 0.7, ease: 'easeOut' }}
+        />
+      ))}
+    </div>
+  );
+}
+
 // ─── Count-up number animation ─────────────────────────────────────────────
 function CountUp({ to, duration = 1.1, suffix = '' }) {
   const [val, setVal] = useState(0);
@@ -381,7 +440,8 @@ export default function PlayerHome() {
       {playCeremony && (
         <motion.div
           aria-hidden
-          className="fixed inset-0 z-40 bg-slate-950/85 pointer-events-none"
+          className="fixed inset-0 z-40 pointer-events-none"
+          style={{ background: 'radial-gradient(circle at 50% 42%, rgba(2,6,23,0.72), rgba(2,6,23,0.94) 70%)' }}
           initial={{ opacity: 1 }}
           animate={{ opacity: 0 }}
           transition={{ delay: 2.25, duration: 0.55, ease: 'easeOut' }}
@@ -395,6 +455,26 @@ export default function PlayerHome() {
 
         {playCeremony && (
           <>
+            {/* vertical light pillar building up behind the reveal (FUT walkout) */}
+            <motion.div
+              aria-hidden
+              className="absolute left-1/2 top-1/2 pointer-events-none"
+              style={{
+                width: 120,
+                height: 430,
+                marginLeft: -60,
+                marginTop: -215,
+                background: 'linear-gradient(to top, transparent, rgba(251,191,36,0.28) 30%, rgba(255,241,196,0.5) 50%, rgba(251,191,36,0.28) 70%, transparent)',
+                filter: 'blur(18px)',
+              }}
+              initial={{ opacity: 0, scaleY: 0.3 }}
+              animate={{ opacity: [0, 0.35, 0.9, 0], scaleY: [0.3, 0.7, 1.15, 1.25] }}
+              transition={{ duration: 2.9, times: [0, 0.45, 0.68, 1], ease: 'easeInOut' }}
+            />
+            {/* gold dust streaming INTO the ball while it charges */}
+            <GoldGather delay={0.25} window={1.3} count={16} />
+            {/* lens-flare rays at the instant the card breaks out */}
+            <RevealRays delay={1.82} />
             {/* the gold ball — spins up fast, then the card rises out of it */}
             <motion.div
               aria-hidden
@@ -475,6 +555,22 @@ export default function PlayerHome() {
               backgroundRepeat: 'no-repeat',
             }}
           >
+            {/* gleam sweeping across the card face right after it lands */}
+            {playCeremony && (
+              <div
+                aria-hidden
+                className="absolute pointer-events-none overflow-hidden"
+                style={{ inset: '4%', borderRadius: 18 }}
+              >
+                <motion.div
+                  className="absolute inset-y-0 w-1/3"
+                  style={{ background: 'linear-gradient(105deg, transparent, rgba(255,255,255,0.35), transparent)' }}
+                  initial={{ x: '-150%' }}
+                  animate={{ x: '400%' }}
+                  transition={{ delay: 2.55, duration: 0.85, ease: 'easeInOut' }}
+                />
+              </div>
+            )}
             <div className="absolute left-1/2 -translate-x-1/2" style={{ top: '18%' }}>
               {player.image ? (
                 <img
