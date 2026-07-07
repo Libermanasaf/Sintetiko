@@ -72,7 +72,7 @@ export default function Layout({ children, currentPageName }) {
           </button>
 
           <div className="flex items-center gap-2.5">
-            <ClubCrest className="h-11 w-auto drop-shadow-[0_2px_6px_rgba(212,160,40,0.35)]" />
+            <ClubCrest className="h-10 w-10 drop-shadow-[0_2px_6px_rgba(212,160,40,0.35)]" />
             <div className="leading-none text-right">
               <h1 className="st-gold-text text-lg font-black tracking-tight">
                 סינתטיקו

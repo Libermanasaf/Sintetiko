@@ -189,7 +189,7 @@ export default function Sidebar({ isOpen, onClose }) {
               </button>
 
               <div className="flex flex-col items-center text-center pt-2">
-                <ClubCrest className="h-16 w-auto drop-shadow-[0_4px_12px_rgba(212,160,40,0.4)]" />
+                <ClubCrest className="h-16 w-16 drop-shadow-[0_4px_12px_rgba(212,160,40,0.4)]" />
                 <h2 className="st-gold-text text-xl font-black tracking-tight mt-2.5">
                   סינתטיקו חולון
                 </h2>
