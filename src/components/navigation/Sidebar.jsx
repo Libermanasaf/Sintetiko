@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/lib/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { menuItems, adminGroups, RESTRICTED_ALLOWED_PAGES } from '@/lib/navConfig';
+import ClubCrest from '@/components/ClubCrest';
 
 const GROUPS_STORAGE_KEY = 'sb_admin_groups';
 const DAY_OF_PAGE = {
@@ -15,34 +16,7 @@ const DAY_OF_PAGE = {
   DayListThursday: 'thursday',
 };
 
-function SidebarCrest() {
-  return (
-    <svg viewBox="0 0 56 56" className="w-12 h-12" aria-hidden="true">
-      <defs>
-        <linearGradient id="sbGold" x1="6" y1="4" x2="50" y2="52" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#fde9b8" />
-          <stop offset="48%" stopColor="#e0a92e" />
-          <stop offset="100%" stopColor="#9a6a16" />
-        </linearGradient>
-        <radialGradient id="sbCore" cx="42%" cy="34%" r="72%">
-          <stop offset="0%" stopColor="#15573f" />
-          <stop offset="100%" stopColor="#06110d" />
-        </radialGradient>
-      </defs>
-      <circle cx="28" cy="28" r="26" fill="url(#sbGold)" />
-      <circle cx="28" cy="28" r="22" fill="url(#sbCore)" />
-      <circle cx="28" cy="28" r="22" fill="none" stroke="#f3d27e" strokeWidth="0.9" strokeOpacity="0.5" />
-      <g transform="translate(28 28)" stroke="url(#sbGold)" strokeWidth="2.1" strokeLinecap="round" fill="none">
-        <line x1="0" y1="-5" x2="0" y2="-13" />
-        <line x1="4.5" y1="-1.5" x2="12.4" y2="-4" />
-        <line x1="2.8" y1="3.8" x2="7.6" y2="10.5" />
-        <line x1="-2.8" y1="3.8" x2="-7.6" y2="10.5" />
-        <line x1="-4.5" y1="-1.5" x2="-12.4" y2="-4" />
-      </g>
-      <path d="M28,21.7 L34,26.06 L31.71,33.1 L24.29,33.1 L22,26.06 Z" fill="url(#sbGold)" />
-    </svg>
-  );
-}
+/* Crest is the shared ClubCrest component — see components/ClubCrest.jsx */
 
 export default function Sidebar({ isOpen, onClose }) {
   const { role, loginMode, user, logout, isRestricted } = useAuth();
@@ -215,7 +189,7 @@ export default function Sidebar({ isOpen, onClose }) {
               </button>
 
               <div className="flex flex-col items-center text-center pt-2">
-                <SidebarCrest />
+                <ClubCrest className="h-16 w-auto drop-shadow-[0_4px_12px_rgba(212,160,40,0.4)]" />
                 <h2 className="st-gold-text text-xl font-black tracking-tight mt-2.5">
                   סינתטיקו חולון
                 </h2>

@@ -9,39 +9,7 @@ import { registerServiceWorker, ensureSubscribed } from '@/lib/push';
 import NotificationGate from '@/components/NotificationGate';
 import { recordPageVisit } from '@/lib/loginActivity';
 import OfflineBanner from '@/components/OfflineBanner';
-
-// Compact crest monogram for the header — gold ring + pitch core
-function HeaderCrest() {
-  return (
-    <svg viewBox="0 0 48 48" className="w-9 h-9" aria-hidden="true">
-      <defs>
-        <linearGradient id="hdrGold" x1="6" y1="4" x2="42" y2="44" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#fde9b8" />
-          <stop offset="48%" stopColor="#e0a92e" />
-          <stop offset="100%" stopColor="#9a6a16" />
-        </linearGradient>
-        <radialGradient id="hdrCore" cx="42%" cy="34%" r="72%">
-          <stop offset="0%" stopColor="#15573f" />
-          <stop offset="100%" stopColor="#06110d" />
-        </radialGradient>
-      </defs>
-      <circle cx="24" cy="24" r="22" fill="url(#hdrGold)" />
-      <circle cx="24" cy="24" r="18.5" fill="url(#hdrCore)" />
-      <circle cx="24" cy="24" r="18.5" fill="none" stroke="#f3d27e" strokeWidth="0.8" strokeOpacity="0.5" />
-      <g transform="translate(24 24)" stroke="url(#hdrGold)" strokeWidth="1.8" strokeLinecap="round" fill="none">
-        <line x1="0" y1="-4" x2="0" y2="-11" />
-        <line x1="3.8" y1="-1.2" x2="10.5" y2="-3.4" />
-        <line x1="2.35" y1="3.2" x2="6.5" y2="9" />
-        <line x1="-2.35" y1="3.2" x2="-6.5" y2="9" />
-        <line x1="-3.8" y1="-1.2" x2="-10.5" y2="-3.4" />
-      </g>
-      <path
-        d="M24,18.6 L29.13,22.33 L27.17,28.36 L20.83,28.36 L18.87,22.33 Z"
-        fill="url(#hdrGold)"
-      />
-    </svg>
-  );
-}
+import ClubCrest from '@/components/ClubCrest';
 
 export default function Layout({ children, currentPageName }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -104,7 +72,7 @@ export default function Layout({ children, currentPageName }) {
           </button>
 
           <div className="flex items-center gap-2.5">
-            <HeaderCrest />
+            <ClubCrest className="h-11 w-auto drop-shadow-[0_2px_6px_rgba(212,160,40,0.35)]" />
             <div className="leading-none text-right">
               <h1 className="st-gold-text text-lg font-black tracking-tight">
                 סינתטיקו
