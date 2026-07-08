@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { PageHeader } from '@/components/ui/lux';
 import { Signup, Player } from '@/api/entities';
 import { supabase } from '@/lib/supabase';
-import { addConfirmedToPublished, publishDayListVerified } from '@/lib/listPublish';
+import { publishDayList, publishDayListVerified } from '@/lib/listPublish';
 import { callApi } from '@/lib/apiClient';
 
 const SIGNUPS_TABLE_SQL = `CREATE TABLE IF NOT EXISTS signups (
@@ -607,23 +607,36 @@ export default function Lists() {
     }
   }, [viewersByDay, data.rows, players]);
 
-  // Confirm a signup: send push to player + add name to first empty main row + delete signup
+  // Confirm a signup: place the name in the first EMPTY main row (approval is
+  // a swap inside the 18 — a full roster blocks confirmation, slot 19 never
+  // exists), push to the player, and if the day was already published —
+  // silently refresh the snapshot so EVERYONE sees the updated roster.
   const handleConfirmSignup = async (signup) => {
     setBusyId(signup.id);
     try {
-      // Add to main list at first empty slot
-      setData(prev => {
-        const rows = [...prev.rows[signup.day]];
-        const emptyIdx = rows.findIndex(r => !r || !r.trim());
-        if (emptyIdx >= 0) {
+      const next = await new Promise((resolve) => {
+        setData(prev => {
+          const rows = [...prev.rows[signup.day]];
+          const emptyIdx = rows.findIndex(r => !r || !r.trim());
+          if (emptyIdx < 0) { resolve(null); return prev; }
           rows[emptyIdx] = signup.player_name;
-        } else {
-          rows.push(signup.player_name);
-        }
-        const next = { ...prev, rows: { ...prev.rows, [signup.day]: rows } };
-        persistAll(next);
-        return next;
+          const n = { ...prev, rows: { ...prev.rows, [signup.day]: rows } };
+          resolve(n);
+          return n;
+        });
       });
+
+      if (!next) {
+        toast.error('הרשימה מלאה (18/18) — האישור לא בוצע', {
+          description: 'פנה מקום ברשימה (מחק שם) ואז אשר את הממתין',
+          duration: 7000,
+        });
+        return;
+      }
+
+      // The snapshot below reads lists_state from the cloud — the save must
+      // fully land first, or we'd snapshot a stale roster.
+      await persistAll(next);
 
       // Send push to player
       const player = players.find(p => p.id === signup.player_id);
@@ -640,14 +653,18 @@ export default function Lists() {
         } catch (e) { console.warn('[push to player]', e); }
       }
 
-      // If this day was ALREADY published, the live-rows change above stays hidden
-      // from everyone (they see the snapshot). So personalize: add this player to
-      // the published snapshot's extraConfirmed, where only they (by email) will
-      // see their name appended. If the day isn't published yet, this no-ops and
-      // the name simply rides along on the next full publish.
+      // Day already published? Re-snapshot it silently (no push) so every
+      // player sees the CURRENT roster — including the swap that freed the
+      // slot. Replaces the old extraConfirmed personalization, which appended
+      // the confirmed player as a phantom row 19 only they could see.
       try {
-        await addConfirmedToPublished(signup.day, { name: signup.player_name, email });
-      } catch (e) { console.warn('[personalize confirm]', e); }
+        const { data: row } = await supabase
+          .from('lists_state').select('data').eq('id', 'main').maybeSingle();
+        if (row?.data?.publishedLists?.[signup.day]) {
+          await publishDayList(signup.day);
+          queryClient.invalidateQueries({ queryKey: ['lists-state'] });
+        }
+      } catch (e) { console.warn('[confirm republish]', e); }
 
       // Remove from signups
       await Signup.delete(signup.id);
