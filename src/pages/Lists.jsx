@@ -37,6 +37,9 @@ const WAITING_ROWS = 6;
 
 const DAY_LABELS = { sunday: 'יום ראשון', wednesday: 'יום רביעי', thursday: 'יום חמישי' };
 
+// Fixed game hours shown in the publish push (only days listed here get one).
+const GAME_TIMES = { wednesday: '21:00-23:00' };
+
 const EMPTY_18 = Array(18).fill('');
 
 const DEFAULTS = {
@@ -498,7 +501,7 @@ export default function Lists() {
       try {
         const res = await callApi('/api/send-notification', {
           title: 'סינתטיקו חולון',
-          body: `הרשימה ל${DAY_LABELS[day]} פורסמה — הצצה מי בפנים`,
+          body: `הרשימה ל${DAY_LABELS[day]} פורסמה${GAME_TIMES[day] ? ` ⏰ המשחק ${GAME_TIMES[day]}` : ''} — הצצה מי בפנים`,
           url: dayUrl || '/',
         });
         const pd = await res.json().catch(() => ({}));
