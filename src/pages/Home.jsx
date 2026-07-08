@@ -13,6 +13,7 @@ import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { LuxCard, Eyebrow, GoldButton, StatTile } from '@/components/ui/lux';
+import ClubCrest from '@/components/ClubCrest';
 import { supabase } from '@/lib/supabase';
 
 const TEAM_NAMES = ['הצהובים', 'הכחולים', 'הכתומים'];
@@ -362,26 +363,13 @@ export default function Home() {
             <Eyebrow>מועדון הכדורגל</Eyebrow>
           </motion.div>
 
-          <motion.h1
+          <motion.div
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5, duration: 0.5 }}
-            className="st-gold-text text-[clamp(3rem,15vw,4.75rem)] font-black leading-[0.92] tracking-tight mt-2"
+            className="flex justify-center mt-3 mb-3"
           >
-            סינתטיקו
-          </motion.h1>
-
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
-            className="flex items-center justify-center gap-3 mt-1 mb-3"
-          >
-            <span className="h-[2px] w-12 rounded-full bg-gradient-to-r from-amber-400/80 to-transparent" />
-            <span className="text-2xl font-black tracking-[0.22em] text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-400">
-              חולון
-            </span>
-            <span className="h-[2px] w-12 rounded-full bg-gradient-to-l from-amber-400/80 to-transparent" />
+            <ClubCrest className="h-40 w-auto drop-shadow-[0_6px_20px_rgba(212,160,40,0.25)]" />
           </motion.div>
 
           <motion.p
