@@ -36,6 +36,41 @@ function PlayerRegistration({ players, user, signups, role }) {
       .map(s => s.day)),
     [signups, user]);
 
+  // The player's own active signups, in weekday order — shown with a cancel
+  // button (standby only; a confirmed arrival is cancelled through the admin).
+  const mySignups = useMemo(() =>
+    (signups || [])
+      .filter(s => s.user_email?.toLowerCase() === user?.email?.toLowerCase())
+      .sort((a, b) => DAYS.findIndex(d => d.key === a.day) - DAYS.findIndex(d => d.key === b.day)),
+    [signups, user]);
+
+  const [cancelingId, setCancelingId] = useState(null);      // delete in flight
+  const [confirmCancelId, setConfirmCancelId] = useState(null); // two-step confirm
+
+  const handleCancelSignup = async (signup) => {
+    setCancelingId(signup.id);
+    try {
+      await Signup.delete(signup.id);
+      queryClient.invalidateQueries({ queryKey: ['signups'] });
+      const dayLabel = DAYS.find(d => d.key === signup.day)?.label || '';
+      toast.success(`הרישום ל${dayLabel} בוטל`);
+      // Let the admin know (best-effort)
+      try {
+        await callApi('/api/send-notification', {
+          targetEmail: ADMIN_EMAIL,
+          title: 'סינתטיקו — ביטול רישום ❌',
+          body: `${signup.player_name} ביטל את הרישום ל${dayLabel}`,
+          url: createPageUrl('Lists'),
+        });
+      } catch (e) { console.warn('[cancel push]', e); }
+    } catch (e) {
+      toast.error('הביטול נכשל', { description: e?.message || 'נסה שוב' });
+    } finally {
+      setCancelingId(null);
+      setConfirmCancelId(null);
+    }
+  };
+
   // Navigate to PlayerHome 2s after success
   useEffect(() => {
     if (!done) return;
@@ -133,6 +168,64 @@ function PlayerRegistration({ players, user, signups, role }) {
 
   return (
     <div className="space-y-4">
+      {/* My active signups — status + cancel */}
+      {mySignups.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-ink-2 text-xs font-black px-1">הרישומים שלך</p>
+          <div className="space-y-2">
+            {mySignups.map(s => {
+              const d = DAYS.find(x => x.key === s.day);
+              const waiting = s.status !== 'confirmed';
+              const busy = cancelingId === s.id;
+              const asking = confirmCancelId === s.id;
+              return (
+                <motion.div
+                  key={s.id}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={`rounded-2xl bg-slate-800/60 ring-1 ${d?.ring || 'ring-white/8'} px-4 py-3 flex items-center gap-3`}
+                >
+                  <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${d?.dot || 'bg-slate-400'}`} />
+                  <div className="flex-1 min-w-0">
+                    <p className={`font-black text-sm ${d?.color || 'text-white'}`}>{d?.label}</p>
+                    <p className={`text-[0.65rem] font-bold mt-0.5 ${waiting ? 'text-amber-400' : 'text-emerald-400'}`}>
+                      {waiting ? 'סטנד-ביי — ממתין לאישור המנהל' : 'מאושר — אתה בפנים ✅'}
+                    </p>
+                  </div>
+                  {waiting ? (
+                    asking ? (
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span className="text-slate-300 text-[0.7rem] font-black">לבטל?</span>
+                        <button onClick={() => handleCancelSignup(s)} disabled={busy}
+                          aria-label="אישור ביטול"
+                          className="grid place-items-center w-9 h-9 rounded-lg bg-rose-500/25 ring-1 ring-rose-500/40 text-rose-300 active:scale-95 disabled:opacity-50 transition-transform touch-manipulation">
+                          {busy
+                            ? <div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                            : <CheckCircle2 className="w-4 h-4" strokeWidth={2.6} />}
+                        </button>
+                        <button onClick={() => setConfirmCancelId(null)} disabled={busy}
+                          aria-label="השאר רישום"
+                          className="grid place-items-center w-9 h-9 rounded-lg bg-slate-700/80 ring-1 ring-white/10 text-slate-300 active:scale-95 transition-transform touch-manipulation">
+                          <X className="w-4 h-4" strokeWidth={2.5} />
+                        </button>
+                      </div>
+                    ) : (
+                      <button onClick={() => setConfirmCancelId(s.id)}
+                        className="flex items-center gap-1 shrink-0 px-2.5 min-h-[36px] rounded-lg bg-rose-500/12 ring-1 ring-rose-500/30 text-rose-300 text-xs font-black active:scale-95 transition-transform touch-manipulation">
+                        <X className="w-3.5 h-3.5" strokeWidth={2.6} />
+                        בטל רישום
+                      </button>
+                    )
+                  ) : (
+                    <span className="text-[0.6rem] text-ink-3 font-bold shrink-0">לביטול פנה למנהל</span>
+                  )}
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Day picker */}
       <div className="space-y-2">
         <p className="text-ink-2 text-xs font-black px-1">בחר יום</p>
