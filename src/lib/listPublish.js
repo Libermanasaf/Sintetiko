@@ -17,7 +17,10 @@ export const DAY_FROM_URL = {
 // Snapshots the current roster for `day` into publishedLists[day]. Reads the
 // live lists_state, copies that day's header+rows, writes back. Fire-and-forget
 // safe: on error it throws so the caller can surface it, but push already sent.
-export async function publishDayList(day) {
+// `preservePublishedAt` keeps the previous snapshot's timestamp — used by the
+// silent refresh after a standby confirm, so the "who viewed" window (which
+// counts views since publishedAt) doesn't reset on every roster tweak.
+export async function publishDayList(day, { preservePublishedAt = false } = {}) {
   if (!supabase || !day) return;
 
   const { data: row, error: readErr } = await supabase
@@ -31,7 +34,9 @@ export async function publishDayList(day) {
   const snapshot = {
     header: all.headers?.[day] || '',
     rows: all.rows?.[day] || [],
-    publishedAt: new Date().toISOString(),
+    publishedAt:
+      (preservePublishedAt && all.publishedLists?.[day]?.publishedAt) ||
+      new Date().toISOString(),
   };
   const nextData = {
     ...all,

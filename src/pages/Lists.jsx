@@ -673,7 +673,9 @@ export default function Lists() {
         const { data: row } = await supabase
           .from('lists_state').select('data').eq('id', 'main').maybeSingle();
         if (row?.data?.publishedLists?.[signup.day]) {
-          await publishDayList(signup.day);
+          // preservePublishedAt: a roster tweak is not a new publish — keep
+          // the "who viewed" window anchored to the original publish time.
+          await publishDayList(signup.day, { preservePublishedAt: true });
           queryClient.invalidateQueries({ queryKey: ['lists-state'] });
         }
       } catch (e) { console.warn('[confirm republish]', e); }
