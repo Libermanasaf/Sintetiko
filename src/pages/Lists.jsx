@@ -490,6 +490,23 @@ export default function Lists() {
       const current = await new Promise((resolve) => {
         setData(prev => { resolve(prev); return prev; });
       });
+
+      // Guard: never publish a roster with the same name twice. The boxes are
+      // already highlighted red — point the admin there and abort.
+      const rosterDups = findDayDuplicates(current.rows[day]);
+      if (rosterDups.size > 0) {
+        const dupNames = [...new Set(
+          (current.rows[day] || [])
+            .filter(n => n.trim() && rosterDups.has(normName(n)))
+            .map(n => n.trim())
+        )];
+        toast.error('הרשימה לא פורסמה — יש שם כפול', {
+          description: `${dupNames.join(', ')} — תקן את השורות המסומנות באדום ופרסם שוב`,
+          duration: 8000,
+        });
+        return;
+      }
+
       await persistAll(current);
       // Publish + verify the snapshot actually landed (no silent failure).
       await publishDayListVerified(day);
