@@ -638,10 +638,16 @@ export default function Lists() {
       // fully land first, or we'd snapshot a stale roster.
       await persistAll(next);
 
-      // Send push to player
+      // Send push to player. signup.user_email is the login email their push
+      // subscription is registered under — prefer it over players.email,
+      // which can be stale. Surface the delivery result instead of failing
+      // silently, so the admin KNOWS whether the player got notified.
       const player = players.find(p => p.id === signup.player_id);
-      const email = player?.email || signup.user_email;
-      if (email && email !== 'unknown') {
+      const email = (signup.user_email && signup.user_email !== 'unknown')
+        ? signup.user_email
+        : (player?.email && player.email !== 'unknown' ? player.email : null);
+      let pushProblem = 'אין לשחקן אימייל במערכת';
+      if (email) {
         try {
           const res = await callApi('/api/send-notification', {
             targetEmail: email,
@@ -649,8 +655,14 @@ export default function Lists() {
             body: `${signup.player_name}, הגעתך ל${DAY_LABELS[signup.day]} אושרה`,
             url: '/',
           });
-          if (!res.ok) console.warn('[push to player] failed', await res.text());
-        } catch (e) { console.warn('[push to player]', e); }
+          const pd = await res.json().catch(() => ({}));
+          if (!res.ok) pushProblem = pd.error || `שגיאת שרת ${res.status}`;
+          else if ((pd.sent || 0) === 0) pushProblem = 'לשחקן אין מנוי התראות פעיל';
+          else pushProblem = null; // delivered
+        } catch (e) {
+          console.warn('[push to player]', e);
+          pushProblem = 'שגיאת רשת';
+        }
       }
 
       // Day already published? Re-snapshot it silently (no push) so every
@@ -669,7 +681,12 @@ export default function Lists() {
       // Remove from signups
       await Signup.delete(signup.id);
       queryClient.invalidateQueries({ queryKey: ['signups'] });
-      toast.success(`${signup.player_name} אושר ונוסף לרשימה!`);
+      if (pushProblem) {
+        toast.success(`${signup.player_name} אושר ונוסף לרשימה`);
+        toast.warning(`הפוש לשחקן לא נמסר — ${pushProblem}`, { duration: 7000 });
+      } else {
+        toast.success(`${signup.player_name} אושר, נוסף לרשימה ונשלח לו פוש ✅`);
+      }
     } catch (e) {
       console.error('[confirm signup]', e);
       toast.error('שגיאה באישור');

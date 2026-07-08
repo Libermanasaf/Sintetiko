@@ -322,17 +322,33 @@ function AdminSignups({ signups, players, isLoading }) {
     setBusyId(signup.id);
     try {
       await updateMutation.mutateAsync({ id: signup.id, status: 'confirmed' });
+      // Prefer the login email (where the push subscription lives) over
+      // players.email, and report the actual delivery result.
       const player = players.find(p => p.id === signup.player_id);
-      const email = player?.email || signup.user_email;
+      const email = (signup.user_email && signup.user_email !== 'unknown')
+        ? signup.user_email
+        : (player?.email && player.email !== 'unknown' ? player.email : null);
+      let pushProblem = 'אין לשחקן אימייל במערכת';
       if (email) {
-        await callApi('/api/send-notification', {
-          targetEmail: email,
-          title: 'סינתטיקו חולון — אתה בפנים! ✅',
-          body: `${signup.player_name}, הגעתך ל${DAYS.find(d => d.key === signup.day)?.label} אושרה!`,
-          url: '/',
-        });
+        try {
+          const res = await callApi('/api/send-notification', {
+            targetEmail: email,
+            title: 'סינתטיקו חולון — אתה בפנים! ✅',
+            body: `${signup.player_name}, הגעתך ל${DAYS.find(d => d.key === signup.day)?.label} אושרה!`,
+            url: '/',
+          });
+          const pd = await res.json().catch(() => ({}));
+          if (!res.ok) pushProblem = pd.error || `שגיאת שרת ${res.status}`;
+          else if ((pd.sent || 0) === 0) pushProblem = 'לשחקן אין מנוי התראות פעיל';
+          else pushProblem = null;
+        } catch { pushProblem = 'שגיאת רשת'; }
       }
-      toast.success(`${signup.player_name} אושר ונשלחה התראה`);
+      if (pushProblem) {
+        toast.success(`${signup.player_name} אושר`);
+        toast.warning(`הפוש לשחקן לא נמסר — ${pushProblem}`, { duration: 7000 });
+      } else {
+        toast.success(`${signup.player_name} אושר ונשלח לו פוש ✅`);
+      }
     } catch { toast.error('שגיאה באישור'); }
     finally { setBusyId(null); }
   };
