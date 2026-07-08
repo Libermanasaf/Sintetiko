@@ -660,18 +660,18 @@ export default function MatchDay() {
                       key={`${teamIdx}-${rowIdx}`}
                       type={isAdmin && p ? 'button' : undefined}
                       onClick={isAdmin && p ? () => setEditingPlayer({ player: p, teamIndex: teamIdx }) : undefined}
-                      className={`h-12 flex items-center gap-2 px-2.5 ${rowIdx % 2 ? 'bg-slate-900/50' : 'bg-slate-900/75'} border-t border-white/5 ring-1 ${t.tint.split(' ')[1]} ${isLast ? 'rounded-b-2xl' : ''} ${isAdmin && p ? 'cursor-pointer hover:bg-white/8 active:bg-white/5 transition-colors touch-manipulation' : ''}`}
+                      className={`h-12 flex items-center gap-1.5 sm:gap-2 px-1.5 sm:px-2.5 ${rowIdx % 2 ? 'bg-slate-900/50' : 'bg-slate-900/75'} border-t border-white/5 ring-1 ${t.tint.split(' ')[1]} ${isLast ? 'rounded-b-2xl' : ''} ${isAdmin && p ? 'cursor-pointer hover:bg-white/8 active:bg-white/5 transition-colors touch-manipulation' : ''}`}
                     >
                       {/* avatar pinned to the row start — every circle sits on
                           the same vertical line down the column */}
                       {p && (p.image ? (
-                        <img src={p.image} alt={p.name} loading="lazy" className="w-8 h-8 rounded-full object-cover shrink-0 ring-1 ring-white/10" />
+                        <img src={p.image} alt={p.name} loading="lazy" className="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover shrink-0 ring-1 ring-white/10" />
                       ) : (
-                        <div className="grid place-items-center w-8 h-8 rounded-full bg-slate-700 shrink-0">
-                          <User className="w-4 h-4 text-slate-400" />
+                        <div className="grid place-items-center w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-slate-700 shrink-0">
+                          <User className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-400" />
                         </div>
                       ))}
-                      <p className="flex-1 min-w-0 text-white text-base font-bold truncate leading-tight text-right">{p?.name ?? ''}</p>
+                      <p className="flex-1 min-w-0 text-white text-[0.8rem] sm:text-base font-bold truncate leading-tight text-right">{p?.name ?? ''}</p>
                       {playerGoals > 0 && (
                         <span className="flex items-center gap-0.5 shrink-0 text-amber-300 text-[0.62rem] font-black tnum">
                           <Target className="w-3 h-3" strokeWidth={2.8} />
