@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, ArrowRight, Trophy, Target, Plus, Minus, X, Star, Lock, Check, Crown } from 'lucide-react';
+import { User, ArrowRight, Trophy, Target, Plus, Minus, X, Lock, Check, Crown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
@@ -238,8 +238,6 @@ export default function MatchDay() {
   const [savingGoals, setSavingGoals] = useState(false);
   const [confirmClose, setConfirmClose] = useState(false);
   const [closingRound, setClosingRound] = useState(false);
-  const [, setMvpVersion] = useState(0);
-  const mvpRef = useRef({ roundId: null, vote: null });
   // Latest-write-wins sequence numbers so rapid clicks don't race
   const winsSaveSeq = useRef(0);
   const goalsSaveSeq = useRef(0);
@@ -369,39 +367,8 @@ export default function MatchDay() {
     }
   };
 
-  // Sync ref when round changes — ref never resets between renders
-  if (round?.id !== mvpRef.current.roundId) {
-    mvpRef.current = {
-      roundId: round?.id || null,
-      vote: round?.id ? (localStorage.getItem(`mvp_vote_${round.id}`) || null) : null,
-    };
-  }
-  const myMvpVote = mvpRef.current.vote;
-  const hasVotedMvp = !!myMvpVote;
-  const serverMvpVotes = round?.mvpVotes || {};
-  const displayMvpVotes = (myMvpVote && !serverMvpVotes[myMvpVote])
-    ? { ...serverMvpVotes, [myMvpVote]: 1 }
-    : serverMvpVotes;
-  const totalMvpVotes = Object.values(displayMvpVotes).reduce((s, v) => s + v, 0);
-
-  const handleMvpVote = (candidateId) => {
-    if (mvpRef.current.vote || !round?.id) return;
-    // A player can't vote for themselves. currentPlayer is set from the logged-in
-    // user_id; admins have no currentPlayer, so this never blocks them.
-    if (currentPlayer && candidateId === currentPlayer.id) {
-      toast.error('אי אפשר להצביע לעצמך');
-      return;
-    }
-    mvpRef.current = { roundId: round.id, vote: candidateId };
-    localStorage.setItem(`mvp_vote_${round.id}`, candidateId);
-    setMvpVersion(v => v + 1);
-    // Atomic server-side increment — avoids the lost-update race when many
-    // people vote at once (was a client read-modify-write of the whole jsonb).
-    if (supabase) {
-      supabase.rpc('cast_mvp_vote', { p_round_id: round.id, p_candidate_id: candidateId })
-        .then(({ error }) => { if (error) console.warn('[mvp vote]', error.message); });
-    }
-  };
+  // MVP voting moved out of MatchDay — it lives in the round-results flow
+  // (the vote gate before seeing results), so no MVP UI/logic here.
 
   const handleCloseRound = async () => {
     if (!round) return;
@@ -737,88 +704,6 @@ export default function MatchDay() {
           />
         </motion.div>
 
-        {/* MVP Vote */}
-        <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
-          <SectionTitle icon={Star} className="mb-3">השחקן המצטיין של הערב</SectionTitle>
-          <div className="rounded-2xl bg-slate-900/70 ring-1 ring-white/8 overflow-hidden">
-            {/* Header */}
-            <div className="px-4 py-3 border-b border-white/5 flex items-center justify-between">
-              <span className="text-slate-400 text-xs font-bold">
-                {hasVotedMvp ? 'הצבעתך נרשמה ✓' : 'הצבע לשחקן המצטיין'}
-              </span>
-              <span className="text-slate-500 text-xs font-bold tnum">{totalMvpVotes} הצבעות</span>
-            </div>
-
-            <div className="p-3 space-y-2">
-              {round.teams.flatMap((playerIds, tIdx) =>
-                playerIds.map(pid => {
-                  const p = allPlayers.find(pl => pl.id === pid);
-                  if (!p) return null;
-                  const t = teamOf(tIdx);
-                  const votes = displayMvpVotes[pid] || 0;
-                  const pct = totalMvpVotes > 0 ? Math.round((votes / totalMvpVotes) * 100) : 0;
-                  const maxVotes = totalMvpVotes > 0 ? Math.max(...Object.values(displayMvpVotes)) : 0;
-                  const isTopVoted = maxVotes > 0 && votes === maxVotes;
-                  const isMyVote = myMvpVote === pid;
-                  const isMe = !!currentPlayer && currentPlayer.id === pid;
-
-                  return (
-                    <button
-                      type="button"
-                      key={pid}
-                      onClick={() => handleMvpVote(pid)}
-                      disabled={isMe && !hasVotedMvp}
-                      className={`relative w-full flex items-center gap-3 p-3 rounded-xl ring-1 text-right overflow-hidden transition-all touch-manipulation
-                        ${isMe && !hasVotedMvp ? 'opacity-55 cursor-not-allowed' : !hasVotedMvp ? 'active:scale-[0.99] cursor-pointer hover:bg-white/5' : 'cursor-default'}
-                        ${isMyVote
-                          ? 'ring-amber-400/60 bg-amber-500/15'
-                          : isTopVoted && hasVotedMvp
-                            ? 'ring-amber-400/30 bg-amber-500/8'
-                            : 'ring-white/6 bg-slate-800/50'}
-                      `}
-                    >
-                      {/* Progress bar (shown after voting) */}
-                      {hasVotedMvp && pct > 0 && (
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: `${pct}%` }}
-                          transition={{ duration: 0.6, ease: 'easeOut' }}
-                          className={`absolute inset-y-0 right-0 ${isMyVote ? 'bg-amber-500/20' : 'bg-white/5'}`}
-                        />
-                      )}
-
-                      {/* Avatar */}
-                      <div className={`relative grid place-items-center w-9 h-9 rounded-lg shrink-0 font-black text-sm
-                        ${isMyVote || (isTopVoted && hasVotedMvp) ? 'st-foil' : 'bg-slate-700 text-slate-300'}`}>
-                        {(p.name?.[0] || '?').toUpperCase()}
-                        {isMyVote && <Star className="absolute -top-1 -right-1 w-3 h-3 text-amber-400 fill-amber-400" />}
-                      </div>
-
-                      {/* Name + team */}
-                      <div className="relative min-w-0 flex-1">
-                        <p className={`font-black text-sm truncate flex items-center gap-1.5 ${isMyVote ? 'text-amber-300' : isTopVoted && hasVotedMvp ? 'text-amber-200' : 'text-slate-200'}`}>
-                          {p.name}
-                          {isMe && (
-                            <span className="shrink-0 text-[0.55rem] font-black px-1.5 py-0.5 rounded-full bg-slate-700/80 ring-1 ring-white/10 text-slate-300">אתה</span>
-                          )}
-                        </p>
-                        <p className={`text-[0.6rem] font-bold ${t.text} opacity-70`}>{t.name}</p>
-                      </div>
-
-                      {/* Vote count (shown after voting) */}
-                      {hasVotedMvp && (
-                        <div className="relative shrink-0 text-left min-w-[32px]">
-                          <p className={`font-black text-sm tnum ${isMyVote || isTopVoted ? 'text-amber-300' : 'text-slate-400'}`}>{votes}</p>
-                          <p className="text-slate-500 text-[0.6rem] font-bold tnum">{pct}%</p>
-                        </div>
-                      )}
-                    </button>
-                  );
-                })
-              )}
-            </div>
-          </div>
-        </motion.div>
       </div>
 
       {/* Goal editor (admin only) */}
