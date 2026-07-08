@@ -71,17 +71,7 @@ export default function Layout({ children, currentPageName }) {
             <Menu className="w-5 h-5" strokeWidth={2.4} />
           </button>
 
-          <div className="flex items-center gap-2.5">
-            <ClubCrest className="h-10 w-10 drop-shadow-[0_2px_6px_rgba(212,160,40,0.35)]" />
-            <div className="leading-none text-right">
-              <h1 className="st-gold-text text-lg font-black tracking-tight">
-                סינתטיקו
-              </h1>
-              <span className="block text-[0.58rem] font-bold tracking-[0.32em] text-ink-3 mt-0.5">
-                חולון
-              </span>
-            </div>
-          </div>
+          <ClubCrest className="h-[52px] w-auto drop-shadow-[0_2px_8px_rgba(212,160,40,0.3)]" />
 
           <div className="w-11" aria-hidden="true" />
         </div>

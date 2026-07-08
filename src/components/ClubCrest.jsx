@@ -1,16 +1,17 @@
 import React from 'react';
 
 /* ═══════════════════════════════════════════════════════════════════
-   CLUB LOGO — the owner's original SYNTHETICO ball mark.
-   /logo-ball.png is cut from public/logo-source.png (the designed
-   lockup): background keyed to transparent, ball cropped square —
-   see the full lockup at /logo-full.png for hero/landing uses.
+   CLUB LOGO — the owner's original SYNTHETICO design, as designed:
+   the FULL lockup (ball + glitch wordmark). Both assets are cut from
+   public/logo-source.png with the outside background keyed out:
+   /logo-full.png — ball + SYNTHETICO (default)
+   /logo-ball.png — ball only (variant="ball" for tight square spots)
    ═══════════════════════════════════════════════════════════════════ */
 
-export default function ClubCrest({ className = 'h-12 w-12', title = 'סינתטיקו חולון' }) {
+export default function ClubCrest({ className = 'h-12 w-auto', variant = 'full', title = 'סינתטיקו חולון' }) {
   return (
     <img
-      src="/logo-ball.png"
+      src={variant === 'ball' ? '/logo-ball.png' : '/logo-full.png'}
       alt={title}
       draggable="false"
       className={`object-contain select-none ${className}`}

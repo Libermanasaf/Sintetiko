@@ -189,12 +189,9 @@ export default function Sidebar({ isOpen, onClose }) {
               </button>
 
               <div className="flex flex-col items-center text-center pt-2">
-                <ClubCrest className="h-16 w-16 drop-shadow-[0_4px_12px_rgba(212,160,40,0.4)]" />
-                <h2 className="st-gold-text text-xl font-black tracking-tight mt-2.5">
-                  סינתטיקו חולון
-                </h2>
-                <span className="text-[0.6rem] font-bold tracking-[0.3em] text-ink-3 uppercase mt-1">
-                  מועדון הכדורגל
+                <ClubCrest className="h-28 w-auto drop-shadow-[0_4px_14px_rgba(212,160,40,0.35)]" />
+                <span className="text-[0.6rem] font-bold tracking-[0.3em] text-ink-3 uppercase mt-2">
+                  מועדון הכדורגל · חולון
                 </span>
               </div>
 
