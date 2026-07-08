@@ -509,7 +509,11 @@ export default function Lists() {
 
       await persistAll(current);
       // Publish + verify the snapshot actually landed (no silent failure).
-      await publishDayListVerified(day);
+      // preservePublishedAt: the seen-checkmarks live for the WHOLE cycle —
+      // re-publishing must not clear them. The viewers window is bounded by
+      // GREATEST(publishedAt, lastReset), so the auto-reset the morning after
+      // the game is what clears the marks (per the club's rule).
+      await publishDayListVerified(day, { preservePublishedAt: true });
       queryClient.invalidateQueries({ queryKey: ['lists-state'] });
 
       // Then send the push to all players, deep-linking to this day's list.

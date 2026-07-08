@@ -57,8 +57,8 @@ export async function publishDayList(day, { preservePublishedAt = false } = {}) 
 // can't masquerade as "published". Throws if the write didn't take. Use this
 // from any UI that publishes (Lists button, SendNotification) for one reliable
 // path instead of fire-and-forget.
-export async function publishDayListVerified(day) {
-  await publishDayList(day);
+export async function publishDayListVerified(day, opts) {
+  await publishDayList(day, opts);
   const { data: row, error } = await supabase
     .from('lists_state').select('data').eq('id', 'main').maybeSingle();
   if (error) throw error;
