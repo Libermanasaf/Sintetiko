@@ -10,6 +10,7 @@ import StepSelectPlayers from '@/components/round/StepSelectPlayers';
 import StepTeamsPreview from '@/components/round/StepTeamsPreview';
 import StepOpeningTeam from '@/components/round/StepOpeningTeam';
 import { EmptyState } from '@/components/ui/lux';
+import { callApi } from '@/lib/apiClient';
 
 const STEP_LABELS = ['הגדרות', 'בחירה', 'תצוגה', 'שמירה'];
 export default function CreateRound() {
@@ -24,6 +25,10 @@ export default function CreateRound() {
   // Bumped on every reshuffle so the preview re-runs its entry animation —
   // visible feedback even when the optimizer lands on a similar arrangement.
   const [shuffleTick, setShuffleTick] = useState(0);
+  // Free-text coach instructions + their AI-parsed structured constraints
+  // (pins / together / apart / opening) — honored by balanceTeams.
+  const [instructions, setInstructions] = useState('');
+  const [constraints, setConstraints] = useState(null);
 
   const { data: players = [], isLoading } = useQuery({
     queryKey: ['players'],
@@ -36,10 +41,37 @@ export default function CreateRound() {
     setStep(2);
   };
 
-  const handleNextFromSelection = () => {
+  const handleNextFromSelection = async () => {
+    // Parse the coach's free-text instructions (if any) into structured
+    // constraints BEFORE the first balance, so it already honors them.
+    let cons = null;
+    if (instructions.trim()) {
+      const tId = toast.loading('מפענח את ההוראות שלך…');
+      try {
+        const roster = selectedPlayers.map((id) => {
+          const p = players.find((x) => x.id === id);
+          return { id, name: p?.name || '' };
+        });
+        const res = await callApi('/api/parse-round-instructions', {
+          text: instructions, players: roster, numTeams,
+        });
+        const pd = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(pd.error || `שגיאה ${res.status}`);
+        cons = pd;
+        if (pd.summary) toast.success('ההוראות פוענחו ✓', { description: pd.summary, duration: 7000 });
+        if (pd.unclear?.length) {
+          toast.warning('לא פוענח', { description: pd.unclear.join(' · '), duration: 8000 });
+        }
+      } catch (e) {
+        toast.warning('פיענוח ההוראות נכשל — ממשיך בלי הנחיות', { description: e?.message });
+      } finally {
+        toast.dismiss(tId);
+      }
+    }
+    setConstraints(cons);
     // Distribute players into the fairest balanced split right away (not a plain
     // random round-robin) so the first preview is already as equal as possible.
-    setTeams(balanceTeams(selectedPlayers));
+    setTeams(balanceTeams(selectedPlayers, null, numTeams, cons));
     setGoalkeepers({});
     setOpeningTeams(null);
     setStep(3);
@@ -51,7 +83,7 @@ export default function CreateRound() {
   // averages — so the result is both genuinely balanced AND different each click
   // (you see players actually move). avoidTeams (optional) nudges away from the
   // previous arrangement so consecutive reshuffles visibly change.
-  const balanceTeams = (playerIds, avoidTeams = null, teamCount = numTeams) => {
+  const balanceTeams = (playerIds, avoidTeams = null, teamCount = numTeams, cons = constraints) => {
     const roster = playerIds
       .map((id) => players.find((p) => p.id === id))
       .filter(Boolean);
@@ -76,14 +108,40 @@ export default function CreateRound() {
       return key(idsOf(teams)) === key(other);
     };
 
-    // One random split honoring the target sizes.
+    // Coach constraints (AI-parsed): pins are honored by construction; a
+    // candidate violating together/apart is simply rejected.
+    const pinById = new Map(
+      (cons?.pins || [])
+        .filter((p) => p.team < teamCount)
+        .map((p) => [p.playerId, p.team])
+    );
+    const teamIndexOf = (teams, id) => teams.findIndex((t) => t.some((p) => p.id === id));
+    const satisfies = (teams) => {
+      for (const [a, b] of cons?.together || []) {
+        const ta = teamIndexOf(teams, a);
+        const tb = teamIndexOf(teams, b);
+        if (ta >= 0 && tb >= 0 && ta !== tb) return false;
+      }
+      for (const [a, b] of cons?.apart || []) {
+        const ta = teamIndexOf(teams, a);
+        const tb = teamIndexOf(teams, b);
+        if (ta >= 0 && tb >= 0 && ta === tb) return false;
+      }
+      return true;
+    };
+
+    // One random split honoring the target sizes (+ pinned players).
     const randomSplit = () => {
-      const shuffled = [...roster].sort(() => Math.random() - 0.5);
-      const teams = [];
-      let cursor = 0;
+      const teams = Array.from({ length: teamCount }, () => []);
+      const rest = [];
+      for (const p of roster) {
+        const t = pinById.get(p.id);
+        if (t !== undefined && teams[t].length < sizes[t]) teams[t].push(p);
+        else rest.push(p);
+      }
+      const shuffled = [...rest].sort(() => Math.random() - 0.5);
       for (let i = 0; i < teamCount; i++) {
-        teams.push(shuffled.slice(cursor, cursor + sizes[i]));
-        cursor += sizes[i];
+        while (teams[i].length < sizes[i] && shuffled.length) teams[i].push(shuffled.shift());
       }
       return teams;
     };
@@ -102,6 +160,7 @@ export default function CreateRound() {
 
     for (let i = 0; i < ATTEMPTS; i++) {
       const candidate = randomSplit();
+      if (!satisfies(candidate)) continue;   // violates together/apart
       const s = spread(candidate);
       if (s < bestSpread - TOLERANCE) {
         // Strictly better — reset the pool to this new best tier.
@@ -117,7 +176,15 @@ export default function CreateRound() {
       }
     }
 
-    if (pool.length === 0) return idsOf(randomSplit());
+    if (pool.length === 0) {
+      // Over-constrained (e.g. contradicting instructions): warn and fall
+      // back to a fully unconstrained balance rather than getting stuck.
+      if (cons) {
+        toast.warning('לא ניתן לקיים את כל ההוראות יחד — הכוחות חולקו בלעדיהן');
+        return balanceTeams(playerIds, avoidTeams, teamCount, null);
+      }
+      return idsOf(randomSplit());
+    }
     // Prefer an arrangement different from the current one; fall back to any.
     const fresh = pool.filter((t) => !sameAs(t, avoidTeams));
     const choices = fresh.length ? fresh : pool;
@@ -141,6 +208,24 @@ export default function CreateRound() {
     });
     setGoalkeepers(newGoalkeepers);
 
+    // Opening-match instructions: explicit colors win; otherwise a named
+    // opening player pins their team as an opener.
+    if (constraints?.openingTeams?.length === 2) {
+      setOpeningTeams(constraints.openingTeams);
+    } else if (constraints?.openingPlayerIds?.length) {
+      const openerTeams = [...new Set(
+        constraints.openingPlayerIds
+          .map((pid) => teams.findIndex((t) => t.includes(pid)))
+          .filter((i) => i >= 0)
+      )];
+      if (openerTeams.length >= 2) {
+        setOpeningTeams([openerTeams[0], openerTeams[1]]);
+      } else if (openerTeams.length === 1) {
+        const others = teams.map((_, i) => i).filter((i) => i !== openerTeams[0]);
+        setOpeningTeams([openerTeams[0], others[Math.floor(Math.random() * others.length)]]);
+      }
+    }
+
     // Move to opening team step
     setStep(4);
   };
@@ -151,6 +236,7 @@ export default function CreateRound() {
     setTeams([]);
     setGoalkeepers({});
     setOpeningTeams(null);
+    setConstraints(null);
   };
 
   const handleQuickRound = (matchedPlayers, unmatched) => {
@@ -165,8 +251,10 @@ export default function CreateRound() {
     setPlayersPerTeam(6);
     // Fairest balanced split into 3 teams (same optimizer as the reshuffle).
     // Pass 3 explicitly — setNumTeams(3) above hasn't applied to state yet.
+    // No constraints: the quick flow skips the instructions box.
     const ids = matchedPlayers.map((p) => p.id);
-    setTeams(balanceTeams(ids, null, 3));
+    setConstraints(null);
+    setTeams(balanceTeams(ids, null, 3, null));
     setSelectedPlayers(ids);
     setGoalkeepers({});
     setOpeningTeams(null);
@@ -265,6 +353,8 @@ export default function CreateRound() {
               setNumTeams={setNumTeams}
               playersPerTeam={playersPerTeam}
               setPlayersPerTeam={setPlayersPerTeam}
+              instructions={instructions}
+              setInstructions={setInstructions}
               onNext={handleNextFromSettings}
               totalPlayers={players.length}
             />

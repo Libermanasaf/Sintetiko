@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Users, UserPlus, Calculator, ArrowLeft } from 'lucide-react';
+import { Users, UserPlus, Calculator, ArrowLeft, Wand2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function StepSettings({
@@ -8,6 +8,8 @@ export default function StepSettings({
   setNumTeams,
   playersPerTeam,
   setPlayersPerTeam,
+  instructions,
+  setInstructions,
   onNext,
   totalPlayers,
 }) {
@@ -68,6 +70,27 @@ export default function StepSettings({
               </div>
               <CounterButton onClick={() => setPlayersPerTeam(playersPerTeam + 1)}>+</CounterButton>
             </div>
+          </div>
+
+          {/* Free-text coach instructions — AI-parsed into constraints that
+              the balancing algorithm honors */}
+          <div className="space-y-3">
+            <label className="text-slate-300 font-medium flex items-center gap-2">
+              <Wand2 className="w-4 h-4 text-amber-400" />
+              הוראות מיוחדות
+              <span className="text-slate-500 text-xs font-normal">(אופציונלי)</span>
+            </label>
+            <textarea
+              value={instructions}
+              onChange={(e) => setInstructions(e.target.value)}
+              rows={3}
+              placeholder={'טקסט חופשי, למשל: גל בן חמו ייצא צהוב, להפריד את דור ויניב, המשחק הפותח צהובים נגד כתומים'}
+              className="w-full rounded-xl bg-slate-900 border border-slate-600 text-white text-sm font-medium p-3 outline-none focus:border-amber-400/60 resize-none placeholder:text-white/25"
+              dir="rtl"
+            />
+            <p className="text-[0.68rem] text-slate-500 font-medium leading-snug">
+              ההוראות יפוענחו אוטומטית וישוקללו בהגרלת הכוחות ובבחירת המשחק הפותח.
+            </p>
           </div>
         </div>
       </div>
