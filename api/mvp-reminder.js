@@ -55,7 +55,7 @@ export default async function handler(req, res) {
   const windowMs = 48 * 60 * 60 * 1000;
   const { data: rounds, error: rErr } = await supabase
     .from('rounds')
-    .select('id, date, teams, mvpVoters, mvpReminded, closed_at, is_closed')
+    .select('id, date, teams, mvpVoters, mvpReminded, mvpVotes, mvpAnnounced, closed_at, is_closed')
     .eq('is_closed', true)
     .not('closed_at', 'is', null);
   if (rErr) return res.status(500).json({ error: rErr.message });
@@ -65,8 +65,18 @@ export default async function handler(req, res) {
     return nowMs < closedAt + windowMs; // still inside the voting window
   });
 
-  if (openRounds.length === 0) {
-    return res.status(200).json({ ok: true, rounds: 0, sent: 0 });
+  // Rounds whose voting window has CLOSED and were never announced. Only
+  // windows that closed in the last 72h get a push — anything older (e.g.
+  // rounds from before this feature) is marked announced silently so we
+  // never blast a backlog.
+  const toAnnounce = (rounds || []).filter((r) => {
+    if (r.mvpAnnounced) return false;
+    const windowEnd = new Date(r.closed_at).getTime() + windowMs;
+    return nowMs >= windowEnd;
+  });
+
+  if (openRounds.length === 0 && toAnnounce.length === 0) {
+    return res.status(200).json({ ok: true, rounds: 0, sent: 0, announced: 0 });
   }
 
   // Map player id -> email once (only players who have an email).
@@ -137,6 +147,65 @@ export default async function handler(req, res) {
     }
   }
 
+  // ── MVP winner announcement ──────────────────────────────────────────────
+  // Once a round's 48h voting window closes: one broadcast naming the winner
+  // (a tie names everyone), a personal crown push to the winner(s), then the
+  // round is flagged. Windows that closed more than 72h ago (e.g. rounds from
+  // before this feature) are flagged silently — no backlog blast.
+  let announced = 0;
+  const recentMs = 72 * 60 * 60 * 1000;
+  for (const round of toAnnounce) {
+    const votes = round.mvpVotes && typeof round.mvpVotes === 'object' ? round.mvpVotes : {};
+    const max = Math.max(0, ...Object.values(votes).map(Number));
+    const winners = max > 0 ? Object.keys(votes).filter((pid) => Number(votes[pid]) === max) : [];
+    const windowEnd = new Date(round.closed_at).getTime() + windowMs;
+    const isRecent = nowMs - windowEnd < recentMs;
+
+    if (winners.length > 0 && isRecent) {
+      const names = winners.map((pid) => nameById.get(pid) || 'שחקן');
+      const dayName = new Intl.DateTimeFormat('he-IL', { timeZone: 'Asia/Jerusalem', weekday: 'long' })
+        .format(new Date(round.date));
+      const title = winners.length > 1 ? 'מצטייני המחזור 🌟' : 'מצטיין המחזור 🌟';
+      const body = winners.length > 1
+        ? `ההצבעה ננעלה! מצטייני מחזור ${dayName}: ${names.join(' ו')}`
+        : `ההצבעה ננעלה! המצטיין של מחזור ${dayName}: ${names[0]} 👑`;
+      const payload = JSON.stringify({ title, body, url: '/HallOfFame' });
+      for (const row of subs || []) {
+        try {
+          await webpush.sendNotification(row.subscription, payload);
+        } catch (err) {
+          if (err.statusCode === 404 || err.statusCode === 410) {
+            await supabase.from('push_subscriptions').delete().eq('endpoint', row.endpoint);
+          }
+        }
+      }
+
+      // Personal crown for the winner(s)
+      for (const pid of winners) {
+        const email = emailById.get(pid);
+        if (!email) continue;
+        const personal = JSON.stringify({
+          title: 'נבחרת מצטיין המחזור! 👑',
+          body: `${nameById.get(pid) || ''}, חברי הקבוצה בחרו בך למצטיין של מחזור ${dayName} — כל הכבוד!`,
+          url: '/HallOfFame',
+        });
+        for (const row of subsByEmail.get(email) || []) {
+          try {
+            await webpush.sendNotification(row.subscription, personal);
+          } catch (err) {
+            if (err.statusCode === 404 || err.statusCode === 410) {
+              await supabase.from('push_subscriptions').delete().eq('endpoint', row.endpoint);
+            }
+          }
+        }
+      }
+      announced++;
+    }
+
+    // Flag regardless — no votes or too old closes out silently.
+    await supabase.from('rounds').update({ mvpAnnounced: true }).eq('id', round.id);
+  }
+
   // ── Admin noon push ─────────────────────────────────────────────────────
   // On GAME DAYS (Sun/Wed/Thu) the admin gets a match-day digest: roster fill,
   // how many viewed the list, standby waiting — plus today's MVP-reminder stats
@@ -201,5 +270,5 @@ export default async function handler(req, res) {
       `נשלחו תזכורות ל-${totalTargets} שחקנים שעדיין לא בחרו מצטיין.`, '/GameHistory');
   }
 
-  return res.status(200).json({ ok: true, rounds: openRounds.length, targets: totalTargets, sent: totalSent, digest });
+  return res.status(200).json({ ok: true, rounds: openRounds.length, targets: totalTargets, sent: totalSent, announced, digest });
 }
