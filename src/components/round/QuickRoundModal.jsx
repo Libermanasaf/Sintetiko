@@ -3,6 +3,7 @@ import { X, Zap, AlertCircle } from 'lucide-react';
 
 export default function QuickRoundModal({ players, onClose, onConfirm }) {
   const [text, setText] = useState('');
+  const [instructions, setInstructions] = useState('');
 
   const parseNames = () => {
     return text
@@ -31,7 +32,7 @@ export default function QuickRoundModal({ players, onClose, onConfirm }) {
       }
     });
 
-    onConfirm(matched, unmatched);
+    onConfirm(matched, unmatched, instructions);
   };
 
   return (
@@ -86,6 +87,17 @@ export default function QuickRoundModal({ players, onClose, onConfirm }) {
               <span className="text-xs text-emerald-400 font-black">✓ מושלם!</span>
             )}
           </div>
+
+          {/* Free-text coach instructions — parsed into balancing constraints */}
+          <p className="text-xs text-slate-400 font-bold mt-4 mb-2">הוראות מיוחדות (אופציונלי):</p>
+          <textarea
+            value={instructions}
+            onChange={e => setInstructions(e.target.value)}
+            rows={2}
+            placeholder="למשל: גל בן חמו ייצא צהוב, להפריד את דור ויניב, הפותחים צהובים נגד כתומים"
+            className="w-full p-3 rounded-2xl bg-slate-800/90 ring-1 ring-white/10 text-white text-sm placeholder:text-slate-600 resize-none focus:outline-none focus:ring-2 focus:ring-amber-400/60 transition-shadow leading-relaxed"
+            dir="rtl"
+          />
         </div>
 
         {/* Actions — sticky footer. Modal already sits above the bottom nav

@@ -41,33 +41,39 @@ export default function CreateRound() {
     setStep(2);
   };
 
+  // Parses free-text coach instructions via the server (Claude) into
+  // structured constraints and surfaces what was understood. Returns null on
+  // empty text or failure — the round then continues unconstrained.
+  const parseInstructions = async (text, playerIds, teamCount) => {
+    if (!text?.trim()) return null;
+    const tId = toast.loading('מפענח את ההוראות שלך…');
+    try {
+      const roster = playerIds.map((id) => {
+        const p = players.find((x) => x.id === id);
+        return { id, name: p?.name || '' };
+      });
+      const res = await callApi('/api/parse-round-instructions', {
+        text, players: roster, numTeams: teamCount,
+      });
+      const pd = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(pd.error || `שגיאה ${res.status}`);
+      if (pd.summary) toast.success('ההוראות פוענחו ✓', { description: pd.summary, duration: 7000 });
+      if (pd.unclear?.length) {
+        toast.warning('לא פוענח', { description: pd.unclear.join(' · '), duration: 8000 });
+      }
+      return pd;
+    } catch (e) {
+      toast.warning('פיענוח ההוראות נכשל — ממשיך בלי הנחיות', { description: e?.message });
+      return null;
+    } finally {
+      toast.dismiss(tId);
+    }
+  };
+
   const handleNextFromSelection = async () => {
     // Parse the coach's free-text instructions (if any) into structured
     // constraints BEFORE the first balance, so it already honors them.
-    let cons = null;
-    if (instructions.trim()) {
-      const tId = toast.loading('מפענח את ההוראות שלך…');
-      try {
-        const roster = selectedPlayers.map((id) => {
-          const p = players.find((x) => x.id === id);
-          return { id, name: p?.name || '' };
-        });
-        const res = await callApi('/api/parse-round-instructions', {
-          text: instructions, players: roster, numTeams,
-        });
-        const pd = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(pd.error || `שגיאה ${res.status}`);
-        cons = pd;
-        if (pd.summary) toast.success('ההוראות פוענחו ✓', { description: pd.summary, duration: 7000 });
-        if (pd.unclear?.length) {
-          toast.warning('לא פוענח', { description: pd.unclear.join(' · '), duration: 8000 });
-        }
-      } catch (e) {
-        toast.warning('פיענוח ההוראות נכשל — ממשיך בלי הנחיות', { description: e?.message });
-      } finally {
-        toast.dismiss(tId);
-      }
-    }
+    const cons = await parseInstructions(instructions, selectedPlayers, numTeams);
     setConstraints(cons);
     // Distribute players into the fairest balanced split right away (not a plain
     // random round-robin) so the first preview is already as equal as possible.
@@ -239,7 +245,7 @@ export default function CreateRound() {
     setConstraints(null);
   };
 
-  const handleQuickRound = (matchedPlayers, unmatched) => {
+  const handleQuickRound = async (matchedPlayers, unmatched, quickInstructions = '') => {
     if (unmatched.length > 0) {
       toast.warning(`${unmatched.length} שמות לא זוהו: ${unmatched.join(', ')}`);
     }
@@ -247,18 +253,18 @@ export default function CreateRound() {
       toast.error('לא זוהו שחקנים תואמים');
       return;
     }
+    setShowQuickModal(false);
     setNumTeams(3);
     setPlayersPerTeam(6);
     // Fairest balanced split into 3 teams (same optimizer as the reshuffle).
     // Pass 3 explicitly — setNumTeams(3) above hasn't applied to state yet.
-    // No constraints: the quick flow skips the instructions box.
     const ids = matchedPlayers.map((p) => p.id);
-    setConstraints(null);
-    setTeams(balanceTeams(ids, null, 3, null));
+    const cons = await parseInstructions(quickInstructions, ids, 3);
+    setConstraints(cons);
+    setTeams(balanceTeams(ids, null, 3, cons));
     setSelectedPlayers(ids);
     setGoalkeepers({});
     setOpeningTeams(null);
-    setShowQuickModal(false);
     setStep(3);
   };
 
