@@ -123,6 +123,10 @@ export default function CreateRound() {
     );
     const teamIndexOf = (teams, id) => teams.findIndex((t) => t.some((p) => p.id === id));
     const satisfies = (teams) => {
+      // negative pins: the player must NOT be on that team
+      for (const { playerId, team } of cons?.avoid || []) {
+        if (team < teamCount && teamIndexOf(teams, playerId) === team) return false;
+      }
       for (const [a, b] of cons?.together || []) {
         const ta = teamIndexOf(teams, a);
         const tb = teamIndexOf(teams, b);

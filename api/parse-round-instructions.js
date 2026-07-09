@@ -46,6 +46,7 @@ ${roster}
 החזר אובייקט JSON במבנה הזה בדיוק:
 {
   "pins": [{"playerId": "<id מהרשימה>", "team": <0-${teamCount - 1}>}],
+  "avoid": [{"playerId": "<id מהרשימה>", "team": <0-${teamCount - 1}>}],
   "together": [["<id>","<id>"]],
   "apart": [["<id>","<id>"]],
   "openingTeams": [<אינדקס>, <אינדקס>] או null,
@@ -57,6 +58,7 @@ ${roster}
 כללים:
 - השתמש אך ורק ב-id-ים מהרשימה. התאם שמות בגמישות (שם פרטי, כינוי, שגיאת כתיב קלה) — אך אם שם מתאים לשני שחקנים, אל תנחש: שים את ההוראה ב-unclear.
 - "ייצא צהוב" / "בצהובים" = pin לקבוצה 0. כחול = 1, כתום = 2.
+- "לא ייצא כתום" / "שלא יהיה בכתומים" = avoid (הקבוצה שאסור לו להיות בה). הוראה שלילית היא avoid, לא pin.
 - "X ו-Y ביחד" = together. "להפריד את X ו-Y" / "שלא יהיו באותה קבוצה" = apart.
 - "המשחק הפותח צהובים נגד כתומים" = openingTeams [0,2]. "שX יפתח" = openingPlayerIds.
 - הוראה שאינה קשורה לחלוקת כוחות — ל-unclear.
@@ -99,6 +101,9 @@ ${roster}
     const pins = (Array.isArray(parsed.pins) ? parsed.pins : [])
       .filter((p) => p && ids.has(String(p.playerId)) && okTeam(p.team))
       .map((p) => ({ playerId: String(p.playerId), team: p.team }));
+    const avoid = (Array.isArray(parsed.avoid) ? parsed.avoid : [])
+      .filter((p) => p && ids.has(String(p.playerId)) && okTeam(p.team))
+      .map((p) => ({ playerId: String(p.playerId), team: p.team }));
     const pairs = (arr) => (Array.isArray(arr) ? arr : [])
       .filter((pr) => Array.isArray(pr) && pr.length === 2
         && ids.has(String(pr[0])) && ids.has(String(pr[1])) && String(pr[0]) !== String(pr[1]))
@@ -114,6 +119,7 @@ ${roster}
 
     return res.status(200).json({
       pins,
+      avoid,
       together: pairs(parsed.together),
       apart: pairs(parsed.apart),
       openingTeams,
