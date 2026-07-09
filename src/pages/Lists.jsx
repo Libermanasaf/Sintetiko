@@ -363,28 +363,18 @@ export default function Lists() {
     }
   };
 
+  // Copies ONLY the numbered roster names (1-18) — no header, no waiting
+  // list, no footer — per the admin's WhatsApp format.
   const copyDayList = async (day) => {
-    const header = data.headers[day] || '';
-    const mainNames    = data.rows[day].map(n => (n || '').trim()).filter(Boolean);
-    const manualWait   = (data.waiting?.[day] || []).map(n => (n || '').trim()).filter(Boolean);
-    const liveSignups  = signups.filter(s => s.day === day).map(s => (s.player_name || '').trim()).filter(Boolean);
-    const allWaiting   = [...liveSignups, ...manualWait];
-
-    const lines = [];
-    if (header) lines.push(header, '');
-    if (mainNames.length) {
-      lines.push(...mainNames.map((name, i) => `${i + 1}. ${name}`));
+    const mainNames = data.rows[day].map(n => (n || '').trim()).filter(Boolean);
+    if (mainNames.length === 0) {
+      toast.error('הרשימה ריקה — אין מה להעתיק');
+      return;
     }
-    if (allWaiting.length) {
-      if (mainNames.length) lines.push('');
-      lines.push('ממתינים:', ...allWaiting.map((name, i) => `${i + 1}. ${name}`));
-    }
-    lines.push('', 'ביטול אחרי 12:00 יחויב בתשלום');
-
-    const text = lines.join('\n');
+    const text = mainNames.map((name, i) => `${i + 1}. ${name}`).join('\n');
     try {
       await navigator.clipboard.writeText(text);
-      toast.success('הרשימה הועתקה ללוח!');
+      toast.success(`הועתקו ${mainNames.length} שמות ללוח!`);
     } catch {
       toast.error('לא ניתן להעתיק');
     }
