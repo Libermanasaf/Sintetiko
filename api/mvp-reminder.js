@@ -237,10 +237,11 @@ export default async function handler(req, res) {
       const roster = (d.rows?.[dayKey] || []).filter((n) => n && n.trim());
 
       // Viewers of the CURRENT list only — same window list_viewers() uses:
-      // views after the later of last publish / weekly reset.
-      const publishedAt = d.publishedLists?.[dayKey]?.publishedAt;
+      // views after the later of the cycle's first publish / weekly reset.
+      const pub = d.publishedLists?.[dayKey];
+      const anchor = pub?.firstPublishedAt || pub?.publishedAt;
       const lastReset = d.lastReset?.[dayKey];
-      const threshold = [publishedAt, lastReset].filter(Boolean).sort().pop();
+      const threshold = [anchor, lastReset].filter(Boolean).sort().pop();
       let viewers = 0;
       if (threshold) {
         const { count } = await supabase

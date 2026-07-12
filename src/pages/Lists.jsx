@@ -499,11 +499,10 @@ export default function Lists() {
 
       await persistAll(current);
       // Publish + verify the snapshot actually landed (no silent failure).
-      // preservePublishedAt: the seen-checkmarks live for the WHOLE cycle —
-      // re-publishing must not clear them. The viewers window is bounded by
-      // GREATEST(publishedAt, lastReset), so the auto-reset the morning after
-      // the game is what clears the marks (per the club's rule).
-      await publishDayListVerified(day, { preservePublishedAt: true });
+      // publishedAt is stamped fresh (players only see lists published in the
+      // last 24h); the ✓-marks anchor (firstPublishedAt) survives re-publishes
+      // within the cycle — see listPublish.js.
+      await publishDayListVerified(day);
       queryClient.invalidateQueries({ queryKey: ['lists-state'] });
 
       // Then send the push to all players, deep-linking to this day's list.
@@ -667,9 +666,7 @@ export default function Lists() {
         const { data: row } = await supabase
           .from('lists_state').select('data').eq('id', 'main').maybeSingle();
         if (row?.data?.publishedLists?.[signup.day]) {
-          // preservePublishedAt: a roster tweak is not a new publish — keep
-          // the "who viewed" window anchored to the original publish time.
-          await publishDayList(signup.day, { preservePublishedAt: true });
+          await publishDayList(signup.day);
           queryClient.invalidateQueries({ queryKey: ['lists-state'] });
         }
       } catch (e) { console.warn('[confirm republish]', e); }

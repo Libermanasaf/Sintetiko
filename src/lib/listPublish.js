@@ -17,10 +17,14 @@ export const DAY_FROM_URL = {
 // Snapshots the current roster for `day` into publishedLists[day]. Reads the
 // live lists_state, copies that day's header+rows, writes back. Fire-and-forget
 // safe: on error it throws so the caller can surface it, but push already sent.
-// `preservePublishedAt` keeps the previous snapshot's timestamp — used by the
-// silent refresh after a standby confirm, so the "who viewed" window (which
-// counts views since publishedAt) doesn't reset on every roster tweak.
-export async function publishDayList(day, { preservePublishedAt = false } = {}) {
+//
+// Two timestamps with two different jobs:
+//   publishedAt      — freshness gate: get_lists_state serves players only
+//                      days published in the last 24h, so this is ALWAYS now.
+//   firstPublishedAt — the seen-checkmarks anchor (list_viewers): set on the
+//                      first publish of a cycle and preserved on re-publishes,
+//                      so roster tweaks never clear the ✓ marks.
+export async function publishDayList(day) {
   if (!supabase || !day) return;
 
   const { data: row, error: readErr } = await supabase
@@ -31,12 +35,16 @@ export async function publishDayList(day, { preservePublishedAt = false } = {}) 
   if (readErr) throw readErr;
 
   const all = row?.data || {};
+  const nowIso = new Date().toISOString();
+  const prevPub = all.publishedLists?.[day] || {};
+  const lastReset = all.lastReset?.[day];
+  const prevFirst = prevPub.firstPublishedAt || prevPub.publishedAt;
+  const sameCycle = !!prevFirst && (!lastReset || new Date(prevFirst) >= new Date(lastReset));
   const snapshot = {
     header: all.headers?.[day] || '',
     rows: all.rows?.[day] || [],
-    publishedAt:
-      (preservePublishedAt && all.publishedLists?.[day]?.publishedAt) ||
-      new Date().toISOString(),
+    publishedAt: nowIso,
+    firstPublishedAt: sameCycle ? prevFirst : nowIso,
   };
   const nextData = {
     ...all,
@@ -57,8 +65,8 @@ export async function publishDayList(day, { preservePublishedAt = false } = {}) 
 // can't masquerade as "published". Throws if the write didn't take. Use this
 // from any UI that publishes (Lists button, SendNotification) for one reliable
 // path instead of fire-and-forget.
-export async function publishDayListVerified(day, opts) {
-  await publishDayList(day, opts);
+export async function publishDayListVerified(day) {
+  await publishDayList(day);
   const { data: row, error } = await supabase
     .from('lists_state').select('data').eq('id', 'main').maybeSingle();
   if (error) throw error;
