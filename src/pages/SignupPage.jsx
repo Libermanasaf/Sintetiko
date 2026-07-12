@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ClipboardCheck, User, MessageSquare, CheckCircle2, Clock, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Signup, Player } from '@/api/entities';
+import { supabase } from '@/lib/supabase';
 import { PageHeader, Skeleton } from '@/components/ui/lux';
 import { useAuth } from '@/lib/AuthContext';
 import { callApi } from '@/lib/apiClient';
@@ -50,7 +51,18 @@ function PlayerRegistration({ players, user, signups, role }) {
   const handleCancelSignup = async (signup) => {
     setCancelingId(signup.id);
     try {
-      await Signup.delete(signup.id);
+      // Delete + VERIFY a row actually went away. Under RLS a blocked delete
+      // "succeeds" with zero rows — that's exactly the silent failure that
+      // left cancelled players stuck in the waiting list.
+      const { data: deleted, error } = await supabase
+        .from('signups')
+        .delete()
+        .eq('id', signup.id)
+        .select('id');
+      if (error) throw error;
+      if (!deleted || deleted.length === 0) {
+        throw new Error('הרישום לא נמחק — נסה שוב או פנה למנהל');
+      }
       queryClient.invalidateQueries({ queryKey: ['signups'] });
       const dayLabel = DAYS.find(d => d.key === signup.day)?.label || '';
       toast.success(`הרישום ל${dayLabel} בוטל`);
