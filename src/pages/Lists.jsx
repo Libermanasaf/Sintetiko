@@ -63,6 +63,16 @@ const STORAGE_KEY = 'sintetiko_lists_v3';
 // inner whitespace, lowercases (matters for latin-lettered names).
 const normName = (s) => (s || '').trim().replace(/\s+/g, ' ').toLowerCase();
 
+// Compact Hebrew timestamp for a signup: "8.7 · 09:15"
+const fmtSignupTime = (d) => {
+  if (!d) return '';
+  const t = new Date(d);
+  if (Number.isNaN(t.getTime())) return '';
+  const hh = String(t.getHours()).padStart(2, '0');
+  const mm = String(t.getMinutes()).padStart(2, '0');
+  return `${t.getDate()}.${t.getMonth() + 1} · ${hh}:${mm}`;
+};
+
 // Names appearing more than once in a day (main rows + manual waiting).
 const findDayDuplicates = (rows = [], waiting = []) => {
   const counts = new Map();
@@ -862,7 +872,10 @@ export default function Lists() {
                         >
                           <div className="flex items-center gap-2">
                             <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0 animate-pulse" />
-                            <p className="flex-1 text-amber-200 text-sm font-black truncate">{signup.player_name}</p>
+                            <p className="flex-1 min-w-0 text-amber-200 text-sm font-black truncate">{signup.player_name}</p>
+                            <span className="shrink-0 text-ink-3 text-[0.62rem] font-bold tnum" title="מועד הרישום">
+                              {fmtSignupTime(signup.created_date)}
+                            </span>
                             <button onClick={() => handleConfirmSignup(signup)} disabled={busy}
                               title="אשר הגעה ושלח פוש לשחקן"
                               className="grid place-items-center w-7 h-7 rounded-lg bg-emerald-500/20 ring-1 ring-emerald-500/30 text-emerald-300 active:scale-95 disabled:opacity-50 transition-all">

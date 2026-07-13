@@ -419,6 +419,12 @@ function AdminSignups({ signups, players, isLoading }) {
                         {s.note && <p className="text-slate-400 text-xs font-medium mt-0.5 leading-snug">{s.note}</p>}
                         <p className={`text-[0.65rem] font-bold mt-0.5 ${isConfirmed ? 'text-emerald-400' : 'text-amber-400'}`}>
                           {isConfirmed ? 'מאושר' : 'ממתין לאישור'}
+                          {s.created_date && (
+                            <span className="text-ink-3 tnum">
+                              {' · נרשם '}
+                              {`${new Date(s.created_date).getDate()}.${new Date(s.created_date).getMonth() + 1} בשעה ${String(new Date(s.created_date).getHours()).padStart(2, '0')}:${String(new Date(s.created_date).getMinutes()).padStart(2, '0')}`}
+                            </span>
+                          )}
                         </p>
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0">
