@@ -156,37 +156,36 @@ export default function CreateRound() {
       return teams;
     };
 
-    // Generate many candidate splits, keep the best spread found, and COLLECT all
-    // distinct arrangements within a tiny tolerance of it. Then pick one at random
-    // (preferring one different from the previous arrangement) — so every reshuffle
-    // is both near-optimally balanced AND visibly different, instead of always
-    // converging to the same single optimum.
-    const TOLERANCE = 0.001;          // treat spreads this close as "equally good"
+    // Two objectives, in priority order:
+    //   1. Rating equality — primary, exactly as always.
+    //   2. Even spread of positions (CB/MC/ST) across the teams — chosen among
+    //      the arrangements whose rating spread is within RATING_SLACK of the
+    //      best found, so team strength stays effectively optimal while no
+    //      team ends up with all the defenders and no striker.
     const ATTEMPTS = 1200;
-    let bestSpread = Infinity;
-    let pool = [];                    // arrangements at (near-)best spread
-    const seen = new Set();
+    const RATING_SLACK = 0.1;
+    const posImbalance = (teams) => {
+      let score = 0;
+      for (const pos of ['CB', 'MC', 'ST']) {
+        const counts = teams.map((t) => t.reduce((s, p) => s + (p.position === pos ? 1 : 0), 0));
+        score += Math.max(...counts) - Math.min(...counts);
+      }
+      return score;
+    };
     const keyOf = (teams) => idsOf(teams).map((t) => [...t].sort().join(',')).sort().join('|');
 
+    const candidates = [];
+    const seen = new Set();
     for (let i = 0; i < ATTEMPTS; i++) {
       const candidate = randomSplit();
       if (!satisfies(candidate)) continue;   // violates together/apart
-      const s = spread(candidate);
-      if (s < bestSpread - TOLERANCE) {
-        // Strictly better — reset the pool to this new best tier.
-        bestSpread = s;
-        pool = [candidate];
-        seen.clear();
-        seen.add(keyOf(candidate));
-      } else if (s <= bestSpread + TOLERANCE) {
-        // As good as the best tier — add it if we haven't seen this arrangement.
-        const k = keyOf(candidate);
-        if (!seen.has(k)) { seen.add(k); pool.push(candidate); }
-        if (s < bestSpread) bestSpread = s;
-      }
+      const k = keyOf(candidate);
+      if (seen.has(k)) continue;
+      seen.add(k);
+      candidates.push({ teams: candidate, spread: spread(candidate), pos: posImbalance(candidate) });
     }
 
-    if (pool.length === 0) {
+    if (candidates.length === 0) {
       // Over-constrained (e.g. contradicting instructions): warn and fall
       // back to a fully unconstrained balance rather than getting stuck.
       if (cons) {
@@ -195,6 +194,12 @@ export default function CreateRound() {
       }
       return idsOf(randomSplit());
     }
+
+    const bestSpread = Math.min(...candidates.map((c) => c.spread));
+    const ratingPool = candidates.filter((c) => c.spread <= bestSpread + RATING_SLACK);
+    const bestPos = Math.min(...ratingPool.map((c) => c.pos));
+    const pool = ratingPool.filter((c) => c.pos === bestPos).map((c) => c.teams);
+
     // Prefer an arrangement different from the current one; fall back to any.
     const fresh = pool.filter((t) => !sameAs(t, avoidTeams));
     const choices = fresh.length ? fresh : pool;
