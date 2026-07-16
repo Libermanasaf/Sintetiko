@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, Save, Shuffle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import { POSITION_LABELS } from '@/lib/positions';
 
 const TEAM_COLORS = [
   { header: 'bg-yellow-500', card: 'bg-yellow-400', text: 'text-white' },
@@ -113,9 +114,16 @@ export default function StepTeamsPreview({ teams, players, shuffleTick = 0, onSa
                                     </span>
                                   </div>
                                 )}
-                                <p className={`${color.text} text-[0.65rem] sm:text-base font-bold text-center sm:text-right leading-tight truncate w-full min-w-0`}>
-                                  {player.name}
-                                </p>
+                                <div className="w-full min-w-0 text-center sm:text-right">
+                                  <p className={`${color.text} text-[0.65rem] sm:text-base font-bold leading-tight truncate`}>
+                                    {player.name}
+                                  </p>
+                                  {player.position && (
+                                    <p className={`${color.text} text-[0.55rem] sm:text-[0.68rem] font-black opacity-75 leading-none mt-0.5`}>
+                                      {POSITION_LABELS[player.position]}
+                                    </p>
+                                  )}
+                                </div>
                               </div>
                             )}
                           </Draggable>

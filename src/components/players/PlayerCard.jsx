@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Star, Pencil, Trash2, Check, X, Trophy, Users } from 'lucide-react';
 import MvpBadge from '@/components/MvpBadge';
+import { POSITION_STYLE } from '@/lib/positions';
 import { motion } from 'framer-motion';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
@@ -77,6 +78,22 @@ export default function PlayerCard({ player, onUpdate, onDelete, onEdit, mvpCoun
             </div>
           </div>
         </button>
+
+        {/* Position — small select box; tap opens the options */}
+        <select
+          value={player.position || ''}
+          onChange={(e) => onUpdate(player.id, { position: e.target.value || null })}
+          aria-label={`עמדה של ${player.name}`}
+          dir="rtl"
+          className={`shrink-0 h-8 px-2 rounded-lg text-xs font-black ring-1 outline-none cursor-pointer appearance-none text-center ${
+            POSITION_STYLE[player.position] || 'text-slate-400 ring-white/10 bg-slate-900/80'
+          }`}
+        >
+          <option value="" className="bg-slate-900 text-slate-300">עמדה?</option>
+          <option value="CB" className="bg-slate-900 text-slate-100">בלם</option>
+          <option value="MC" className="bg-slate-900 text-slate-100">קשר</option>
+          <option value="ST" className="bg-slate-900 text-slate-100">חלוץ</option>
+        </select>
 
         {/* Rating */}
         <button
