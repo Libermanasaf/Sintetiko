@@ -81,6 +81,7 @@ const Debts = lazy(() => import('./pages/Debts'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const ComplaintsBox = lazy(() => import('./pages/ComplaintsBox'));
 const HallOfFame = lazy(() => import('./pages/HallOfFame'));
+const ShamingCorner = lazy(() => import('./pages/ShamingCorner'));
 
 export const PAGES = {
     "CreateRound": CreateRound,
@@ -111,6 +112,7 @@ export const PAGES = {
     "ResetPassword": ResetPassword,
     "ComplaintsBox": ComplaintsBox,
     "HallOfFame": HallOfFame,
+    "ShamingCorner": ShamingCorner,
 }
 
 export const pagesConfig = {
