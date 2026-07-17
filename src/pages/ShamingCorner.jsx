@@ -32,6 +32,25 @@ function ShameRow({ player, value, place }) {
   );
 }
 
+function LiarSelect({ value, onChange, placeholder, players }) {
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      dir="rtl"
+      className="w-full min-h-[44px] rounded-xl bg-slate-900 ring-1 ring-white/10 text-white text-sm font-bold px-3 outline-none cursor-pointer"
+    >
+      <option value="">{placeholder}</option>
+      {[...players]
+        .filter((p) => !EXCLUDED.has(p.name))
+        .sort((a, b) => a.name.localeCompare(b.name, 'he'))
+        .map((p) => (
+          <option key={p.id} value={p.id} className="bg-slate-900">{p.name}</option>
+        ))}
+    </select>
+  );
+}
+
 function ShameSection({ emoji, title, hint, children }) {
   return (
     <div>
@@ -93,8 +112,9 @@ export default function ShamingCorner() {
     return { dry, turtles };
   }, [players]);
 
-  // ── The poll ──────────────────────────────────────────────────────────
-  const [pollPick, setPollPick] = useState('');
+  // ── The poll — up to TWO picks per voter ──────────────────────────────
+  const [pollPick1, setPollPick1] = useState('');
+  const [pollPick2, setPollPick2] = useState('');
   const [votingPoll, setVotingPoll] = useState(false);
 
   // PUBLIC votes (per the club's decision): every row is candidate + voter
@@ -111,7 +131,8 @@ export default function ShamingCorner() {
     refetchOnWindowFocus: true,
   });
   const totalPollVotes = pollVotes.length;
-  const myPollVote = pollVotes.find((v) => v.is_mine)?.candidate_id || null;
+  const myPollVotes = pollVotes.filter((v) => v.is_mine).map((v) => v.candidate_id);
+  const hasVotedPoll = myPollVotes.length > 0;
   const pollSummary = useMemo(() => {
     const byCandidate = new Map();
     for (const v of pollVotes) {
@@ -134,23 +155,28 @@ export default function ShamingCorner() {
   });
 
   const castPollVote = async () => {
-    if (!pollPick || !user) return;
-    if (myPlayer && pollPick === myPlayer.id) {
+    const picks = [...new Set([pollPick1, pollPick2].filter(Boolean))];
+    if (picks.length === 0 || !user) return;
+    if (pollPick1 && pollPick1 === pollPick2) {
+      toast.error('בחרת את אותו שחקן פעמיים — תן צ׳אנס לעוד שקרן 🙂');
+      return;
+    }
+    if (myPlayer && picks.includes(myPlayer.id)) {
       toast.error('להצביע לעצמך? יצירתי, אבל לא 🙂');
       return;
     }
     setVotingPoll(true);
     try {
-      // SECURITY DEFINER RPC — same proven pattern as cast_mvp_vote; the
-      // votes table itself has zero client access (stronger anonymity).
-      const { error } = await supabase.rpc('cast_shame_vote', {
+      // SECURITY DEFINER RPC replaces the voter's picks wholesale (max 2).
+      const { error } = await supabase.rpc('cast_shame_votes', {
         p_poll_id: POLL.id,
-        p_candidate_id: pollPick,
+        p_candidate_ids: picks,
       });
       if (error) throw error;
-      queryClient.invalidateQueries({ queryKey: ['shame-poll', POLL.id] });
+      queryClient.invalidateQueries({ queryKey: ['shame-poll-votes', POLL.id] });
       toast.success('ההצבעה נקלטה — וכולם רואים 👀');
-      setPollPick('');
+      setPollPick1('');
+      setPollPick2('');
     } catch (e) {
       toast.error('ההצבעה נכשלה', { description: e?.message });
     } finally {
@@ -267,7 +293,7 @@ export default function ShamingCorner() {
             <div className="p-4">
               <p className="text-white font-black text-base text-center">{POLL.question}</p>
 
-              {myPollVote ? (
+              {hasVotedPoll ? (
                 /* Results — visible once you've voted */
                 <div className="mt-4 space-y-2.5">
                   {pollSummary.map((v) => {
@@ -275,7 +301,7 @@ export default function ShamingCorner() {
                     if (!p) return null;
                     const count = v.voters.length;
                     const pct = totalPollVotes > 0 ? Math.round((count / totalPollVotes) * 100) : 0;
-                    const mine = v.candidate_id === myPollVote;
+                    const mine = myPollVotes.includes(v.candidate_id);
                     return (
                       <div key={v.candidate_id} className="space-y-1">
                         <div className="flex items-center justify-between">
@@ -302,52 +328,28 @@ export default function ShamingCorner() {
                     );
                   })}
                   <p className="text-center text-ink-3 text-[0.62rem] font-bold pt-1 tnum">
-                    {totalPollVotes} הצבעות · אפשר לשנות הצבעה למטה
+                    {totalPollVotes} קולות · שינוי הצבעה למטה מחליף את שתי הבחירות
                   </p>
-                  <div className="flex gap-2 pt-1">
-                    <select
-                      value={pollPick}
-                      onChange={(e) => setPollPick(e.target.value)}
-                      dir="rtl"
-                      className="flex-1 min-h-[40px] rounded-xl bg-slate-900 ring-1 ring-white/10 text-white text-xs font-bold px-2 outline-none cursor-pointer"
-                    >
-                      <option value="">— שנה הצבעה —</option>
-                      {[...players]
-                        .filter((p) => !EXCLUDED.has(p.name))
-                        .sort((a, b) => a.name.localeCompare(b.name, 'he'))
-                        .map((p) => (
-                          <option key={p.id} value={p.id} className="bg-slate-900">{p.name}</option>
-                        ))}
-                    </select>
+                  <div className="space-y-2 pt-1">
+                    <LiarSelect value={pollPick1} onChange={setPollPick1} placeholder="— שנה הצבעה: שקרן ראשון —" players={players} />
+                    <LiarSelect value={pollPick2} onChange={setPollPick2} placeholder="— שקרן שני (אופציונלי) —" players={players} />
                     <button
                       onClick={castPollVote}
-                      disabled={!pollPick || votingPoll}
-                      className="shrink-0 px-4 min-h-[40px] rounded-xl bg-rose-500/15 ring-1 ring-rose-500/30 text-rose-300 text-xs font-black active:scale-95 disabled:opacity-40 transition-transform touch-manipulation"
+                      disabled={(!pollPick1 && !pollPick2) || votingPoll}
+                      className="w-full px-4 min-h-[40px] rounded-xl bg-rose-500/15 ring-1 ring-rose-500/30 text-rose-300 text-xs font-black active:scale-95 disabled:opacity-40 transition-transform touch-manipulation"
                     >
-                      {votingPoll ? '...' : 'עדכן'}
+                      {votingPoll ? '...' : 'עדכן הצבעה'}
                     </button>
                   </div>
                 </div>
               ) : (
-                /* Voting — pick a player */
+                /* Voting — pick up to two players */
                 <div className="mt-4 space-y-2.5">
-                  <select
-                    value={pollPick}
-                    onChange={(e) => setPollPick(e.target.value)}
-                    dir="rtl"
-                    className="w-full min-h-[48px] rounded-xl bg-slate-900 ring-1 ring-white/10 text-white text-sm font-bold px-3 outline-none cursor-pointer"
-                  >
-                    <option value="">— בחר את השקרן —</option>
-                    {[...players]
-                      .filter((p) => !EXCLUDED.has(p.name))
-                      .sort((a, b) => a.name.localeCompare(b.name, 'he'))
-                      .map((p) => (
-                        <option key={p.id} value={p.id} className="bg-slate-900">{p.name}</option>
-                      ))}
-                  </select>
+                  <LiarSelect value={pollPick1} onChange={setPollPick1} placeholder="— בחר שקרן ראשון —" players={players} />
+                  <LiarSelect value={pollPick2} onChange={setPollPick2} placeholder="— שקרן שני (אופציונלי) —" players={players} />
                   <button
                     onClick={castPollVote}
-                    disabled={!pollPick || votingPoll}
+                    disabled={(!pollPick1 && !pollPick2) || votingPoll}
                     className="w-full flex items-center justify-center gap-2 min-h-[48px] rounded-xl st-foil font-black text-sm active:scale-[0.98] disabled:opacity-50 transition-transform touch-manipulation"
                   >
                     {votingPoll
@@ -356,7 +358,7 @@ export default function ShamingCorner() {
                     הצבע
                   </button>
                   <p className="flex items-center justify-center gap-1.5 text-ink-3 text-[0.6rem] font-bold">
-                    👀 שים לב: ההצבעה גלויה — כולם יראו על מי הצבעת
+                    👀 אפשר לבחור עד שני שקרנים · ההצבעה גלויה — כולם יראו על מי הצבעת
                   </p>
                 </div>
               )}
