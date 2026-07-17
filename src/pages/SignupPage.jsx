@@ -8,6 +8,7 @@ import { Signup, Player } from '@/api/entities';
 import { supabase } from '@/lib/supabase';
 import { PageHeader, Skeleton } from '@/components/ui/lux';
 import { useAuth } from '@/lib/AuthContext';
+import { oneOffTuesdayActive } from '@/lib/oneOffTuesday';
 import { callApi } from '@/lib/apiClient';
 import { createPageUrl } from '@/utils';
 
@@ -20,8 +21,8 @@ const DAYS = [
 ];
 
 // ─── One-off extra day: Tuesday 21.7.2026 (user-requested, single week) ────
-// Shown until Wednesday morning 22.7 at 08:00, then gone for good. This
-// block is safe to delete afterwards.
+// Shown until Wednesday morning 22.7 at 08:00 (see lib/oneOffTuesday.js),
+// then gone for good. This block is safe to delete afterwards.
 const ONE_OFF_TUESDAY = {
   key: 'tuesday',
   label: 'יום שלישי (21.7)',
@@ -30,8 +31,7 @@ const ONE_OFF_TUESDAY = {
   bg: 'from-violet-500/20 to-violet-600/5',
   dot: 'bg-violet-400',
 };
-const oneOffActive = () => Date.now() < new Date('2026-07-22T08:00:00+03:00').getTime();
-const activeDays = () => (oneOffActive() ? [...DAYS, ONE_OFF_TUESDAY] : DAYS);
+const activeDays = () => (oneOffTuesdayActive() ? [...DAYS, ONE_OFF_TUESDAY] : DAYS);
 
 /* ─── Player view ────────────────────────────────────── */
 function PlayerRegistration({ players, user, signups, role }) {

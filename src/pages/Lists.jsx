@@ -7,6 +7,7 @@ import { PageHeader } from '@/components/ui/lux';
 import { Signup, Player } from '@/api/entities';
 import { supabase } from '@/lib/supabase';
 import { publishDayList, publishDayListVerified } from '@/lib/listPublish';
+import { oneOffTuesdayActive } from '@/lib/oneOffTuesday';
 import { callApi } from '@/lib/apiClient';
 
 const SIGNUPS_TABLE_SQL = `CREATE TABLE IF NOT EXISTS signups (
@@ -35,7 +36,7 @@ INSERT INTO lists_state (id, data) VALUES ('main', '{}'::jsonb) ON CONFLICT (id)
 
 const WAITING_ROWS = 6;
 
-const DAY_LABELS = { sunday: 'יום ראשון', wednesday: 'יום רביעי', thursday: 'יום חמישי' };
+const DAY_LABELS = { sunday: 'יום ראשון', wednesday: 'יום רביעי', thursday: 'יום חמישי', tuesday: 'יום שלישי' };
 
 // Fixed game hours shown in the publish push (only days listed here get one).
 const GAME_TIMES = { wednesday: '21:00-23:00' };
@@ -56,6 +57,17 @@ const DAYS = [
   { key: 'wednesday', color: 'text-blue-300',     ring: 'ring-blue-400/30',    bg: 'from-blue-500/15 to-blue-600/5' },
   { key: 'thursday',  color: 'text-emerald-300',  ring: 'ring-emerald-400/30', bg: 'from-emerald-500/15 to-emerald-600/5' },
 ];
+
+// One-off Tuesday 21.7 column (see lib/oneOffTuesday.js) — admin-managed
+// roster; no publish (there is no player-facing Tuesday list page), the
+// roster goes out via the WhatsApp copy button. Safe to delete after 22.7.
+const ONE_OFF_TUESDAY_COL = {
+  key: 'tuesday',
+  color: 'text-violet-300',
+  ring: 'ring-violet-400/30',
+  bg: 'from-violet-500/15 to-violet-600/5',
+};
+const activeListDays = () => (oneOffTuesdayActive() ? [...DAYS, ONE_OFF_TUESDAY_COL] : DAYS);
 
 const STORAGE_KEY = 'sintetiko_lists_v3';
 
@@ -350,6 +362,21 @@ export default function Lists() {
     return () => clearInterval(id);
   }, [queryClient, hydrated]);
 
+  // Seed the one-off Tuesday arrays once, after cloud hydration (so nothing
+  // gets overwritten). Until then the render falls back to empty arrays.
+  useEffect(() => {
+    if (!hydrated || !oneOffTuesdayActive()) return;
+    setData(prev => {
+      if (prev.rows.tuesday) return prev;
+      return {
+        ...prev,
+        headers: { ...prev.headers, tuesday: prev.headers.tuesday || 'יום שלישי (21.7)' },
+        rows: { ...prev.rows, tuesday: [...EMPTY_18] },
+        waiting: { ...prev.waiting, tuesday: Array(WAITING_ROWS).fill('') },
+      };
+    });
+  }, [hydrated]);
+
   // Live signups from the SignupPage flow
   const { data: signups = [], refetch: refetchSignups } = useQuery({
     queryKey: ['signups'],
@@ -376,7 +403,7 @@ export default function Lists() {
   // Copies ONLY the numbered roster names (1-18) — no header, no waiting
   // list, no footer — per the admin's WhatsApp format.
   const copyDayList = async (day) => {
-    const mainNames = data.rows[day].map(n => (n || '').trim()).filter(Boolean);
+    const mainNames = (data.rows[day] || []).map(n => (n || '').trim()).filter(Boolean);
     if (mainNames.length === 0) {
       toast.error('הרשימה ריקה — אין מה להעתיק');
       return;
@@ -749,10 +776,12 @@ export default function Lists() {
       </div>
 
       <div className="p-4">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {DAYS.map(({ key, color, ring, bg }) => {
+        <div className={`grid grid-cols-1 gap-4 ${activeListDays().length === 4 ? 'sm:grid-cols-2 xl:grid-cols-4' : 'sm:grid-cols-3'}`}>
+          {activeListDays().map(({ key, color, ring, bg }) => {
             const daySignups = signups.filter(s => s.day === key);
-            const dayDups = findDayDuplicates(data.rows[key], data.waiting?.[key]);
+            const dayRows = data.rows[key] || EMPTY_18;
+            const dayWaiting = data.waiting?.[key] || [];
+            const dayDups = findDayDuplicates(dayRows, dayWaiting);
             return (
               <div key={key} className={`rounded-2xl bg-slate-900/70 ring-1 ${ring} overflow-hidden`}>
                 <div className={`bg-gradient-to-l ${bg} px-4 py-3 flex items-center justify-between border-b border-white/8 gap-2`}>
@@ -795,14 +824,18 @@ export default function Lists() {
                         </button>
                       );
                     })()}
-                    <button onClick={() => handlePublishDay(key)} disabled={publishingDay === key}
-                      title="פרסם לשחקנים ושלח התראה — הרשימה תופיע להם ותישלח הודעת פוש"
-                      className="grid place-items-center h-8 px-2.5 gap-1 rounded-lg bg-amber-500/15 ring-1 ring-amber-500/30 text-amber-300 font-black text-xs hover:bg-amber-500/25 active:scale-95 transition-all disabled:opacity-50">
-                      {publishingDay === key
-                        ? <div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                        : <Send className="w-3.5 h-3.5" />}
-                      <span>פרסם</span>
-                    </button>
+                    {/* Tuesday is one-off: no player-facing list page, so no
+                        publish — the roster goes out via WhatsApp copy */}
+                    {key !== 'tuesday' && (
+                      <button onClick={() => handlePublishDay(key)} disabled={publishingDay === key}
+                        title="פרסם לשחקנים ושלח התראה — הרשימה תופיע להם ותישלח הודעת פוש"
+                        className="grid place-items-center h-8 px-2.5 gap-1 rounded-lg bg-amber-500/15 ring-1 ring-amber-500/30 text-amber-300 font-black text-xs hover:bg-amber-500/25 active:scale-95 transition-all disabled:opacity-50">
+                        {publishingDay === key
+                          ? <div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                          : <Send className="w-3.5 h-3.5" />}
+                        <span>פרסם</span>
+                      </button>
+                    )}
                     <button onClick={() => pasteDayList(key)} title="הדבק רשימה מ-WhatsApp"
                       className="grid place-items-center w-8 h-8 rounded-lg bg-slate-800/60 text-slate-500 hover:text-blue-400 active:scale-95 transition-all">
                       <ClipboardPaste className="w-3.5 h-3.5" />
@@ -820,7 +853,7 @@ export default function Lists() {
 
                 {/* Main 18 rows */}
                 <div className="divide-y divide-white/5">
-                  {data.rows[key].map((name, i) => {
+                  {dayRows.map((name, i) => {
                     const seen = name.trim() && viewersByDay[key]?.has(name.trim());
                     const isDup = !!name.trim() && dayDups.has(normName(name));
                     return (
@@ -899,7 +932,7 @@ export default function Lists() {
 
                   {/* Manual editable waiting rows */}
                   <div className="divide-y divide-white/5">
-                    {data.waiting[key].map((name, i) => {
+                    {dayWaiting.map((name, i) => {
                       const isDup = !!name.trim() && dayDups.has(normName(name));
                       return (
                       <div key={i} className={`flex items-center gap-3 px-3 py-1.5 ${isDup ? 'bg-rose-500/15 ring-1 ring-inset ring-rose-400/40' : ''}`}>
