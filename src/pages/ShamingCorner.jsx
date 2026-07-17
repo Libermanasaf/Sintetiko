@@ -131,12 +131,12 @@ export default function ShamingCorner() {
     }
     setVotingPoll(true);
     try {
-      const { error } = await supabase
-        .from('shame_poll_votes')
-        .upsert(
-          { poll_id: POLL.id, voter_user_id: user.id, candidate_id: pollPick },
-          { onConflict: 'poll_id,voter_user_id' }
-        );
+      // SECURITY DEFINER RPC — same proven pattern as cast_mvp_vote; the
+      // votes table itself has zero client access (stronger anonymity).
+      const { error } = await supabase.rpc('cast_shame_vote', {
+        p_poll_id: POLL.id,
+        p_candidate_id: pollPick,
+      });
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey: ['shame-poll', POLL.id] });
       toast.success('ההצבעה נקלטה — אנונימית לחלוטין 🤐');
