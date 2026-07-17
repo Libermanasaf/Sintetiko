@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { Laugh, Megaphone, Save, Pencil, X, User, Vote, Lock } from 'lucide-react';
+import { Laugh, Megaphone, Save, Pencil, X, User, Vote } from 'lucide-react';
 import { toast } from 'sonner';
 import { Player } from '@/api/entities';
 import { supabase } from '@/lib/supabase';
@@ -97,19 +97,29 @@ export default function ShamingCorner() {
   const [pollPick, setPollPick] = useState('');
   const [votingPoll, setVotingPoll] = useState(false);
 
-  const { data: pollSummary = [] } = useQuery({
-    queryKey: ['shame-poll', POLL.id],
+  // PUBLIC votes (per the club's decision): every row is candidate + voter
+  // name, so everyone sees who voted for whom.
+  const { data: pollVotes = [] } = useQuery({
+    queryKey: ['shame-poll-votes', POLL.id],
     queryFn: async () => {
       if (!supabase) return [];
-      const { data, error } = await supabase.rpc('shame_poll_summary', { p_poll_id: POLL.id });
+      const { data, error } = await supabase.rpc('shame_poll_votes_detail', { p_poll_id: POLL.id });
       if (error) { console.warn('[shame poll]', error.message); return []; }
       return data || [];
     },
     staleTime: 30_000,
     refetchOnWindowFocus: true,
   });
-  const totalPollVotes = pollSummary.reduce((s, v) => s + Number(v.vote_count), 0);
-  const myPollVote = pollSummary.find((v) => v.is_mine)?.candidate_id || null;
+  const totalPollVotes = pollVotes.length;
+  const myPollVote = pollVotes.find((v) => v.is_mine)?.candidate_id || null;
+  const pollSummary = useMemo(() => {
+    const byCandidate = new Map();
+    for (const v of pollVotes) {
+      if (!byCandidate.has(v.candidate_id)) byCandidate.set(v.candidate_id, { candidate_id: v.candidate_id, voters: [] });
+      byCandidate.get(v.candidate_id).voters.push(v.voter_name);
+    }
+    return [...byCandidate.values()].sort((a, b) => b.voters.length - a.voters.length);
+  }, [pollVotes]);
 
   // My own player row — to block voting for yourself (nice try 🙂)
   const { data: myPlayer } = useQuery({
@@ -139,7 +149,7 @@ export default function ShamingCorner() {
       });
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey: ['shame-poll', POLL.id] });
-      toast.success('ההצבעה נקלטה — אנונימית לחלוטין 🤐');
+      toast.success('ההצבעה נקלטה — וכולם רואים 👀');
       setPollPick('');
     } catch (e) {
       toast.error('ההצבעה נכשלה', { description: e?.message });
@@ -263,7 +273,8 @@ export default function ShamingCorner() {
                   {pollSummary.map((v) => {
                     const p = players.find((x) => x.id === v.candidate_id);
                     if (!p) return null;
-                    const pct = totalPollVotes > 0 ? Math.round((Number(v.vote_count) / totalPollVotes) * 100) : 0;
+                    const count = v.voters.length;
+                    const pct = totalPollVotes > 0 ? Math.round((count / totalPollVotes) * 100) : 0;
                     const mine = v.candidate_id === myPollVote;
                     return (
                       <div key={v.candidate_id} className="space-y-1">
@@ -272,7 +283,7 @@ export default function ShamingCorner() {
                             {p.name}
                             {mine && <span className="text-[0.55rem] st-foil px-1.5 py-0.5 rounded-full">ההצבעה שלי</span>}
                           </span>
-                          <span className="text-ink-3 text-[0.62rem] font-bold tnum">{v.vote_count} · {pct}%</span>
+                          <span className="text-ink-3 text-[0.62rem] font-bold tnum">{count} · {pct}%</span>
                         </div>
                         <div className="h-6 bg-slate-800/80 rounded-lg overflow-hidden ring-1 ring-white/5">
                           <motion.div
@@ -282,6 +293,11 @@ export default function ShamingCorner() {
                             className="h-full rounded-lg bg-gradient-to-l from-rose-500 to-rose-700"
                           />
                         </div>
+                        {/* who voted — fully public, by the club's decision */}
+                        <p className="text-[0.62rem] text-slate-400 font-bold leading-snug">
+                          <span className="text-rose-300/80">הצביעו: </span>
+                          {v.voters.join(', ')}
+                        </p>
                       </div>
                     );
                   })}
@@ -340,8 +356,7 @@ export default function ShamingCorner() {
                     הצבע
                   </button>
                   <p className="flex items-center justify-center gap-1.5 text-ink-3 text-[0.6rem] font-bold">
-                    <Lock className="w-[11px] h-[11px]" strokeWidth={2.6} />
-                    ההצבעה אנונימית לחלוטין — התוצאות ייחשפו לך אחרי שתצביע
+                    👀 שים לב: ההצבעה גלויה — כולם יראו על מי הצבעת
                   </p>
                 </div>
               )}
