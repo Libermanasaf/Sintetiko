@@ -19,8 +19,23 @@ const DAYS = [
   { key: 'thursday',  label: 'יום חמישי', color: 'text-emerald-300',ring: 'ring-emerald-400/30',bg: 'from-emerald-500/20 to-emerald-600/5',dot: 'bg-emerald-400'},
 ];
 
+// ─── One-off extra day: Tuesday 21.7.2026 (user-requested, single week) ────
+// Shown until Wednesday morning 22.7 at 08:00, then gone for good. This
+// block is safe to delete afterwards.
+const ONE_OFF_TUESDAY = {
+  key: 'tuesday',
+  label: 'יום שלישי (21.7)',
+  color: 'text-violet-300',
+  ring: 'ring-violet-400/30',
+  bg: 'from-violet-500/20 to-violet-600/5',
+  dot: 'bg-violet-400',
+};
+const oneOffActive = () => Date.now() < new Date('2026-07-22T08:00:00+03:00').getTime();
+const activeDays = () => (oneOffActive() ? [...DAYS, ONE_OFF_TUESDAY] : DAYS);
+
 /* ─── Player view ────────────────────────────────────── */
 function PlayerRegistration({ players, user, signups, role }) {
+  const days = activeDays();
   const [selectedDay, setSelectedDay] = useState(null);
   const [selectedPlayerId, setSelectedPlayerId] = useState('');
   const [note, setNote] = useState('');
@@ -42,8 +57,9 @@ function PlayerRegistration({ players, user, signups, role }) {
   const mySignups = useMemo(() =>
     (signups || [])
       .filter(s => s.user_email?.toLowerCase() === user?.email?.toLowerCase())
-      .sort((a, b) => DAYS.findIndex(d => d.key === a.day) - DAYS.findIndex(d => d.key === b.day)),
-    [signups, user]);
+      .filter(s => days.some(d => d.key === s.day))
+      .sort((a, b) => days.findIndex(d => d.key === a.day) - days.findIndex(d => d.key === b.day)),
+    [signups, user, days]);
 
   const [cancelingId, setCancelingId] = useState(null);      // delete in flight
   const [confirmCancelId, setConfirmCancelId] = useState(null); // two-step confirm
@@ -64,7 +80,7 @@ function PlayerRegistration({ players, user, signups, role }) {
         throw new Error('הרישום לא נמחק — נסה שוב או פנה למנהל');
       }
       queryClient.invalidateQueries({ queryKey: ['signups'] });
-      const dayLabel = DAYS.find(d => d.key === signup.day)?.label || '';
+      const dayLabel = days.find(d => d.key === signup.day)?.label || '';
       toast.success(`הרישום ל${dayLabel} בוטל`);
       // Let the admin know (best-effort)
       try {
@@ -118,7 +134,7 @@ function PlayerRegistration({ players, user, signups, role }) {
     mutationFn: (data) => Signup.create(data),
     onSuccess: (_, vars) => {
       queryClient.invalidateQueries({ queryKey: ['signups'] });
-      const dayLabel = DAYS.find(d => d.key === vars.day)?.label || '';
+      const dayLabel = days.find(d => d.key === vars.day)?.label || '';
       sendAdminPush(vars.player_name, dayLabel);
       setErrorMsg(null);
       setDone(true);
@@ -161,7 +177,7 @@ function PlayerRegistration({ players, user, signups, role }) {
     });
   };
 
-  const dayInfo = DAYS.find(d => d.key === selectedDay);
+  const dayInfo = days.find(d => d.key === selectedDay);
 
   if (done) {
     return (
@@ -186,7 +202,7 @@ function PlayerRegistration({ players, user, signups, role }) {
           <p className="text-ink-2 text-xs font-black px-1">הרישומים שלך</p>
           <div className="space-y-2">
             {mySignups.map(s => {
-              const d = DAYS.find(x => x.key === s.day);
+              const d = days.find(x => x.key === s.day);
               const waiting = s.status !== 'confirmed';
               const busy = cancelingId === s.id;
               const asking = confirmCancelId === s.id;
@@ -241,8 +257,8 @@ function PlayerRegistration({ players, user, signups, role }) {
       {/* Day picker */}
       <div className="space-y-2">
         <p className="text-ink-2 text-xs font-black px-1">בחר יום</p>
-        <div className="grid grid-cols-3 gap-2">
-          {DAYS.map(d => {
+        <div className={`grid gap-2 ${days.length === 4 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+          {days.map(d => {
             const taken = registeredDays.has(d.key);
             return (
               <button key={d.key} onClick={() => !taken && setSelectedDay(d.key)} disabled={taken}
@@ -322,6 +338,7 @@ function PlayerRegistration({ players, user, signups, role }) {
 
 /* ─── Admin view ─────────────────────────────────────── */
 function AdminSignups({ signups, players, isLoading }) {
+  const days = activeDays();
   const queryClient = useQueryClient();
   const [busyId, setBusyId] = useState(null);
 
@@ -346,7 +363,7 @@ function AdminSignups({ signups, players, isLoading }) {
           const res = await callApi('/api/send-notification', {
             targetEmail: email,
             title: 'סינתטיקו חולון — אתה בפנים! ✅',
-            body: `${signup.player_name}, הגעתך ל${DAYS.find(d => d.key === signup.day)?.label} אושרה!`,
+            body: `${signup.player_name}, הגעתך ל${days.find(d => d.key === signup.day)?.label} אושרה!`,
             url: '/',
           });
           const pd = await res.json().catch(() => ({}));
@@ -386,7 +403,7 @@ function AdminSignups({ signups, players, isLoading }) {
 
   return (
     <div className="space-y-4">
-      {DAYS.map(day => {
+      {days.map(day => {
         const daySignups = (signups || [])
           .filter(s => s.day === day.key)
           .sort((a, b) => new Date(a.created_date) - new Date(b.created_date));
