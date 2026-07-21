@@ -97,13 +97,15 @@ export default function ShamingCorner() {
   });
 
   // Shame stats from existing data — thresholds keep it fair-ish:
-  // the desert needs 5+ games, the turtles 8+.
+  // the desert needs 10+ games with a sub-15% win rate (shows EVERYONE who
+  // qualifies, worst first); the turtles 8+ (top 3 lowest).
   const stats = useMemo(() => {
     const eligible = players.filter((p) => !EXCLUDED.has(p.name));
     const dry = eligible
-      .filter((p) => (p.appearances || 0) >= 5 && (p.wins || 0) === 0)
-      .sort((a, b) => (b.appearances || 0) - (a.appearances || 0))
-      .slice(0, 3);
+      .filter((p) => (p.appearances || 0) >= 10
+        && ((p.wins || 0) / (p.appearances || 1)) < 0.15)
+      .sort((a, b) =>
+        (a.wins || 0) / (a.appearances || 1) - (b.wins || 0) / (b.appearances || 1));
     const turtles = eligible
       .filter((p) => (p.appearances || 0) >= 8)
       .sort((a, b) =>
@@ -374,10 +376,10 @@ export default function ShamingCorner() {
             <ShameSection
               emoji="🏜️"
               title="מדבר הגביעים"
-              hint="הכי הרבה משחקים בלי גביע אחד (מינימום 5 הופעות)"
+              hint="פחות מ-15% ניצחונות (מינימום 10 הופעות)"
             >
               {stats.dry.map((p, i) => (
-                <ShameRow key={p.id} player={p} place={i + 1} value={`${p.appearances} משחקים · 0 גביעים`} />
+                <ShameRow key={p.id} player={p} place={i + 1} value={`${winRate(p)}% ניצחונות · ${p.wins || 0} מתוך ${p.appearances}`} />
               ))}
             </ShameSection>
           )}
