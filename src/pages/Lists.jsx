@@ -38,8 +38,14 @@ const WAITING_ROWS = 6;
 
 const DAY_LABELS = { sunday: 'יום ראשון', wednesday: 'יום רביעי', thursday: 'יום חמישי', tuesday: 'יום שלישי' };
 
-// Fixed game hours shown in the publish push (only days listed here get one).
-const GAME_TIMES = { wednesday: '21:00-23:00' };
+// Fixed game hours shown in the publish push. Tuesday is the one-off 21.7 game
+// and runs on the same slot as Sunday/Thursday.
+const GAME_TIMES = {
+  sunday:    '20:30-22:30',
+  wednesday: '21:00-23:00',
+  thursday:  '20:30-22:30',
+  tuesday:   '20:30-22:30',
+};
 
 const EMPTY_18 = Array(18).fill('');
 
