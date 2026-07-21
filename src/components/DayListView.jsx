@@ -12,6 +12,8 @@ const DAY_CONFIG = {
   sunday:    { label: 'יום ראשון',  color: 'text-amber-300',   ring: 'ring-amber-400/30',   bg: 'bg-amber-500/10',   dot: 'bg-amber-400' },
   wednesday: { label: 'יום רביעי',  color: 'text-blue-300',    ring: 'ring-blue-400/30',    bg: 'bg-blue-500/10',    dot: 'bg-blue-400' },
   thursday:  { label: 'יום חמישי',  color: 'text-emerald-300', ring: 'ring-emerald-400/30', bg: 'bg-emerald-500/10', dot: 'bg-emerald-400' },
+  // One-off extra game day (Tuesday 21.7) — same violet as the Lists column.
+  tuesday:   { label: 'יום שלישי',  color: 'text-violet-300',  ring: 'ring-violet-400/30',  bg: 'bg-violet-500/10',  dot: 'bg-violet-400' },
 };
 
 const EMPTY_ROWS = Array(18).fill('');
@@ -173,7 +175,7 @@ export default function DayListView({ day }) {
     return (
       <div className="pb-10">
         <PageHeader icon={ClipboardList} title={cfg.label} subtitle="רשימה"
-          accent={day === 'sunday' ? 'amber' : day === 'wednesday' ? 'sky' : 'emerald'} />
+          accent={day === 'sunday' ? 'amber' : day === 'wednesday' ? 'sky' : day === 'tuesday' ? 'violet' : 'emerald'} />
         <div className="p-4">
           <div className="rounded-2xl bg-slate-900/50 ring-1 ring-white/8 px-6 py-12 text-center">
             <div className={`mx-auto mb-4 grid place-items-center w-14 h-14 rounded-2xl ${cfg.bg} ring-1 ${cfg.ring}`}>
@@ -198,7 +200,7 @@ export default function DayListView({ day }) {
           icon={ClipboardList}
           title={cfg.label}
           subtitle="רשימה"
-          accent={day === 'sunday' ? 'amber' : day === 'wednesday' ? 'sky' : 'emerald'}
+          accent={day === 'sunday' ? 'amber' : day === 'wednesday' ? 'sky' : day === 'tuesday' ? 'violet' : 'emerald'}
         />
         <div className="p-4">
           <div className="rounded-2xl bg-slate-900/50 ring-1 ring-white/8 px-6 py-12 text-center">
@@ -224,7 +226,7 @@ export default function DayListView({ day }) {
         icon={ClipboardList}
         title={listData.header}
         subtitle={`${filledRows.length} שחקנים ברשימה`}
-        accent={day === 'sunday' ? 'amber' : day === 'wednesday' ? 'sky' : 'emerald'}
+        accent={day === 'sunday' ? 'amber' : day === 'wednesday' ? 'sky' : day === 'tuesday' ? 'violet' : 'emerald'}
       />
 
       <div className="p-4 space-y-4">

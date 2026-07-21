@@ -543,7 +543,7 @@ export default function Lists() {
       queryClient.invalidateQueries({ queryKey: ['lists-state'] });
 
       // Then send the push to all players, deep-linking to this day's list.
-      const dayUrl = { sunday: '/DayListSunday', wednesday: '/DayListWednesday', thursday: '/DayListThursday' }[day];
+      const dayUrl = { sunday: '/DayListSunday', wednesday: '/DayListWednesday', thursday: '/DayListThursday', tuesday: '/DayListTuesday' }[day];
       let pushed = 0;
       try {
         const res = await callApi('/api/send-notification', {
@@ -614,7 +614,7 @@ export default function Lists() {
             targetEmail: email,
             title: 'סינתטיקו חולון 👀',
             body: `${name}, הרשימה ל${DAY_LABELS[day]} פורסמה ועדיין לא הצצת — אתה בפנים היום! בוא לראות מי איתך`,
-            url: { sunday: '/DayListSunday', wednesday: '/DayListWednesday', thursday: '/DayListThursday' }[day] || '/',
+            url: { sunday: '/DayListSunday', wednesday: '/DayListWednesday', thursday: '/DayListThursday', tuesday: '/DayListTuesday' }[day] || '/',
           });
           const pd = await res.json().catch(() => ({}));
           if (!res.ok) { console.warn('[nudge] failed', name, pd.error); continue; }
@@ -824,18 +824,14 @@ export default function Lists() {
                         </button>
                       );
                     })()}
-                    {/* Tuesday is one-off: no player-facing list page, so no
-                        publish — the roster goes out via WhatsApp copy */}
-                    {key !== 'tuesday' && (
-                      <button onClick={() => handlePublishDay(key)} disabled={publishingDay === key}
-                        title="פרסם לשחקנים ושלח התראה — הרשימה תופיע להם ותישלח הודעת פוש"
-                        className="grid place-items-center h-8 px-2.5 gap-1 rounded-lg bg-amber-500/15 ring-1 ring-amber-500/30 text-amber-300 font-black text-xs hover:bg-amber-500/25 active:scale-95 transition-all disabled:opacity-50">
-                        {publishingDay === key
-                          ? <div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                          : <Send className="w-3.5 h-3.5" />}
-                        <span>פרסם</span>
-                      </button>
-                    )}
+                    <button onClick={() => handlePublishDay(key)} disabled={publishingDay === key}
+                      title="פרסם לשחקנים ושלח התראה — הרשימה תופיע להם ותישלח הודעת פוש"
+                      className="grid place-items-center h-8 px-2.5 gap-1 rounded-lg bg-amber-500/15 ring-1 ring-amber-500/30 text-amber-300 font-black text-xs hover:bg-amber-500/25 active:scale-95 transition-all disabled:opacity-50">
+                      {publishingDay === key
+                        ? <div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                        : <Send className="w-3.5 h-3.5" />}
+                      <span>פרסם</span>
+                    </button>
                     <button onClick={() => pasteDayList(key)} title="הדבק רשימה מ-WhatsApp"
                       className="grid place-items-center w-8 h-8 rounded-lg bg-slate-800/60 text-slate-500 hover:text-blue-400 active:scale-95 transition-all">
                       <ClipboardPaste className="w-3.5 h-3.5" />

@@ -4,6 +4,7 @@ import {
   BellRing, Bell, Send, ClipboardList, ClipboardCheck, LogIn, Briefcase, Coins,
   MessageSquare, Crown, Settings, Laugh,
 } from 'lucide-react';
+import { oneOffTuesdayActive } from '@/lib/oneOffTuesday';
 
 // Single source of truth for navigation + access control.
 // `admin`/`player` flags drive BOTH the Sidebar menu and the RouteGuard in
@@ -36,6 +37,11 @@ export const menuItems = [
   { name: 'רשימה יום ראשון',  page: 'DayListSunday',    icon: ClipboardList, player: true },
   { name: 'רשימה יום רביעי',  page: 'DayListWednesday', icon: ClipboardList, player: true },
   { name: 'רשימה יום חמישי',  page: 'DayListThursday',  icon: ClipboardList, player: true },
+  // One-off extra game day (Tuesday 21.7) — only listed while the window is
+  // open; the whole `oneOffTuesdayActive` gate + this entry delete together.
+  ...(oneOffTuesdayActive()
+    ? [{ name: 'רשימה יום שלישי', page: 'DayListTuesday', icon: ClipboardList, player: true }]
+    : []),
   { name: 'התראות',            page: 'Notifications', icon: Bell,     player: true },
   { name: 'תיבת התלונות',      page: 'ComplaintsBox', icon: MessageSquare, admin: true, player: true },
   { name: 'הורד את האפליקציה', page: 'InstallApp', icon: Download, admin: true, player: true, group: 'system' },
@@ -56,7 +62,7 @@ export const adminGroups = [
 // RouteGuard and hidden from the sidebar.
 export const RESTRICTED_ALLOWED_PAGES = new Set([
   'PlayerHome', 'SignupPage', 'Professionals', 'Notifications', 'InstallApp',
-  'DayListSunday', 'DayListWednesday', 'DayListThursday',
+  'DayListSunday', 'DayListWednesday', 'DayListThursday', 'DayListTuesday',
 ]);
 
 // Pages reachable by a player (player flag set). Pages that exist in the router

@@ -14,6 +14,7 @@ const DAY_OF_PAGE = {
   DayListSunday: 'sunday',
   DayListWednesday: 'wednesday',
   DayListThursday: 'thursday',
+  DayListTuesday: 'tuesday',
 };
 
 /* Crest is the shared ClubCrest component — see components/ClubCrest.jsx */

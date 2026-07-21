@@ -12,6 +12,7 @@ export const DAY_FROM_URL = {
   '/DayListSunday':    'sunday',
   '/DayListWednesday': 'wednesday',
   '/DayListThursday':  'thursday',
+  '/DayListTuesday':   'tuesday',
 };
 
 // Snapshots the current roster for `day` into publishedLists[day]. Reads the

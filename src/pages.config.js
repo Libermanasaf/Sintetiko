@@ -75,6 +75,7 @@ const SignupPage = lazy(() => import('./pages/SignupPage'));
 const DayListSunday = lazy(() => import('./pages/DayListSunday'));
 const DayListWednesday = lazy(() => import('./pages/DayListWednesday'));
 const DayListThursday = lazy(() => import('./pages/DayListThursday'));
+const DayListTuesday = lazy(() => import('./pages/DayListTuesday'));
 const LoginActivity = lazy(() => import('./pages/LoginActivity'));
 const Professionals = lazy(() => import('./pages/Professionals'));
 const Debts = lazy(() => import('./pages/Debts'));
@@ -106,6 +107,7 @@ export const PAGES = {
     "DayListSunday": DayListSunday,
     "DayListWednesday": DayListWednesday,
     "DayListThursday": DayListThursday,
+    "DayListTuesday": DayListTuesday,
     "LoginActivity": LoginActivity,
     "Professionals": Professionals,
     "Debts": Debts,
