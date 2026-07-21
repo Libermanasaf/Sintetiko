@@ -65,8 +65,8 @@ const DAYS = [
 ];
 
 // One-off Tuesday 21.7 column (see lib/oneOffTuesday.js) — admin-managed
-// roster; no publish (there is no player-facing Tuesday list page), the
-// roster goes out via the WhatsApp copy button. Safe to delete after 22.7.
+// roster that publishes (with push + ✓ tracking) just like the other days
+// via the DayListTuesday page. Safe to delete after 22.7.
 const ONE_OFF_TUESDAY_COL = {
   key: 'tuesday',
   color: 'text-violet-300',
@@ -180,7 +180,9 @@ export default function Lists() {
     if (!supabase) return;
     let cancelled = false;
     const load = async () => {
-      const days = ['sunday', 'wednesday', 'thursday'];
+      // Include the one-off Tuesday while it's active — otherwise its ✓ marks
+      // never load even though players' views ARE recorded server-side.
+      const days = activeListDays().map((d) => d.key);
       const results = await Promise.all(
         days.map((d) => supabase.rpc('list_viewers', { p_day: d }).then(({ data }) => [d, data]))
       );
