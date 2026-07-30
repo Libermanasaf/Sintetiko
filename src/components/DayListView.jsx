@@ -5,6 +5,7 @@ import { ClipboardList, Clock, User, Check } from 'lucide-react';
 import { PageHeader, EmptyState, Skeleton } from '@/components/ui/lux';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/AuthContext';
+import { useRealtimeSync } from '@/lib/useRealtimeSync';
 
 const STORAGE_KEY = 'sintetiko_lists_v3';
 
@@ -103,10 +104,17 @@ export default function DayListView({ day }) {
       }
       return { header: pub.header || DAY_CONFIG[day].label, rows };
     },
-    refetchInterval: 60_000,
+    // No refetchInterval: the realtime subscription below pushes lists_state
+    // changes immediately, so polling every 60s on every player's device was
+    // pure egress for an answer that hadn't changed. Window-focus + staleTime
+    // remain as the fallback if the socket drops. See EGRESS.md.
     refetchOnWindowFocus: true,
     staleTime: 30_000,
   });
+
+  // LIVE SYNC: when the admin edits or publishes a day, every player's open
+  // screen updates within ~a second instead of up to a minute later.
+  useRealtimeSync('lists_state', [['lists-state']]);
 
   // Players must NEVER fall back to the local (live) list — that would leak an
   // unpublished roster. Only the admin gets the localStorage fallback.

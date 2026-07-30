@@ -9,6 +9,7 @@ import { supabase } from '@/lib/supabase';
 import { publishDayList, publishDayListVerified } from '@/lib/listPublish';
 import { oneOffTuesdayActive } from '@/lib/oneOffTuesday';
 import { callApi } from '@/lib/apiClient';
+import { useRealtimeSync } from '@/lib/useRealtimeSync';
 
 const SIGNUPS_TABLE_SQL = `CREATE TABLE IF NOT EXISTS signups (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -281,23 +282,45 @@ export default function Lists() {
       });
   }, []);
 
-  // Hydrate state from cloud once per mount; merge so we don't clobber unrelated keys.
-  // Mark hydrated even when cloud has no data so the auto-reset can safely start saving.
-  // If cloud is empty but localStorage has names, push them up (backfill recovery).
+  // Apply cloud state to local state on EVERY fetch, not just the first.
+  //
+  // This used to bail out via `if (hydrated) return`, which meant that after the
+  // first mount fresh server data arrived in `cloudState` and was then thrown
+  // away — so an edit made on the phone never appeared on the desktop (and vice
+  // versa) until a full page reload remounted the component. That was the
+  // "I edit lists and it doesn't update" bug. The realtime subscription below
+  // invalidates ['lists-state'], which re-runs the query and now actually lands.
+  //
+  // Safe against clobbering an in-progress edit: the inline editor holds the text
+  // being typed in its own `draft` state and only writes into `data` on commit,
+  // and every commit calls persistAll() immediately. So `data` never holds an
+  // uncommitted edit that a re-hydrate could overwrite.
+  //
+  // `hydrated` still gates the one-time localStorage->cloud backfill below, and
+  // still gates the auto-reset effect, so neither can run against empty state.
   useEffect(() => {
-    if (hydrated) return;
     if (cloudState === undefined) return; // query still loading
 
     const cloudHasData = cloudState && (cloudState.rows || cloudState.waiting || cloudState.headers);
     if (cloudHasData) {
-      setData(prev => ({
-        ...prev,
-        headers:   cloudState.headers   || prev.headers,
-        rows:      cloudState.rows      || prev.rows,
-        waiting:   cloudState.waiting   || prev.waiting,
-        lastReset: cloudState.lastReset || prev.lastReset,
-      }));
-    } else {
+      setData(prev => {
+        const next = {
+          ...prev,
+          headers:   cloudState.headers   || prev.headers,
+          rows:      cloudState.rows      || prev.rows,
+          waiting:   cloudState.waiting   || prev.waiting,
+          lastReset: cloudState.lastReset || prev.lastReset,
+        };
+        // Bail out if nothing actually changed so a re-fetch that returns
+        // identical data doesn't trigger a pointless re-render on every poll.
+        const same =
+          JSON.stringify(next.headers)   === JSON.stringify(prev.headers) &&
+          JSON.stringify(next.rows)      === JSON.stringify(prev.rows) &&
+          JSON.stringify(next.waiting)   === JSON.stringify(prev.waiting) &&
+          JSON.stringify(next.lastReset) === JSON.stringify(prev.lastReset);
+        return same ? prev : next;
+      });
+    } else if (!hydrated) {
       // Cloud empty — if local has names, push them up so we don't lose them.
       setData(prev => {
         const hasLocalNames =
@@ -396,6 +419,14 @@ export default function Lists() {
     queryKey: ['players'],
     queryFn: () => Player.list(),
   });
+
+  // LIVE SYNC (phone <-> desktop, both directions).
+  // A roster edit or a signup on one device now lands here in ~a second instead
+  // of waiting for staleTime/window-focus. Invalidating ['lists-state'] re-runs
+  // the cloud query above, and the hydrate effect applies it to `data` — which
+  // is what the dead `hydrated` guard used to block.
+  useRealtimeSync('lists_state', [['lists-state']]);
+  useRealtimeSync('signups', [['signups']]);
 
   const refresh = () => { probe(); refetchSignups(); };
 

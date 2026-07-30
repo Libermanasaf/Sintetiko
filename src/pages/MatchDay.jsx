@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { Round, Player, RoundBet } from '@/api/entities';
 import { useAuth } from '@/lib/AuthContext';
 import { supabase } from '@/lib/supabase';
+import { useRealtimeSync } from '@/lib/useRealtimeSync';
 import { LuxCard, SectionTitle, EmptyState } from '@/components/ui/lux';
 
 const TEAM = [
@@ -277,11 +278,18 @@ export default function MatchDay() {
         (isAdmin || (new Date(r.date) >= cutoff && r.is_published === true))
       ) || null;
     },
-    refetchInterval: 60000,
+    // No refetchInterval: the realtime subscription below pushes round changes
+    // (goals, teams, publish/close) the moment they happen, which is strictly
+    // faster than the old 60s poll and cheaper. Focus + staleTime stay as the
+    // fallback for a dropped socket. See EGRESS.md.
     refetchOnWindowFocus: true,
     staleTime: 30000,
     placeholderData: (prev) => prev,
   });
+
+  // LIVE SYNC: a goal or team edit entered on the phone shows on the desktop
+  // (and every other viewer) within ~a second, in both directions.
+  useRealtimeSync('rounds', [['latest-round'], ['rounds']]);
 
   // Force Supabase session refresh whenever the tab regains visibility,
   // so saves don't hang on an expired token after a long absence.

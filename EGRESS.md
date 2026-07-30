@@ -27,8 +27,29 @@ re-fetch 300k+ times (~4 GB) for nothing. Fixed two ways: cached **3 min**
 (`setQueryDefaults(['latest-round'])`) and the home-screen polls relaxed from 60s
 to **5 min** (`Home`, `PlayerHome`, `BottomNav`). Safe because a published round
 arrives via push + `invalidateQueries`, so the poll is a fallback, not the primary
-signal. `MatchDay` keeps its local 30s stale / 60s poll (the shorter local
-staleTime wins for the active observer), so the **live screen stays live**.
+signal. `MatchDay` keeps its local 30s stale (the shorter local staleTime wins for
+the active observer), so the **live screen stays live**.
+
+## Realtime replaced three polls (2026-07-30)
+
+`lists_state`, `rounds` and `signups` are in the `supabase_realtime` publication
+(migration `20260730120000_enable_realtime_sync.sql`), consumed via the
+`useRealtimeSync` hook. A changed row is pushed **once** over one shared WebSocket
+and invalidates the matching query key, instead of every client re-fetching a whole
+table on a timer.
+
+This **lowered** egress rather than raising it. Removed:
+- `DayListView` 60s poll — ran on *every player's* device while a list was open,
+  re-fetching the full `get_lists_state` blob every minute for an answer that
+  changes a few times a week.
+- `MatchDay` 60s `['latest-round']` poll.
+
+Kept deliberately: the 30s `round_vote_summary` poll. It reads `round_bets`, which
+is **not** in the publication, and its RPC already returns aggregate counts (O(1))
+rather than rows — so realtime would add a subscription without removing a cost.
+
+Rule 4 below still applies to any *new* poll. Prefer realtime over a new timer for
+anything already covered by a published table; don't add both for the same data.
 
 ## Hard rules (enforced by review)
 
