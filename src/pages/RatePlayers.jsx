@@ -231,6 +231,7 @@ export default function RatePlayers() {
   const queryClient = useQueryClient();
   const [savedId, setSavedId] = useState(null);
   const [breakdownPlayer, setBreakdownPlayer] = useState(null); // admin: whose ratings to detail
+  const [playerSearch, setPlayerSearch] = useState('');
   // Optimistic local ratings — merged over server data for immediate UI feedback
   const [localRatings, setLocalRatings] = useState({});
 
@@ -327,6 +328,16 @@ export default function RatePlayers() {
     : null;
   const isLoading = loadingPlayers || loadingProfile;
 
+  // Name search over the roster (111 players is a lot of scrolling).
+  const playerQuery = playerSearch.trim().toLowerCase();
+  const visiblePlayers = playerQuery
+    ? otherPlayers.filter(p => (p.name || '').toLowerCase().includes(playerQuery))
+    : otherPlayers;
+  // Hide your own card while searching unless it matches, so the results list
+  // only ever contains what you searched for.
+  const showMyCard = !playerQuery
+    || (myPlayerCard?.name || '').toLowerCase().includes(playerQuery);
+
   return (
     <div className="pb-10">
       <PageHeader icon={Star} title="דרג שחקנים" subtitle="הדירוג שלך מאזן את הקבוצות" accent="amber" />
@@ -356,11 +367,32 @@ export default function RatePlayers() {
                 דרג כל שחקן מ־1 עד 5. הדירוג נשמר אוטומטית ומשמש לאיזון הקבוצות במחזורים.
               </p>
             </div>
+
+            <div className="relative mb-3">
+              <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
+              <input
+                value={playerSearch}
+                onChange={(e) => setPlayerSearch(e.target.value)}
+                placeholder="חפש שחקן לפי שם…"
+                dir="rtl"
+                className="w-full h-12 pr-9 pl-9 rounded-xl bg-slate-800/70 ring-1 ring-white/10 text-white text-sm font-bold placeholder:text-slate-500 placeholder:font-bold outline-none focus:ring-amber-400/40 transition-all"
+              />
+              {playerSearch && (
+                <button
+                  onClick={() => setPlayerSearch('')}
+                  aria-label="נקה חיפוש"
+                  className="absolute left-2.5 top-1/2 -translate-y-1/2 grid place-items-center w-7 h-7 rounded-md bg-slate-700/80 text-slate-400 active:scale-95"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+
             <div className="space-y-2.5">
               {/* Your own card. Excluded from the rateable list (nobody rates
                   themselves), but as admin you still want to see what you
                   received — so show it read-only, with the same breakdown. */}
-              {isAdmin && myPlayerCard && ratingStatsByPlayer[myPlayerCard.id]?.count > 0 && (
+              {isAdmin && showMyCard && myPlayerCard && ratingStatsByPlayer[myPlayerCard.id]?.count > 0 && (
                 <div className="relative rounded-2xl p-px bg-gradient-to-br from-amber-300/30 via-slate-700/25 to-slate-800/10">
                   <div className="rounded-[15px] bg-gradient-to-b from-slate-800/95 to-slate-950 p-3.5 flex items-center gap-3.5">
                     {myPlayerCard.image ? (
@@ -391,7 +423,7 @@ export default function RatePlayers() {
                 </div>
               )}
 
-              {otherPlayers.map(player => (
+              {visiblePlayers.map(player => (
                 <PlayerRatingRow
                   key={player.id}
                   player={player}
@@ -403,6 +435,12 @@ export default function RatePlayers() {
                   onShowBreakdown={setBreakdownPlayer}
                 />
               ))}
+
+              {visiblePlayers.length === 0 && !showMyCard && (
+                <p className="text-center text-slate-400 text-sm font-bold py-10">
+                  לא נמצא שחקן בשם "{playerSearch.trim()}"
+                </p>
+              )}
             </div>
           </>
         )}
