@@ -55,6 +55,11 @@ export default function Sidebar({ isOpen, onClose }) {
     Object.entries(DAY_OF_PAGE).forEach(([page, day]) => {
       const pub = listsState.publishedLists?.[day];
       if (!pub || !Array.isArray(pub.rows)) return;
+      // Mirror get_lists_state's 24h window — see the same gate in DayListView.
+      // No-op for real players (the RPC already stripped stale days); needed so
+      // the admin's player-mode preview doesn't list days a player can't open.
+      const publishedAt = Date.parse(pub.publishedAt || '');
+      if (!Number.isFinite(publishedAt) || Date.now() - publishedAt > 24 * 60 * 60 * 1000) return;
       const inRows = !!myName && pub.rows.some((n) => (n || '').trim() === myName);
       const inExtra = !!myEmail && (pub.extraConfirmed || []).some(
         (e) => (e.email || '').toLowerCase() === myEmail

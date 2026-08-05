@@ -6,14 +6,16 @@ import { toast } from 'sonner';
 
 // Shown over a closed round's page when the logged-in player PLAYED in it but
 // hasn't yet voted for the MVP. The page behind is blurred. Flow:
-//   1) PICK  — one tap on a teammate casts the vote (cast_mvp_vote). You can't
-//              vote for yourself (hidden here + blocked server-side) and the
-//              vote is FINAL (server is idempotent once you've voted).
-//   2) RESULTS — after voting we load mvp_vote_tally and show who got how many
+//   1) PICK  — tap a teammate to select them. You can't vote for yourself
+//              (hidden here + blocked server-side).
+//   2) CONFIRM — we name the pick back and ask כן/לא, because the vote is FINAL
+//              (server is idempotent once you've voted). "לא" returns to PICK.
+//   3) RESULTS — after voting we load mvp_vote_tally and show who got how many
 //              votes, with ✓ on your own pick. "המשך" reveals the round.
 // A ✕ backs out to history without revealing the result (vote still required
 // next time — unless you already voted, in which case we jump to results).
 export default function MvpGateOverlay({ round, players, currentPlayer, onVoted, onClose }) {
+  const [pending, setPending] = useState(null); // candidate awaiting כן/לא confirmation
   const [casting, setCasting] = useState(null); // candidate id being cast
   const [tally, setTally] = useState(null);      // [{candidate_id, votes, is_mine}] once voted
 
@@ -52,6 +54,7 @@ export default function MvpGateOverlay({ round, players, currentPlayer, onVoted,
     } catch (e) {
       toast.error('ההצבעה נכשלה', { description: e.message });
       setCasting(null);
+      setPending(null); // back to the list so they can pick again
     }
   };
 
@@ -72,7 +75,52 @@ export default function MvpGateOverlay({ round, players, currentPlayer, onVoted,
           <X className="w-4 h-4" />
         </button>
 
-        {tally === null ? (
+        {tally === null && pending ? (
+          /* ── STEP 2: CONFIRM ────────────────────────────────────────── */
+          <>
+            <div className="text-center mb-5 mt-1">
+              <div className="grid place-items-center w-14 h-14 mx-auto mb-3 rounded-2xl st-foil shadow-[0_8px_24px_-8px_rgba(250,204,21,0.6)]">
+                <Trophy className="w-6 h-6" />
+              </div>
+              <h2 className="font-black text-white text-lg leading-tight">
+                בחרת ב"{pending.name}"
+              </h2>
+              <p className="text-ink-3 text-sm font-bold mt-2">אתה בטוח?</p>
+              <p className="text-ink-3 text-[0.7rem] font-bold mt-1 opacity-70">הבחירה סופית ולא ניתנת לשינוי</p>
+            </div>
+
+            <div className="flex items-center justify-center gap-3 mb-5">
+              {pending.image ? (
+                <img src={pending.image} alt={pending.name} className="w-16 h-16 rounded-2xl object-cover ring-1 ring-amber-400/40" />
+              ) : (
+                <div className="grid place-items-center w-16 h-16 rounded-2xl bg-slate-700 text-slate-300 font-black text-xl ring-1 ring-amber-400/40">
+                  {(pending.name?.[0] || '?').toUpperCase()}
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-2.5">
+              <button
+                onClick={() => setPending(null)}
+                disabled={!!casting}
+                className="flex-1 min-h-[48px] rounded-2xl ring-1 ring-white/10 bg-slate-800/70 text-white font-black active:scale-[0.99] transition-transform disabled:opacity-50"
+              >
+                לא
+              </button>
+              <button
+                onClick={() => vote(pending.id)}
+                disabled={!!casting}
+                className="flex-1 min-h-[48px] rounded-2xl st-foil font-black active:scale-[0.99] transition-transform shadow-[0_8px_24px_-8px_rgba(250,204,21,0.6)] disabled:opacity-50"
+              >
+                {casting ? (
+                  <Loader2 className="w-4 h-4 animate-spin mx-auto" />
+                ) : (
+                  'כן'
+                )}
+              </button>
+            </div>
+          </>
+        ) : tally === null ? (
           /* ── STEP 1: PICK ───────────────────────────────────────────── */
           <>
             <div className="text-center mb-4 mt-1">
@@ -88,9 +136,8 @@ export default function MvpGateOverlay({ round, players, currentPlayer, onVoted,
               {candidates.map((p) => (
                 <button
                   key={p.id}
-                  onClick={() => vote(p.id)}
-                  disabled={!!casting}
-                  className="w-full flex items-center gap-3 p-3 rounded-xl ring-1 ring-white/8 bg-slate-800/50 text-right active:scale-[0.99] hover:bg-amber-500/10 hover:ring-amber-400/30 transition-all touch-manipulation disabled:opacity-50"
+                  onClick={() => setPending(p)}
+                  className="w-full flex items-center gap-3 p-3 rounded-xl ring-1 ring-white/8 bg-slate-800/50 text-right active:scale-[0.99] hover:bg-amber-500/10 hover:ring-amber-400/30 transition-all touch-manipulation"
                 >
                   {p.image ? (
                     <img src={p.image} alt={p.name} className="w-9 h-9 rounded-lg object-cover ring-1 ring-white/10 shrink-0" />
@@ -100,9 +147,7 @@ export default function MvpGateOverlay({ round, players, currentPlayer, onVoted,
                     </div>
                   )}
                   <span className="font-black text-white text-sm flex-1 truncate">{p.name}</span>
-                  {casting === p.id
-                    ? <Loader2 className="w-4 h-4 animate-spin text-amber-300 shrink-0" />
-                    : <Star className="w-4 h-4 text-slate-600 shrink-0" />}
+                  <Star className="w-4 h-4 text-slate-600 shrink-0" />
                 </button>
               ))}
             </div>

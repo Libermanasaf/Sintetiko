@@ -9,15 +9,30 @@ import { useRealtimeSync } from '@/lib/useRealtimeSync';
 
 const STORAGE_KEY = 'sintetiko_lists_v3';
 
+// `time` is the FIXED weekly slot for that day — always shown to every player
+// (admin or not, published or not), so it never depends on the roster loading.
 const DAY_CONFIG = {
-  sunday:    { label: 'יום ראשון',  color: 'text-amber-300',   ring: 'ring-amber-400/30',   bg: 'bg-amber-500/10',   dot: 'bg-amber-400' },
-  wednesday: { label: 'יום רביעי',  color: 'text-blue-300',    ring: 'ring-blue-400/30',    bg: 'bg-blue-500/10',    dot: 'bg-blue-400' },
-  thursday:  { label: 'יום חמישי',  color: 'text-emerald-300', ring: 'ring-emerald-400/30', bg: 'bg-emerald-500/10', dot: 'bg-emerald-400' },
+  sunday:    { label: 'יום ראשון',  time: '20:30-22:30', color: 'text-amber-300',   ring: 'ring-amber-400/30',   bg: 'bg-amber-500/10',   dot: 'bg-amber-400' },
+  wednesday: { label: 'יום רביעי',  time: '21:00-23:00', color: 'text-blue-300',    ring: 'ring-blue-400/30',    bg: 'bg-blue-500/10',    dot: 'bg-blue-400' },
+  thursday:  { label: 'יום חמישי',  time: '20:30-22:30', color: 'text-emerald-300', ring: 'ring-emerald-400/30', bg: 'bg-emerald-500/10', dot: 'bg-emerald-400' },
   // One-off extra game day (Tuesday 21.7) — same violet as the Lists column.
-  tuesday:   { label: 'יום שלישי',  color: 'text-violet-300',  ring: 'ring-violet-400/30',  bg: 'bg-violet-500/10',  dot: 'bg-violet-400' },
+  // Runs on the Sunday/Thursday slot; keep in sync with GAME_TIMES in Lists.jsx.
+  tuesday:   { label: 'יום שלישי',  time: '20:30-22:30', color: 'text-violet-300',  ring: 'ring-violet-400/30',  bg: 'bg-violet-500/10',  dot: 'bg-violet-400' },
 };
 
 const EMPTY_ROWS = Array(18).fill('');
+
+// Fixed weekly playing hours. Rendered on every state of the page (blocked /
+// unpublished / roster) so the time is public information for all players.
+function TimeBanner({ cfg }) {
+  if (!cfg.time) return null;
+  return (
+    <div className={`flex items-center justify-center gap-2 rounded-2xl ${cfg.bg} ring-1 ${cfg.ring} px-4 py-3`}>
+      <Clock className={`w-4 h-4 ${cfg.color} shrink-0`} strokeWidth={2.5} />
+      <span className="text-white font-black text-base tnum" dir="ltr">{cfg.time}</span>
+    </div>
+  );
+}
 
 function loadDay(day) {
   try {
@@ -88,6 +103,17 @@ export default function DayListView({ day }) {
       // Player: only the published snapshot. Absent → not published yet.
       const pub = all.publishedLists?.[day];
       if (!pub || !Array.isArray(pub.rows)) return { notPublished: true };
+
+      // Freshness gate, mirrored from get_lists_state. The RPC already strips
+      // stale days for real players, so this is a no-op for them. It matters for
+      // the ADMIN previewing in player mode: their JWT is still the admin email,
+      // so is_admin() passes server-side and the RPC hands back the full live
+      // blob — without this the preview would show rosters a real player can't
+      // see. Keep the 24h window identical to the SQL or the two will disagree.
+      const publishedAt = Date.parse(pub.publishedAt || '');
+      if (!Number.isFinite(publishedAt) || Date.now() - publishedAt > 24 * 60 * 60 * 1000) {
+        return { notPublished: true };
+      }
 
       // Personalized: if THIS player was confirmed from stand-by after publish,
       // append their name to the roster they see (others don't see it). Slot it
@@ -184,7 +210,8 @@ export default function DayListView({ day }) {
       <div className="pb-10">
         <PageHeader icon={ClipboardList} title={cfg.label} subtitle="רשימה"
           accent={day === 'sunday' ? 'amber' : day === 'wednesday' ? 'sky' : day === 'tuesday' ? 'violet' : 'emerald'} />
-        <div className="p-4">
+        <div className="p-4 space-y-4">
+          <TimeBanner cfg={cfg} />
           <div className="rounded-2xl bg-slate-900/50 ring-1 ring-white/8 px-6 py-12 text-center">
             <div className={`mx-auto mb-4 grid place-items-center w-14 h-14 rounded-2xl ${cfg.bg} ring-1 ${cfg.ring}`}>
               <Clock className={`w-7 h-7 ${cfg.color}`} strokeWidth={2} />
@@ -210,7 +237,8 @@ export default function DayListView({ day }) {
           subtitle="רשימה"
           accent={day === 'sunday' ? 'amber' : day === 'wednesday' ? 'sky' : day === 'tuesday' ? 'violet' : 'emerald'}
         />
-        <div className="p-4">
+        <div className="p-4 space-y-4">
+          <TimeBanner cfg={cfg} />
           <div className="rounded-2xl bg-slate-900/50 ring-1 ring-white/8 px-6 py-12 text-center">
             <div className={`mx-auto mb-4 grid place-items-center w-14 h-14 rounded-2xl ${cfg.bg} ring-1 ${cfg.ring}`}>
               <Clock className={`w-7 h-7 ${cfg.color}`} strokeWidth={2} />
@@ -238,6 +266,8 @@ export default function DayListView({ day }) {
       />
 
       <div className="p-4 space-y-4">
+        <TimeBanner cfg={cfg} />
+
         {/* Roster */}
         <div className={`rounded-2xl ring-1 ${cfg.ring} overflow-hidden`}>
           <div className={`${cfg.bg} px-4 py-3 flex items-center gap-2`}>

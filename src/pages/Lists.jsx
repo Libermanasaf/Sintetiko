@@ -886,6 +886,14 @@ export default function Lists() {
                   </div>
                 </div>
 
+                {/* Fixed weekly hours — always shown, not editable */}
+                {GAME_TIMES[key] && (
+                  <div className="flex items-center justify-center gap-1.5 px-4 py-2 bg-slate-950/40 border-b border-white/8">
+                    <Clock className={`w-3.5 h-3.5 ${color} shrink-0`} strokeWidth={2.5} />
+                    <span className="text-white font-black text-sm tnum" dir="ltr">{GAME_TIMES[key]}</span>
+                  </div>
+                )}
+
                 {/* Main 18 rows */}
                 <div className="divide-y divide-white/5">
                   {dayRows.map((name, i) => {
