@@ -4,7 +4,7 @@ import { Player, PlayerRating } from '@/api/entities';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Star, Check, ShieldQuestion, Users, X, Loader2 } from 'lucide-react';
+import { Star, Check, ShieldQuestion, Users, X, Loader2, Search } from 'lucide-react';
 import { PageHeader, EmptyState, Skeleton } from '@/components/ui/lux';
 import { toast } from 'sonner';
 
@@ -40,6 +40,7 @@ function RatingChips({ value, onChange }) {
 // is_admin() server-side — this component is never rendered for players, but
 // the RPC is the actual boundary (the client check is only a UI convenience).
 function RatingBreakdownModal({ player, onClose }) {
+  const [search, setSearch] = useState('');
   const { data: rows = [], isLoading, error } = useQuery({
     queryKey: ['admin-rating-breakdown', player.id],
     queryFn: async () => {
@@ -54,9 +55,16 @@ function RatingBreakdownModal({ player, onClose }) {
     staleTime: 30_000,
   });
 
+  // Average always reflects ALL ratings — searching filters the list you see,
+  // it must not change the reported average.
   const avg = rows.length
     ? (rows.reduce((s, r) => s + Number(r.rating), 0) / rows.length).toFixed(1)
     : null;
+
+  const q = search.trim().toLowerCase();
+  const visibleRows = q
+    ? rows.filter((r) => (r.rater_name || '').toLowerCase().includes(q))
+    : rows;
 
   return (
     <motion.div
@@ -91,6 +99,28 @@ function RatingBreakdownModal({ player, onClose }) {
           </div>
         </div>
 
+        {!isLoading && !error && rows.length > 0 && (
+          <div className="relative mb-3">
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="חפש מדרג לפי שם…"
+              dir="rtl"
+              className="w-full h-11 pr-9 pl-9 rounded-xl bg-slate-800/70 ring-1 ring-white/10 text-white text-sm font-bold placeholder:text-slate-500 placeholder:font-bold outline-none focus:ring-amber-400/40 transition-all"
+            />
+            {search && (
+              <button
+                onClick={() => setSearch('')}
+                aria-label="נקה חיפוש"
+                className="absolute left-2.5 top-1/2 -translate-y-1/2 grid place-items-center w-6 h-6 rounded-md bg-slate-700/80 text-slate-400 active:scale-95"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        )}
+
         {isLoading ? (
           <div className="grid place-items-center py-10">
             <Loader2 className="w-6 h-6 animate-spin text-amber-300" />
@@ -103,9 +133,13 @@ function RatingBreakdownModal({ player, onClose }) {
           <p className="text-center text-ink-3 text-sm font-bold py-8">
             אף אחד עוד לא דירג את {player.name}
           </p>
+        ) : visibleRows.length === 0 ? (
+          <p className="text-center text-ink-3 text-sm font-bold py-8">
+            אין מדרג בשם "{search.trim()}"
+          </p>
         ) : (
           <div className="space-y-1.5">
-            {rows.map((r) => (
+            {visibleRows.map((r) => (
               <div key={r.rater_player_id}
                 className="flex items-center gap-2.5 p-2.5 rounded-xl bg-slate-800/50 ring-1 ring-white/8">
                 {r.rater_image ? (
@@ -287,6 +321,10 @@ export default function RatePlayers() {
   }, [myPlayer?.id, rateMutation]);
 
   const otherPlayers = allPlayers.filter(p => p.id !== myPlayer?.id);
+  // myPlayer only selects `id`; the full row (name/image) comes from the roster.
+  const myPlayerCard = myPlayer?.id
+    ? allPlayers.find(p => p.id === myPlayer.id)
+    : null;
   const isLoading = loadingPlayers || loadingProfile;
 
   return (
@@ -319,6 +357,40 @@ export default function RatePlayers() {
               </p>
             </div>
             <div className="space-y-2.5">
+              {/* Your own card. Excluded from the rateable list (nobody rates
+                  themselves), but as admin you still want to see what you
+                  received — so show it read-only, with the same breakdown. */}
+              {isAdmin && myPlayerCard && ratingStatsByPlayer[myPlayerCard.id]?.count > 0 && (
+                <div className="relative rounded-2xl p-px bg-gradient-to-br from-amber-300/30 via-slate-700/25 to-slate-800/10">
+                  <div className="rounded-[15px] bg-gradient-to-b from-slate-800/95 to-slate-950 p-3.5 flex items-center gap-3.5">
+                    {myPlayerCard.image ? (
+                      <img src={myPlayerCard.image} alt="" className="w-12 h-12 rounded-xl object-cover ring-2 ring-amber-500/30 shrink-0" />
+                    ) : (
+                      <div className="grid place-items-center w-12 h-12 rounded-xl bg-slate-700 ring-2 ring-amber-500/30 shrink-0">
+                        <span className="text-base font-black text-amber-400/70">{myPlayerCard.name.charAt(0)}</span>
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="font-black text-white text-base truncate">{myPlayerCard.name}</p>
+                          <p className="text-slate-500 text-[0.68rem] font-bold">הכרטיס שלך — לא ניתן לדרג את עצמך</p>
+                        </div>
+                        <button
+                          onClick={() => setBreakdownPlayer(myPlayerCard)}
+                          className="flex items-center gap-1 shrink-0 px-2 py-0.5 rounded-lg bg-amber-500/15 ring-1 ring-amber-500/30 active:scale-95 hover:bg-amber-500/25 transition-all"
+                          title={`ממוצע מתוך ${ratingStatsByPlayer[myPlayerCard.id].count} דירוגים — לחץ לפירוט מי דירג`}
+                        >
+                          <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
+                          <span className="font-black text-amber-300 text-xs tnum">{ratingStatsByPlayer[myPlayerCard.id].avg}</span>
+                          <span className="text-amber-400/60 text-[0.6rem] font-bold tnum">({ratingStatsByPlayer[myPlayerCard.id].count})</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {otherPlayers.map(player => (
                 <PlayerRatingRow
                   key={player.id}
