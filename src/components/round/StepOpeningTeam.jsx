@@ -46,7 +46,7 @@ function TeamBanner({ index, side }) {
   );
 }
 
-export default function StepOpeningTeam({ numTeams, openingTeams, setOpeningTeams, teams, goalkeepers }) {
+export default function StepOpeningTeam({ numTeams, openingTeams, setOpeningTeams, teams, goalkeepers, captains = [] }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
@@ -67,6 +67,7 @@ export default function StepOpeningTeam({ numTeams, openingTeams, setOpeningTeam
         date: new Date().toISOString(),
         teams,
         goalkeepers,
+        captains,
         openingTeams,
         teamWins: {},
       };
@@ -78,10 +79,12 @@ export default function StepOpeningTeam({ numTeams, openingTeams, setOpeningTeam
         await Round.create({ ...basePayload, is_published: false });
       } catch (err) {
         const msg = String(err?.message || '');
-        const missingCol = err?.code === '42703' || /is_published/.test(msg) || /column/.test(msg);
+        const missingCol = err?.code === '42703' || /is_published/.test(msg) || /captains/.test(msg) || /column/.test(msg);
         if (missingCol) {
-          console.warn('[CreateRound] is_published column missing — saving without it', msg);
-          await Round.create(basePayload);
+          // Drop the optional columns rather than lose the round entirely.
+          console.warn('[CreateRound] optional column missing — saving without it', msg);
+          const { captains: _omit, ...withoutCaptains } = basePayload;
+          await Round.create(/captains/.test(msg) ? withoutCaptains : basePayload);
         } else {
           throw err;
         }

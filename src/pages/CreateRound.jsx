@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Player } from '@/api/entities';
+import { Player, Round } from '@/api/entities';
 import { useQuery } from '@tanstack/react-query';
 import { AnimatePresence } from 'framer-motion';
 import { Shuffle, Zap, Check, Users } from 'lucide-react';
@@ -11,6 +11,7 @@ import StepTeamsPreview from '@/components/round/StepTeamsPreview';
 import StepOpeningTeam from '@/components/round/StepOpeningTeam';
 import { EmptyState } from '@/components/ui/lux';
 import { callApi } from '@/lib/apiClient';
+import { pickCaptains, countCaptaincies } from '@/lib/captains';
 
 const STEP_LABELS = ['הגדרות', 'בחירה', 'תצוגה', 'שמירה'];
 export default function CreateRound() {
@@ -20,6 +21,8 @@ export default function CreateRound() {
   const [selectedPlayers, setSelectedPlayers] = useState([]);
   const [teams, setTeams] = useState([]);
   const [goalkeepers, setGoalkeepers] = useState({});
+  // One captain (referee) per team, index-aligned with `teams`.
+  const [captains, setCaptains] = useState([]);
   const [openingTeams, setOpeningTeams] = useState(null);
   const [showQuickModal, setShowQuickModal] = useState(false);
   // Bumped on every reshuffle so the preview re-runs its entry animation —
@@ -34,6 +37,19 @@ export default function CreateRound() {
     queryKey: ['players'],
     queryFn: () => Player.list('-rating'),
   });
+
+  // Past rounds, only to tally how often each player has already refereed so
+  // the captain draw can rotate. Failure here must not block round creation —
+  // an empty list just means the draw is unweighted this time.
+  const { data: pastRounds = [] } = useQuery({
+    queryKey: ['rounds-for-captaincy'],
+    queryFn: () => Round.list('-date'),
+    staleTime: 5 * 60_000,
+  });
+  const captaincyCounts = React.useMemo(
+    () => countCaptaincies(pastRounds),
+    [pastRounds]
+  );
 
   const requiredPlayers = numTeams * playersPerTeam;
 
@@ -77,7 +93,9 @@ export default function CreateRound() {
     setConstraints(cons);
     // Distribute players into the fairest balanced split right away (not a plain
     // random round-robin) so the first preview is already as equal as possible.
-    setTeams(balanceTeams(selectedPlayers, null, numTeams, cons));
+    const nextTeams = balanceTeams(selectedPlayers, null, numTeams, cons);
+    setTeams(nextTeams);
+    setCaptains(pickCaptains(nextTeams, captaincyCounts));
     setGoalkeepers({});
     setOpeningTeams(null);
     setStep(3);
@@ -210,8 +228,32 @@ export default function CreateRound() {
   const handleReshufflePreview = () => {
     // Pass the current arrangement (as id arrays — sameAs expects team arrays,
     // not a precomputed key) so the reshuffle visibly differs from it.
-    setTeams(balanceTeams(teams.flat(), teams));
+    const nextTeams = balanceTeams(teams.flat(), teams);
+    setTeams(nextTeams);
+    // Re-draw captains too, avoiding a straight repeat of the current picks.
+    setCaptains(pickCaptains(nextTeams, captaincyCounts, captains));
     setShuffleTick((t) => t + 1);
+  };
+
+  const handleCaptainChange = (teamIndex, playerId) => {
+    setCaptains((prev) => {
+      const next = [...prev];
+      next[teamIndex] = playerId;
+      return next;
+    });
+  };
+
+  // Dragging a player between teams can leave a captain sitting on a team they
+  // no longer belong to. Re-draw only the teams whose captain went missing.
+  const handleTeamsChange = (nextTeams) => {
+    setTeams(nextTeams);
+    setCaptains((prev) =>
+      nextTeams.map((teamIds, i) => {
+        const current = prev[i];
+        if (current && teamIds.includes(current)) return current;
+        return pickCaptains([teamIds], captaincyCounts)[0];
+      })
+    );
   };
 
   const handleSaveTeams = () => {
@@ -249,6 +291,7 @@ export default function CreateRound() {
     setStep(1);
     setSelectedPlayers([]);
     setTeams([]);
+    setCaptains([]);
     setGoalkeepers({});
     setOpeningTeams(null);
     setConstraints(null);
@@ -270,7 +313,9 @@ export default function CreateRound() {
     const ids = matchedPlayers.map((p) => p.id);
     const cons = await parseInstructions(quickInstructions, ids, 3);
     setConstraints(cons);
-    setTeams(balanceTeams(ids, null, 3, cons));
+    const nextTeams = balanceTeams(ids, null, 3, cons);
+    setTeams(nextTeams);
+    setCaptains(pickCaptains(nextTeams, captaincyCounts));
     setSelectedPlayers(ids);
     setGoalkeepers({});
     setOpeningTeams(null);
@@ -393,7 +438,10 @@ export default function CreateRound() {
               shuffleTick={shuffleTick}
               onSave={handleSaveTeams}
               onReshuffle={handleReshufflePreview}
-              onTeamsChange={setTeams}
+              onTeamsChange={handleTeamsChange}
+              captains={captains}
+              captaincyCounts={captaincyCounts}
+              onCaptainChange={handleCaptainChange}
             />
           )}
           {step === 4 && (
@@ -404,6 +452,7 @@ export default function CreateRound() {
               setOpeningTeams={setOpeningTeams}
               teams={teams}
               goalkeepers={goalkeepers}
+              captains={captains}
             />
           )}
         </AnimatePresence>

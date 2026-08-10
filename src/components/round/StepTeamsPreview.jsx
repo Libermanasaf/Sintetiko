@@ -16,7 +16,7 @@ const TEAM_COLORS = [
 
 const TEAM_NAMES = ['הצהובים', 'הכחולים', 'הכתומים', 'הצהובים', 'הכחולים', 'הכתומים'];
 
-export default function StepTeamsPreview({ teams, players, shuffleTick = 0, onSave, onReshuffle, onTeamsChange }) {
+export default function StepTeamsPreview({ teams, players, shuffleTick = 0, onSave, onReshuffle, onTeamsChange, captains = [], captaincyCounts = {}, onCaptainChange }) {
 
   const handleDragEnd = (result) => {
     const { source, destination } = result;
@@ -74,6 +74,11 @@ export default function StepTeamsPreview({ teams, players, shuffleTick = 0, onSa
                     {TEAM_NAMES[teamIndex]}
                     <span className="opacity-80"> ({teamAverage.toFixed(1)})</span>
                   </h3>
+                  {captains[teamIndex] && (
+                    <p className={`${color.text} text-[0.6rem] sm:text-xs font-black text-center leading-tight mt-0.5 opacity-90 truncate`}>
+                      🎖️ {players.find(p => p.id === captains[teamIndex])?.name || '—'}
+                    </p>
+                  )}
                 </div>
 
                 {/* Players Drop Zone */}
@@ -89,6 +94,7 @@ export default function StepTeamsPreview({ teams, players, shuffleTick = 0, onSa
                       {teamPlayerIds.map((playerId, playerIndex) => {
                         const player = players.find((p) => p.id === playerId);
                         if (!player) return null;
+                        const isCaptain = captains[teamIndex] === playerId;
 
                         return (
                           <Draggable key={playerId} draggableId={playerId} index={playerIndex}>
@@ -97,9 +103,9 @@ export default function StepTeamsPreview({ teams, players, shuffleTick = 0, onSa
                                 ref={provided.innerRef}
                                 {...provided.draggableProps}
                                 {...provided.dragHandleProps}
-                                className={`${color.card} rounded-xl sm:rounded-2xl p-1.5 sm:p-4 shadow-md flex flex-col sm:flex-row items-center gap-1 sm:gap-3 transition-opacity ${
+                                className={`${color.card} relative rounded-xl sm:rounded-2xl p-1.5 sm:p-4 shadow-md flex flex-col sm:flex-row items-center gap-1 sm:gap-3 transition-opacity ${
                                   snapshot.isDragging ? 'opacity-70 shadow-2xl scale-105' : ''
-                                }`}
+                                } ${isCaptain ? 'ring-2 ring-amber-300 shadow-[0_0_16px_-4px_rgba(252,211,77,0.9)]' : ''}`}
                               >
                                 {player.image ? (
                                   <img
@@ -124,6 +130,26 @@ export default function StepTeamsPreview({ teams, players, shuffleTick = 0, onSa
                                     </p>
                                   )}
                                 </div>
+
+                                {/* Captain toggle. A separate button (not a card
+                                    click) so it never fights the drag handle. */}
+                                <button
+                                  onClick={() => onCaptainChange?.(teamIndex, playerId)}
+                                  aria-label={isCaptain ? 'הקפטן של הקבוצה' : `הפוך את ${player.name} לקפטן`}
+                                  aria-pressed={isCaptain}
+                                  title={
+                                    isCaptain
+                                      ? `קפטן ושופט — שפט ${captaincyCounts[playerId] || 0} פעמים`
+                                      : `הפוך לקפטן (שפט ${captaincyCounts[playerId] || 0} פעמים)`
+                                  }
+                                  className={`shrink-0 grid place-items-center w-6 h-6 sm:w-8 sm:h-8 rounded-lg text-xs sm:text-sm transition-all active:scale-90 ${
+                                    isCaptain
+                                      ? 'bg-amber-300 shadow-md'
+                                      : 'bg-black/15 opacity-40 hover:opacity-100 hover:bg-black/25'
+                                  }`}
+                                >
+                                  🎖️
+                                </button>
                               </div>
                             )}
                           </Draggable>

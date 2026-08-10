@@ -673,6 +673,7 @@ export default function GameHistory() {
                             const player = players.find(p => p.id === playerId);
                             if (!player) return null;
                             const isGoalkeeper = selectedRound.goalkeepers?.[teamIndex] === playerId;
+                            const isCaptain = selectedRound.captains?.[teamIndex] === playerId;
                             const goals = selectedRound.player_goals?.[playerId];
                             const RowTag = isAdmin ? 'button' : 'div';
                             return (
@@ -698,7 +699,17 @@ export default function GameHistory() {
                                   )}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-white font-bold text-sm truncate">{player.name}</p>
+                                  <div className="flex items-center gap-1.5">
+                                    <p className="text-white font-bold text-sm truncate">{player.name}</p>
+                                    {isCaptain && (
+                                      <span
+                                        title="קפטן ושופט המחזור"
+                                        className="shrink-0 px-1.5 py-0.5 rounded-md bg-amber-400/20 ring-1 ring-amber-400/40 text-amber-300 text-[0.6rem] font-black leading-none"
+                                      >
+                                        🎖️ קפטן
+                                      </span>
+                                    )}
+                                  </div>
                                   <div className="flex items-center gap-0.5 mt-0.5">{renderStars(player.rating || 3)}</div>
                                 </div>
                                 {isAdmin && goals > 0 && (
