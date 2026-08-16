@@ -748,10 +748,14 @@ export default function Lists() {
       try {
         const { data: row } = await supabase
           .from('lists_state').select('data').eq('id', 'main').maybeSingle();
-        const pubAt = Date.parse(row?.data?.publishedLists?.[signup.day]?.publishedAt || '');
-        const isLive = Number.isFinite(pubAt) && Date.now() - pubAt <= 24 * 60 * 60 * 1000;
+        const prev = row?.data?.publishedLists?.[signup.day];
+        const pubAt = Date.parse(prev?.publishedAt || '');
+        const isLive = prev?.intent === 'publish'
+          && Number.isFinite(pubAt)
+          && Date.now() - pubAt <= 24 * 60 * 60 * 1000;
         if (isLive) {
-          await publishDayList(signup.day);
+          // refreshOnly: updates the rows, never grants visibility.
+          await publishDayList(signup.day, { refreshOnly: true });
           queryClient.invalidateQueries({ queryKey: ['lists-state'] });
         }
       } catch (e) { console.warn('[confirm republish]', e); }

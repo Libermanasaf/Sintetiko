@@ -25,7 +25,12 @@ export const DAY_FROM_URL = {
 //   firstPublishedAt — the seen-checkmarks anchor (list_viewers): set on the
 //                      first publish of a cycle and preserved on re-publishes,
 //                      so roster tweaks never clear the ✓ marks.
-export async function publishDayList(day) {
+// `intent` is the server-side visibility switch. get_lists_state serves a day
+// to players only when publishedLists[day].intent === 'publish'. Pass
+// { refreshOnly: true } to update an already-published day's rows WITHOUT
+// granting visibility — that path preserves whatever intent is already there
+// and can never turn an unpublished list live.
+export async function publishDayList(day, { refreshOnly = false } = {}) {
   if (!supabase || !day) return;
 
   const { data: row, error: readErr } = await supabase
@@ -46,6 +51,9 @@ export async function publishDayList(day) {
     rows: all.rows?.[day] || [],
     publishedAt: nowIso,
     firstPublishedAt: sameCycle ? prevFirst : nowIso,
+    // A refresh inherits existing intent (absent => stays invisible).
+    // A real publish is the ONLY thing that sets it.
+    intent: refreshOnly ? prevPub.intent : 'publish',
   };
   const nextData = {
     ...all,
