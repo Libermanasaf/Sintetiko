@@ -734,14 +734,23 @@ export default function Lists() {
         }
       }
 
-      // Day already published? Re-snapshot it silently (no push) so every
-      // player sees the CURRENT roster — including the swap that freed the
+      // Day CURRENTLY published? Re-snapshot it silently (no push) so every
+      // player sees the up-to-date roster — including the swap that freed the
       // slot. Replaces the old extraConfirmed personalization, which appended
       // the confirmed player as a phantom row 19 only they could see.
+      //
+      // "Currently" is the whole point: publishedLists[day] is never removed,
+      // it just goes stale, so a mere existence check matched days that expired
+      // weeks ago. publishDayList always stamps publishedAt = now, so that
+      // check silently RE-PUBLISHED an expired list — players saw a roster the
+      // admin had not published. Gate on the same 24h window get_lists_state
+      // enforces; if it has expired, leave it alone and let the admin publish.
       try {
         const { data: row } = await supabase
           .from('lists_state').select('data').eq('id', 'main').maybeSingle();
-        if (row?.data?.publishedLists?.[signup.day]) {
+        const pubAt = Date.parse(row?.data?.publishedLists?.[signup.day]?.publishedAt || '');
+        const isLive = Number.isFinite(pubAt) && Date.now() - pubAt <= 24 * 60 * 60 * 1000;
+        if (isLive) {
           await publishDayList(signup.day);
           queryClient.invalidateQueries({ queryKey: ['lists-state'] });
         }
