@@ -92,12 +92,17 @@ const fmtSignupTime = (d) => {
   return `${t.getDate()}.${t.getMonth() + 1} · ${hh}:${mm}`;
 };
 
+// Placeholder slots, not people — a roster legitimately holds one per team, so
+// repeating them is expected and must not trip the duplicate warning (which
+// also blocks publishing). Matched on the normalized name.
+const ROLE_PLACEHOLDERS = new Set(['שוער', 'שוער קבוע', 'אורח', 'חבר']);
+
 // Names appearing more than once in a day (main rows + manual waiting).
 const findDayDuplicates = (rows = [], waiting = []) => {
   const counts = new Map();
   for (const n of [...rows, ...waiting]) {
     const k = normName(n);
-    if (!k) continue;
+    if (!k || ROLE_PLACEHOLDERS.has(k)) continue;
     counts.set(k, (counts.get(k) || 0) + 1);
   }
   return new Set([...counts].filter(([, c]) => c > 1).map(([k]) => k));
