@@ -9,6 +9,7 @@ import { supabase } from '@/lib/supabase';
 import { publishDayList, publishDayListVerified } from '@/lib/listPublish';
 import { oneOffTuesdayActive } from '@/lib/oneOffTuesday';
 import { callApi } from '@/lib/apiClient';
+import { isRolePlaceholder } from '@/lib/rosterPlaceholders';
 import { useRealtimeSync } from '@/lib/useRealtimeSync';
 
 const SIGNUPS_TABLE_SQL = `CREATE TABLE IF NOT EXISTS signups (
@@ -92,17 +93,13 @@ const fmtSignupTime = (d) => {
   return `${t.getDate()}.${t.getMonth() + 1} · ${hh}:${mm}`;
 };
 
-// Placeholder slots, not people — a roster legitimately holds one per team, so
-// repeating them is expected and must not trip the duplicate warning (which
-// also blocks publishing). Matched on the normalized name.
-const ROLE_PLACEHOLDERS = new Set(['שוער', 'שוער קבוע', 'אורח', 'חבר']);
-
 // Names appearing more than once in a day (main rows + manual waiting).
+// Role placeholders ("שוער" etc.) are exempt — see rosterPlaceholders.js.
 const findDayDuplicates = (rows = [], waiting = []) => {
   const counts = new Map();
   for (const n of [...rows, ...waiting]) {
     const k = normName(n);
-    if (!k || ROLE_PLACEHOLDERS.has(k)) continue;
+    if (!k || isRolePlaceholder(k)) continue;
     counts.set(k, (counts.get(k) || 0) + 1);
   }
   return new Set([...counts].filter(([, c]) => c > 1).map(([k]) => k));

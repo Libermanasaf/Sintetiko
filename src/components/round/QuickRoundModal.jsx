@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Zap, AlertCircle } from 'lucide-react';
+import { isRolePlaceholder } from '@/lib/rosterPlaceholders';
 
 export default function QuickRoundModal({ players, onClose, onConfirm }) {
   const [text, setText] = useState('');
@@ -16,20 +17,38 @@ export default function QuickRoundModal({ players, onClose, onConfirm }) {
   const names = parseNames();
 
   const handleConfirm = () => {
-    // Match names to players (case-insensitive, partial match)
+    // Match names to players (case-insensitive, partial match).
+    //
+    // A roster line may legitimately repeat a PLACEHOLDER — "שוער" appears once
+    // per team. De-duplicating by id silently dropped every occurrence after
+    // the first, so the round came out a player short.
+    //
+    // Teams are arrays of player ids, and every screen resolves a row by
+    // looking that id up in `players` — so a repeat cannot reuse the same id
+    // (breaks the balancer and captain draw) nor invent one (renders blank).
+    // Instead each occurrence claims the NEXT distinct player row sharing that
+    // placeholder name; the roster carries one such row per team. If the list
+    // asks for more than exist, the extras are reported as unmatched rather
+    // than silently dropped. Real players are still de-duplicated.
     const matched = [];
     const unmatched = [];
 
     names.forEach(name => {
-      const found = players.find(p =>
-        p.name.toLowerCase().includes(name.toLowerCase()) ||
-        name.toLowerCase().includes(p.name.toLowerCase())
+      const lower = name.toLowerCase();
+      const candidates = players.filter(p =>
+        p.name.toLowerCase().includes(lower) || lower.includes(p.name.toLowerCase())
       );
-      if (found && !matched.find(m => m.id === found.id)) {
-        matched.push(found);
-      } else if (!found) {
-        unmatched.push(name);
+      if (candidates.length === 0) { unmatched.push(name); return; }
+
+      if (isRolePlaceholder(candidates[0].name)) {
+        const free = candidates.find(c => !matched.some(m => m.id === c.id));
+        if (free) matched.push(free);
+        else unmatched.push(name); // more placeholders requested than rows exist
+        return;
       }
+
+      const found = candidates[0];
+      if (!matched.find(m => m.id === found.id)) matched.push(found);
     });
 
     onConfirm(matched, unmatched, instructions);
