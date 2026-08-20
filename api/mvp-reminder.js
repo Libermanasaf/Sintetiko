@@ -1,5 +1,6 @@
 import webpush from 'web-push';
 import { getSupabaseAdmin } from './_supabaseAdmin.js';
+import { getRestrictedEmails } from './_restrictedEmails.js';
 import { VAPID_PUBLIC_KEY } from '../src/lib/vapidPublic.js';
 
 // Lowercased to match subsByEmail keys (which are lowercased on insert below).
@@ -94,10 +95,13 @@ export default async function handler(req, res) {
   // Preload all subscriptions once, grouped by email, to avoid a query per player.
   const { data: subs, error: sErr } = await supabase.from('push_subscriptions').select('*');
   if (sErr) return res.status(500).json({ error: sErr.message });
+  // Restricted players get no pushes — they are cut off from the pages these
+  // notifications link to. Skipping them here covers every send below.
+  const restricted = await getRestrictedEmails(supabase);
   const subsByEmail = new Map();
   for (const row of subs || []) {
     const key = (row.user_email || '').toLowerCase();
-    if (!key) continue;
+    if (!key || restricted.has(key)) continue;
     if (!subsByEmail.has(key)) subsByEmail.set(key, []);
     subsByEmail.get(key).push(row);
   }

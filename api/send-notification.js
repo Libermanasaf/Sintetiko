@@ -1,5 +1,6 @@
 import webpush from 'web-push';
 import { getSupabaseAdmin, getCallerUser, isAdminUser } from './_supabaseAdmin.js';
+import { getRestrictedEmails, withoutRestricted } from './_restrictedEmails.js';
 import { VAPID_PUBLIC_KEY } from '../src/lib/vapidPublic.js';
 
 const ADMIN_EMAIL = 'libermanasaf@gmail.com';
@@ -61,11 +62,18 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: error.message });
   }
 
+  // Restricted players are cut off from the club-wide experience, so they must
+  // not be notified either — a push would link them to a page they cannot open.
+  // Applies to a targeted send too: the admin alert (targetEmail === admin) is
+  // unaffected because the admin is never a restricted player.
+  const restricted = await getRestrictedEmails(supabase);
+  const recipients = withoutRestricted(subs, restricted);
+
   let sent = 0;
   let failed = 0;
 
   await Promise.all(
-    (subs || []).map(async (row) => {
+    (recipients || []).map(async (row) => {
       try {
         await webpush.sendNotification(row.subscription, payload);
         sent++;
