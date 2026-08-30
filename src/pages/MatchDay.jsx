@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, ArrowRight, Trophy, Target, Plus, Minus, X, Lock, Check, Crown } from 'lucide-react';
+import { User, ArrowRight, Trophy, Target, Plus, Minus, X, Lock, Check, Crown, Award } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
@@ -616,6 +616,49 @@ export default function MatchDay() {
               </div>
             </LuxCard>
           </motion.div>
+        )}
+
+        {/* Captains / referees — its own card above the line-ups, showing the
+            three names at full size with their photos. The team headers below
+            also name their captain, but that is a small line inside a narrow
+            column; this is the at-a-glance "who referees tonight" answer.
+            Hidden for rounds saved before captains existed (captains == null). */}
+        {Array.isArray(round.captains) && round.captains.some(Boolean) && (
+          <div className="mb-5">
+            <SectionTitle icon={Award} className="mb-3">שופטי הערב</SectionTitle>
+            <LuxCard accent="amber" glow>
+              <div className={`grid gap-2 p-2.5 ${round.captains.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+                {round.captains.map((pid, teamIdx) => {
+                  const t = teamOf(teamIdx);
+                  const p = pid ? allPlayers.find(x => x.id === pid) : null;
+                  if (!p) return <div key={`cap-${teamIdx}`} />;
+                  return (
+                    <div
+                      key={`cap-${teamIdx}`}
+                      className={`flex flex-col items-center gap-1.5 rounded-xl px-1.5 py-2.5 bg-gradient-to-b ${t.hdr} ring-1 ${t.tint.split(' ')[1]}`}
+                    >
+                      <div className="relative shrink-0">
+                        {p.image ? (
+                          <img src={p.image} alt={p.name} loading="lazy" className="w-11 h-11 sm:w-14 sm:h-14 rounded-full object-cover ring-2 ring-amber-300/80" />
+                        ) : (
+                          <div className="grid place-items-center w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-slate-700 ring-2 ring-amber-300/80">
+                            <User className="w-5 h-5 text-slate-300" />
+                          </div>
+                        )}
+                        <span className="absolute -bottom-1 -right-1 text-sm sm:text-base leading-none drop-shadow">🎖️</span>
+                      </div>
+                      <p className={`font-black text-[0.72rem] sm:text-sm leading-tight text-center truncate max-w-full ${t.text}`}>
+                        {p.name}
+                      </p>
+                      <span className={`text-[0.55rem] font-bold leading-none opacity-75 truncate max-w-full ${t.text}`}>
+                        {t.name}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </LuxCard>
+          </div>
         )}
 
         {/* Teams — mirrors the CreateRound preview: solid team colours, the
