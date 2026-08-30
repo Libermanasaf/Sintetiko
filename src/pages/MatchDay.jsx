@@ -287,18 +287,18 @@ export default function MatchDay() {
   });
 
   const { data: round, isLoading } = useQuery({
-    // Scorekeepers share the admin view: they must reach the round while it is
-    // still unpublished, otherwise they cannot keep score during the game.
-    queryKey: canEditScore ? ['latest-round-admin'] : ['latest-round'],
+    // Only the admin sees an unpublished round. Scorekeepers see it on the
+    // same terms as every other player — once it is published — and can then
+    // edit the score. Publishing stays the admin's decision alone.
+    queryKey: isAdmin ? ['latest-round-admin'] : ['latest-round'],
     queryFn: async () => {
       // Only the 5 most recent rounds — the active round is always among the
       // newest (it leaves the active filter once closed). Avoids re-fetching the
       // entire rounds history on every 60s poll, which would scale egress with
       // total rounds. GameHistory still fetches all (it needs the full history).
       const rounds = await Round.list('-created_date', 5);
-      // Admin / scorekeeper: any active (uncompleted) round — no date/publish
-      // filter, so scoring remains possible until the admin explicitly closes it.
-      // Player: limited to last 3 days + published.
+      // Admin: any active (uncompleted) round — no date/publish filter so editing remains possible until they explicitly close it.
+      // Everyone else (players and scorekeepers): last 3 days + published.
       const cutoff = new Date();
       cutoff.setDate(cutoff.getDate() - 3);
       cutoff.setHours(0, 0, 0, 0);
@@ -307,7 +307,7 @@ export default function MatchDay() {
         r.winningTeam == null &&
         !r.victoryPhoto &&
         !r.is_closed &&
-        (canEditScore || (new Date(r.date) >= cutoff && r.is_published === true))
+        (isAdmin || (new Date(r.date) >= cutoff && r.is_published === true))
       ) || null;
     },
     // No refetchInterval: the realtime subscription below pushes round changes
@@ -386,7 +386,7 @@ export default function MatchDay() {
 
   const handleWinsChange = async (teamIndex, newCount) => {
     if (!round) return;
-    const qKey = canEditScore ? ['latest-round-admin'] : ['latest-round'];
+    const qKey = isAdmin ? ['latest-round-admin'] : ['latest-round'];
     const roundId = round.id;
     const currentWins = round.teamWins || {};
     const nextWins = { ...currentWins, [teamIndex]: newCount };
@@ -482,7 +482,7 @@ export default function MatchDay() {
 
   const handleGoalChange = async (newCount) => {
     if (!editingPlayer || !round) return;
-    const qKey = canEditScore ? ['latest-round-admin'] : ['latest-round'];
+    const qKey = isAdmin ? ['latest-round-admin'] : ['latest-round'];
     const roundId = round.id;
     const pid = editingPlayer.player.id;
     const nextGoals = { ...(round.player_goals || {}), [pid]: newCount };
