@@ -240,6 +240,27 @@ export default function MatchDay() {
   const { user, role, loginMode } = useAuth();
   const isAdmin = role === 'admin' && loginMode !== 'player';
   const navigate = useNavigate();
+
+  // Scorekeepers: trusted players who may edit LIVE SCORES (team wins + player
+  // goals) but nothing else — they cannot close, publish or re-team a round.
+  // The list lives in the `scorekeepers` table so it changes without a deploy;
+  // this query is only for showing the controls. The real enforcement is
+  // server-side (RLS + the enforce_scorekeeper_scope trigger), so a player who
+  // forges this flag still cannot write.
+  const { data: isScorekeeper = false } = useQuery({
+    queryKey: ['is-scorekeeper', user?.email],
+    queryFn: async () => {
+      if (!supabase || !user?.email) return false;
+      const { data, error } = await supabase.rpc('is_scorekeeper');
+      if (error) { console.warn('[scorekeeper]', error.message); return false; }
+      return !!data;
+    },
+    enabled: !!user?.email && !isAdmin,
+    staleTime: 5 * 60_000,
+  });
+
+  // May edit the live score: admins, plus scorekeepers.
+  const canEditScore = isAdmin || isScorekeeper;
   const queryClient = useQueryClient();
   const [voting, setVoting] = useState(false);
   const [localVotedIndex, setLocalVotedIndex] = useState(null);
@@ -266,14 +287,17 @@ export default function MatchDay() {
   });
 
   const { data: round, isLoading } = useQuery({
-    queryKey: isAdmin ? ['latest-round-admin'] : ['latest-round'],
+    // Scorekeepers share the admin view: they must reach the round while it is
+    // still unpublished, otherwise they cannot keep score during the game.
+    queryKey: canEditScore ? ['latest-round-admin'] : ['latest-round'],
     queryFn: async () => {
       // Only the 5 most recent rounds — the active round is always among the
       // newest (it leaves the active filter once closed). Avoids re-fetching the
       // entire rounds history on every 60s poll, which would scale egress with
       // total rounds. GameHistory still fetches all (it needs the full history).
       const rounds = await Round.list('-created_date', 5);
-      // Admin: any active (uncompleted) round — no date/publish filter so editing remains possible until they explicitly close it.
+      // Admin / scorekeeper: any active (uncompleted) round — no date/publish
+      // filter, so scoring remains possible until the admin explicitly closes it.
       // Player: limited to last 3 days + published.
       const cutoff = new Date();
       cutoff.setDate(cutoff.getDate() - 3);
@@ -283,7 +307,7 @@ export default function MatchDay() {
         r.winningTeam == null &&
         !r.victoryPhoto &&
         !r.is_closed &&
-        (isAdmin || (new Date(r.date) >= cutoff && r.is_published === true))
+        (canEditScore || (new Date(r.date) >= cutoff && r.is_published === true))
       ) || null;
     },
     // No refetchInterval: the realtime subscription below pushes round changes
@@ -362,7 +386,7 @@ export default function MatchDay() {
 
   const handleWinsChange = async (teamIndex, newCount) => {
     if (!round) return;
-    const qKey = isAdmin ? ['latest-round-admin'] : ['latest-round'];
+    const qKey = canEditScore ? ['latest-round-admin'] : ['latest-round'];
     const roundId = round.id;
     const currentWins = round.teamWins || {};
     const nextWins = { ...currentWins, [teamIndex]: newCount };
@@ -458,7 +482,7 @@ export default function MatchDay() {
 
   const handleGoalChange = async (newCount) => {
     if (!editingPlayer || !round) return;
-    const qKey = isAdmin ? ['latest-round-admin'] : ['latest-round'];
+    const qKey = canEditScore ? ['latest-round-admin'] : ['latest-round'];
     const roundId = round.id;
     const pid = editingPlayer.player.id;
     const nextGoals = { ...(round.player_goals || {}), [pid]: newCount };
@@ -702,7 +726,7 @@ export default function MatchDay() {
                       </p>
                     )}
                     <p className={`text-[0.5rem] font-bold text-center leading-none mt-0.5 ${isOpening ? 'text-emerald-900' : 'invisible'}`}>פותחת</p>
-                    {isAdmin ? (
+                    {canEditScore ? (
                       <div className="flex items-center justify-center gap-1 mt-1">
                         <button type="button" onClick={() => handleWinsChange(teamIdx, Math.max(0, wins - 1))} disabled={!wins} className="grid place-items-center w-6 h-6 rounded bg-black/25 text-white active:scale-95 disabled:opacity-30 transition-transform touch-manipulation">
                           <Minus className="w-2.5 h-2.5" strokeWidth={3} />
@@ -723,13 +747,13 @@ export default function MatchDay() {
                     if (!p) return null;
                     const playerGoals = goals[pid] || 0;
                     const isCap = capId === pid;
-                    const RowTag = isAdmin ? 'button' : 'div';
+                    const RowTag = canEditScore ? 'button' : 'div';
                     return (
                       <RowTag
                         key={`${teamIdx}-${pid}`}
-                        type={isAdmin ? 'button' : undefined}
-                        onClick={isAdmin ? () => setEditingPlayer({ player: p, teamIndex: teamIdx }) : undefined}
-                        className={`w-full ${solid.card} rounded-xl sm:rounded-2xl p-1.5 sm:p-3 shadow-md flex items-center gap-1.5 sm:gap-2.5 ${isCap ? 'ring-2 ring-amber-200' : ''} ${isAdmin ? 'cursor-pointer active:scale-[0.99] transition-transform touch-manipulation' : ''}`}
+                        type={canEditScore ? 'button' : undefined}
+                        onClick={canEditScore ? () => setEditingPlayer({ player: p, teamIndex: teamIdx }) : undefined}
+                        className={`w-full ${solid.card} rounded-xl sm:rounded-2xl p-1.5 sm:p-3 shadow-md flex items-center gap-1.5 sm:gap-2.5 ${isCap ? 'ring-2 ring-amber-200' : ''} ${canEditScore ? 'cursor-pointer active:scale-[0.99] transition-transform touch-manipulation' : ''}`}
                       >
                         {p.image ? (
                           <img src={p.image} alt={p.name} loading="lazy" className="w-7 h-7 sm:w-9 sm:h-9 rounded-full object-cover shrink-0 ring-2 ring-white/70" />
