@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, ArrowRight, Trophy, Target, Plus, Minus, X, Lock, Check, Crown, Award } from 'lucide-react';
+import { User, ArrowRight, Trophy, Target, Plus, Minus, X, Lock, Check, Crown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
@@ -19,6 +19,14 @@ const TEAM = [
   { name: 'הכתומים', bar: 'bg-orange-500', tint: 'bg-orange-500/12 ring-orange-500/30', text: 'text-orange-300', hdr: 'from-orange-500/25 to-orange-600/5', dot: 'bg-orange-400' },
 ];
 const teamOf = (i) => TEAM[i % 3];
+
+// Solid jersey colours for the line-up cards, matching the CreateRound preview
+// (StepTeamsPreview) so the teams look the same in both screens.
+const TEAM_SOLID = [
+  { header: 'bg-yellow-500', card: 'bg-yellow-400', text: 'text-white' },
+  { header: 'bg-blue-700',   card: 'bg-blue-600',   text: 'text-white' },
+  { header: 'bg-orange-600', card: 'bg-orange-500', text: 'text-white' },
+];
 
 
 // ─── Goal editor bottom-sheet (admin only) ────────────────────────────────
@@ -610,130 +618,98 @@ export default function MatchDay() {
           </motion.div>
         )}
 
-        {/* Captains / referees — its own card above the line-ups. The line-up
-            grid is 3 narrow columns with already-truncated names, so a badge
-            per row there would squeeze them further; this keeps the three
-            names full-size and unmissable. Hidden for rounds saved before
-            captains existed (captains == null). */}
-        {Array.isArray(round.captains) && round.captains.some(Boolean) && (
-          <div className="mb-5">
-            <SectionTitle icon={Award} className="mb-3">שופטי הערב</SectionTitle>
-            <LuxCard accent="amber" glow>
-              <div className={`grid gap-2 p-2.5 ${round.captains.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
-                {round.captains.map((pid, teamIdx) => {
-                  const t = teamOf(teamIdx);
-                  const p = pid ? allPlayers.find(x => x.id === pid) : null;
-                  if (!p) return <div key={`cap-${teamIdx}`} />;
-                  return (
-                    <div
-                      key={`cap-${teamIdx}`}
-                      className={`flex flex-col items-center gap-1.5 rounded-xl px-1.5 py-2.5 bg-gradient-to-b ${t.hdr} ring-1 ${t.tint.split(' ')[1]}`}
-                    >
-                      <div className="relative shrink-0">
-                        {p.image ? (
-                          <img src={p.image} alt={p.name} loading="lazy" className="w-11 h-11 sm:w-14 sm:h-14 rounded-full object-cover ring-2 ring-amber-300/80" />
-                        ) : (
-                          <div className="grid place-items-center w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-slate-700 ring-2 ring-amber-300/80">
-                            <User className="w-5 h-5 text-slate-300" />
-                          </div>
-                        )}
-                        <span className="absolute -bottom-1 -right-1 text-sm sm:text-base leading-none drop-shadow">🎖️</span>
-                      </div>
-                      <p className={`font-black text-[0.72rem] sm:text-sm leading-tight text-center truncate max-w-full ${t.text}`}>
-                        {p.name}
-                      </p>
-                      <span className={`text-[0.55rem] font-bold leading-none opacity-75 truncate max-w-full ${t.text}`}>
-                        {t.name}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </LuxCard>
-          </div>
-        )}
-
-        {/* Teams — single flat grid so every row aligns across all columns */}
+        {/* Teams — mirrors the CreateRound preview: solid team colours, the
+            team's average rating in the header, its captain named beneath, and
+            one coloured card per player. */}
         <div>
           <SectionTitle icon={User} className="mb-3">ההרכבים</SectionTitle>
           <motion.div
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.05 }}
-            className={`grid gap-x-2 gap-y-0 ${round.teams.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}
+            className={`grid gap-1.5 sm:gap-3 items-start ${round.teams.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}
           >
-            {/* Headers row — stacked layout avoids overflow in narrow 3-col cells */}
-            {round.teams.map((_, teamIdx) => {
+            {round.teams.map((playerIds, teamIdx) => {
               const t = teamOf(teamIdx);
+              const solid = TEAM_SOLID[teamIdx % 3];
               const isOpening = openingIdx.includes(teamIdx);
               const wins = round.teamWins?.[teamIdx] ?? 0;
+              const capId = round.captains?.[teamIdx];
+              const capName = capId ? allPlayers.find(x => x.id === capId)?.name : null;
+              // Same fallback the preview uses, so a player with no rating
+              // doesn't drag the average toward zero.
+              const rated = playerIds.map(pid => allPlayers.find(x => x.id === pid)?.rating ?? 3);
+              const avg = rated.length ? rated.reduce((s, r) => s + Number(r), 0) / rated.length : 0;
+
               return (
-                <div key={`h-${teamIdx}`} className={`rounded-t-2xl px-1.5 py-2 bg-gradient-to-b ${t.hdr} flex flex-col items-center gap-0.5 ring-1 ${t.tint.split(' ')[1]}`}>
-                  <div className="flex items-center gap-1 justify-center min-w-0 w-full">
-                    {teamIdx === leadingTeam ? (
-                      <Crown className="w-3.5 h-3.5 text-amber-300 shrink-0" strokeWidth={2.6} />
-                    ) : (
-                      <span className={`w-2 h-2 rounded-full shrink-0 ${t.dot}`} />
-                    )}
-                    <p className={`font-black text-sm leading-tight truncate ${t.text}`}>{t.name}</p>
-                  </div>
-                  <span className={`text-[0.5rem] font-bold leading-none ${isOpening ? 'text-emerald-300' : 'invisible'}`}>פותחת</span>
-                  {isAdmin ? (
-                    <div className="flex items-center gap-1 mt-0.5">
-                      <button type="button" onClick={() => handleWinsChange(teamIdx, Math.max(0, wins - 1))} disabled={!wins} className="grid place-items-center w-6 h-6 rounded bg-rose-500/20 text-rose-300 active:scale-95 disabled:opacity-30 transition-transform touch-manipulation">
-                        <Minus className="w-2.5 h-2.5" strokeWidth={3} />
-                      </button>
-                      <span className={`font-black text-base tnum w-6 text-center leading-none ${t.text}`}>{wins}</span>
-                      <button type="button" onClick={() => handleWinsChange(teamIdx, wins + 1)} className="grid place-items-center w-6 h-6 rounded bg-emerald-500/20 text-emerald-300 active:scale-95 transition-transform touch-manipulation">
-                        <Plus className="w-2.5 h-2.5" strokeWidth={3} />
-                      </button>
+                <div key={`team-${teamIdx}`} className="min-w-0 space-y-1.5 sm:space-y-2">
+                  {/* Header: name + average, captain, opener flag, wins */}
+                  <div className={`${solid.header} rounded-xl sm:rounded-2xl px-1.5 py-2 sm:px-3 sm:py-2.5 shadow-lg`}>
+                    <div className="flex items-center gap-1 justify-center min-w-0">
+                      {teamIdx === leadingTeam && (
+                        <Crown className={`w-3.5 h-3.5 shrink-0 ${solid.text}`} strokeWidth={2.6} />
+                      )}
+                      <p className={`font-black text-[0.78rem] sm:text-lg leading-tight truncate ${solid.text}`}>
+                        {t.name} <span className="opacity-80 tnum">({avg.toFixed(1)})</span>
+                      </p>
                     </div>
-                  ) : (
-                    <span className={`text-sm font-black tnum leading-none mt-0.5 ${wins > 0 ? t.text : 'invisible'}`}>{wins || 0}</span>
-                  )}
+                    {capName && (
+                      <p className={`text-[0.55rem] sm:text-xs font-black text-center leading-tight mt-0.5 truncate ${solid.text} opacity-90`}>
+                        🎖️ {capName}
+                      </p>
+                    )}
+                    <p className={`text-[0.5rem] font-bold text-center leading-none mt-0.5 ${isOpening ? 'text-emerald-900' : 'invisible'}`}>פותחת</p>
+                    {isAdmin ? (
+                      <div className="flex items-center justify-center gap-1 mt-1">
+                        <button type="button" onClick={() => handleWinsChange(teamIdx, Math.max(0, wins - 1))} disabled={!wins} className="grid place-items-center w-6 h-6 rounded bg-black/25 text-white active:scale-95 disabled:opacity-30 transition-transform touch-manipulation">
+                          <Minus className="w-2.5 h-2.5" strokeWidth={3} />
+                        </button>
+                        <span className={`font-black text-base tnum w-6 text-center leading-none ${solid.text}`}>{wins}</span>
+                        <button type="button" onClick={() => handleWinsChange(teamIdx, wins + 1)} className="grid place-items-center w-6 h-6 rounded bg-black/25 text-white active:scale-95 transition-transform touch-manipulation">
+                          <Plus className="w-2.5 h-2.5" strokeWidth={3} />
+                        </button>
+                      </div>
+                    ) : (
+                      <p className={`text-sm font-black tnum text-center leading-none mt-0.5 ${wins > 0 ? solid.text : 'invisible'}`}>{wins || 0}</p>
+                    )}
+                  </div>
+
+                  {/* One card per player */}
+                  {playerIds.map((pid) => {
+                    const p = allPlayers.find(x => x.id === pid);
+                    if (!p) return null;
+                    const playerGoals = goals[pid] || 0;
+                    const isCap = capId === pid;
+                    const RowTag = isAdmin ? 'button' : 'div';
+                    return (
+                      <RowTag
+                        key={`${teamIdx}-${pid}`}
+                        type={isAdmin ? 'button' : undefined}
+                        onClick={isAdmin ? () => setEditingPlayer({ player: p, teamIndex: teamIdx }) : undefined}
+                        className={`w-full ${solid.card} rounded-xl sm:rounded-2xl p-1.5 sm:p-3 shadow-md flex items-center gap-1.5 sm:gap-2.5 ${isCap ? 'ring-2 ring-amber-200' : ''} ${isAdmin ? 'cursor-pointer active:scale-[0.99] transition-transform touch-manipulation' : ''}`}
+                      >
+                        {p.image ? (
+                          <img src={p.image} alt={p.name} loading="lazy" className="w-7 h-7 sm:w-9 sm:h-9 rounded-full object-cover shrink-0 ring-2 ring-white/70" />
+                        ) : (
+                          <div className="grid place-items-center w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-white/30 ring-2 ring-white/70 shrink-0">
+                            <span className={`text-[0.6rem] sm:text-xs font-black ${solid.text}`}>{p.name.charAt(0)}</span>
+                          </div>
+                        )}
+                        <span className={`flex-1 min-w-0 text-[0.7rem] sm:text-base font-bold truncate text-right ${solid.text}`}>
+                          {p.name}
+                        </span>
+                        {playerGoals > 0 && (
+                          <span className={`flex items-center gap-0.5 shrink-0 text-[0.62rem] font-black tnum ${solid.text}`}>
+                            <Target className="w-3 h-3" strokeWidth={2.8} />
+                            {playerGoals}
+                          </span>
+                        )}
+                      </RowTag>
+                    );
+                  })}
                 </div>
               );
             })}
-
-            {/* Player rows — each rowIdx is one CSS grid row, perfectly aligned */}
-            {(() => {
-              const maxLen = Math.max(...round.teams.map(t => t.length));
-              return Array.from({ length: maxLen }).flatMap((_, rowIdx) =>
-                round.teams.map((playerIds, teamIdx) => {
-                  const t = teamOf(teamIdx);
-                  const pid = playerIds[rowIdx];
-                  const p = pid ? allPlayers.find(x => x.id === pid) : null;
-                  const playerGoals = pid ? (goals[pid] || 0) : 0;
-                  const isLast = rowIdx === maxLen - 1;
-                  const RowTag = isAdmin && p ? 'button' : 'div';
-                  return (
-                    <RowTag
-                      key={`${teamIdx}-${rowIdx}`}
-                      type={isAdmin && p ? 'button' : undefined}
-                      onClick={isAdmin && p ? () => setEditingPlayer({ player: p, teamIndex: teamIdx }) : undefined}
-                      className={`h-12 flex items-center gap-1.5 sm:gap-2 px-1.5 sm:px-2.5 ${rowIdx % 2 ? 'bg-slate-900/50' : 'bg-slate-900/75'} border-t border-white/5 ring-1 ${t.tint.split(' ')[1]} ${isLast ? 'rounded-b-2xl' : ''} ${isAdmin && p ? 'cursor-pointer hover:bg-white/8 active:bg-white/5 transition-colors touch-manipulation' : ''}`}
-                    >
-                      {/* avatar pinned to the row start — every circle sits on
-                          the same vertical line down the column */}
-                      {p && (p.image ? (
-                        <img src={p.image} alt={p.name} loading="lazy" className="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover shrink-0 ring-1 ring-white/10" />
-                      ) : (
-                        <div className="grid place-items-center w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-slate-700 shrink-0">
-                          <User className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-400" />
-                        </div>
-                      ))}
-                      <p className="flex-1 min-w-0 text-white text-[0.8rem] sm:text-base font-bold truncate leading-tight text-right">{p?.name ?? ''}</p>
-                      {playerGoals > 0 && (
-                        <span className="flex items-center gap-0.5 shrink-0 text-amber-300 text-[0.62rem] font-black tnum">
-                          <Target className="w-3 h-3" strokeWidth={2.8} />
-                          {playerGoals}
-                        </span>
-                      )}
-                    </RowTag>
-                  );
-                })
-              );
-            })()}
           </motion.div>
         </div>
 
