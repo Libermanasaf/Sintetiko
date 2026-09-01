@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { Trophy, User, Crown } from 'lucide-react';
+import { Trophy } from 'lucide-react';
 import { Player, Round } from '@/api/entities';
 import { PageHeader, Skeleton, EmptyState } from '@/components/ui/lux';
 import { POSITION_LABELS } from '@/lib/positions';
@@ -24,65 +24,114 @@ function previousMonthWindow() {
   return { start, end };
 }
 
+// One squad slot rendered as the club's gold player card — the same
+// /gold-card.png frame and layout as the card on PlayerHome, so a player
+// recognises their own card here. Rank, wins and appearances sit outside the
+// frame so nothing covers the artwork.
 function SquadCard({ entry, player, rank }) {
   const winRate = entry.appearances > 0
     ? Math.round((entry.wins / entry.appearances) * 100)
     : 0;
-  const isTop = rank === 1;
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 16, scale: 0.96 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ delay: 0.05 * rank, type: 'spring', damping: 22, stiffness: 220 }}
-      className="relative rounded-2xl p-px bg-gradient-to-b from-amber-300/70 via-amber-500/25 to-slate-800/10"
+      transition={{ delay: 0.06 * rank, type: 'spring', damping: 22, stiffness: 220 }}
+      className="flex flex-col items-center gap-2"
     >
-      <div className="rounded-[15px] bg-gradient-to-b from-slate-800/95 to-slate-950 p-3 flex flex-col items-center gap-2 h-full">
-        {/* rank + rating corner, like a card's top-left block */}
-        <div className="w-full flex items-start justify-between">
-          <span className="st-foil grid place-items-center w-6 h-6 rounded-lg font-black text-xs tnum">
-            {rank}
-          </span>
-          {isTop && <Crown className="w-4 h-4 text-amber-300" strokeWidth={2.6} />}
+      <div
+        className="relative w-full"
+        style={{
+          aspectRatio: '2 / 3',
+          backgroundImage: 'url(/gold-card.png)',
+          backgroundSize: '100% 100%',
+          backgroundRepeat: 'no-repeat',
+          filter: 'drop-shadow(0 10px 24px rgba(200,150,25,0.35))',
+        }}
+      >
+        {/* rank badge — top corner, clear of the crest */}
+        <div
+          className="absolute grid place-items-center rounded-lg font-black tnum"
+          style={{
+            top: '4%', insetInlineEnd: '6%',
+            width: '22%', maxWidth: 30, aspectRatio: '1',
+            background: 'rgba(61,32,0,0.85)', color: '#f5d67a',
+            fontSize: 'clamp(0.6rem, 2.6vw, 0.85rem)',
+          }}
+        >
+          {rank}
         </div>
 
-        {player?.image ? (
-          <img
-            src={player.image}
-            alt={player.name}
-            loading="lazy"
-            className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover ring-2 ring-amber-300/70"
-          />
-        ) : (
-          <div className="grid place-items-center w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-slate-700 ring-2 ring-amber-300/70">
-            <User className="w-7 h-7 text-slate-400" />
+        {rank === 1 && (
+          <div className="absolute" style={{ top: '3%', insetInlineStart: '6%', fontSize: 'clamp(0.8rem,3.4vw,1.1rem)' }}>
+            👑
           </div>
         )}
 
-        <p className="font-black text-white text-[0.8rem] sm:text-sm leading-tight text-center truncate max-w-full">
-          {entry.name}
-        </p>
+        <div className="absolute left-1/2 -translate-x-1/2" style={{ top: '18%' }}>
+          {player?.image ? (
+            <img
+              src={player.image}
+              alt={entry.name}
+              loading="lazy"
+              decoding="async"
+              className="rounded-full object-cover"
+              style={{
+                width: 'clamp(44px, 34%, 96px)', aspectRatio: '1',
+                border: '3px solid rgba(200,155,30,0.85)',
+                boxShadow: '0 0 18px rgba(200,155,30,0.5)',
+              }}
+            />
+          ) : (
+            <div
+              className="rounded-full flex items-center justify-center font-black"
+              style={{
+                width: 'clamp(44px, 34%, 96px)', aspectRatio: '1',
+                background: 'linear-gradient(135deg, rgba(212,175,55,0.35), rgba(180,130,20,0.2))',
+                border: '3px solid rgba(200,155,30,0.85)',
+                boxShadow: '0 0 18px rgba(200,155,30,0.5)',
+                color: '#5a3500', fontSize: 'clamp(1rem, 5vw, 1.8rem)',
+              }}
+            >
+              {entry.name?.charAt(0)}
+            </div>
+          )}
+        </div>
+
+        <div className="absolute left-0 right-0 text-center px-2" style={{ top: '64%' }}>
+          <p
+            className="font-black leading-tight truncate"
+            style={{ color: '#3d2000', fontSize: 'clamp(0.6rem, 2.7vw, 0.95rem)' }}
+          >
+            {entry.name}
+          </p>
+        </div>
 
         {player?.position && (
-          <span className="text-amber-300/80 text-[0.6rem] font-black leading-none -mt-1">
-            {POSITION_LABELS[player.position]}
-          </span>
+          <div className="absolute left-0 right-0 text-center" style={{ top: '73%' }}>
+            <span
+              className="font-black"
+              style={{ color: '#5a3500', fontSize: 'clamp(0.45rem, 2vw, 0.7rem)' }}
+            >
+              {POSITION_LABELS[player.position]}
+            </span>
+          </div>
         )}
-
-        {/* the two numbers the ranking is actually based on */}
-        <div className="w-full grid grid-cols-2 gap-1 mt-auto pt-1">
-          <div className="rounded-lg bg-emerald-500/12 ring-1 ring-emerald-400/25 py-1 text-center">
-            <p className="text-emerald-300 font-black text-sm tnum leading-none">{entry.wins}</p>
-            <p className="text-emerald-400/70 text-[0.52rem] font-bold mt-0.5">נצחונות</p>
-          </div>
-          <div className="rounded-lg bg-slate-700/40 ring-1 ring-white/10 py-1 text-center">
-            <p className="text-white font-black text-sm tnum leading-none">{entry.appearances}</p>
-            <p className="text-slate-400 text-[0.52rem] font-bold mt-0.5">הופעות</p>
-          </div>
-        </div>
-
-        <p className="text-ink-3 text-[0.55rem] font-bold tnum">{winRate}% ניצחון</p>
       </div>
+
+      {/* The two numbers the ranking is based on, kept off the artwork. */}
+      <div className="w-full grid grid-cols-2 gap-1">
+        <div className="rounded-lg bg-emerald-500/12 ring-1 ring-emerald-400/25 py-1 text-center">
+          <p className="text-emerald-300 font-black text-sm tnum leading-none">{entry.wins}</p>
+          <p className="text-emerald-400/70 text-[0.5rem] font-bold mt-0.5">נצחונות</p>
+        </div>
+        <div className="rounded-lg bg-slate-700/40 ring-1 ring-white/10 py-1 text-center">
+          <p className="text-white font-black text-sm tnum leading-none">{entry.appearances}</p>
+          <p className="text-slate-400 text-[0.5rem] font-bold mt-0.5">הופעות</p>
+        </div>
+      </div>
+      <p className="text-ink-3 text-[0.55rem] font-bold tnum -mt-1">{winRate}% ניצחון</p>
     </motion.div>
   );
 }
@@ -140,9 +189,9 @@ export default function TeamOfMonth() {
         </div>
 
         {isLoading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {Array.from({ length: SQUAD_SIZE }).map((_, i) => (
-              <Skeleton key={i} className="h-52 rounded-2xl" />
+              <Skeleton key={i} className="aspect-[2/3] rounded-2xl" />
             ))}
           </div>
         ) : squad.length === 0 ? (
@@ -153,7 +202,7 @@ export default function TeamOfMonth() {
           />
         ) : (
           <>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {squad.map((entry, i) => (
                 <SquadCard
                   key={entry.id}
