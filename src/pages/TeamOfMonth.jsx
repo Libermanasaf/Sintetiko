@@ -31,36 +31,44 @@ function previousMonthWindow() {
 // One squad slot: the club's gold card, small, as it would sit on a team sheet.
 // Deliberately compact — six of these share one pitch, so the card reads as a
 // counter on a formation rather than a full-size hero card.
-function SquadCard({ entry, player, rank }) {
+const fmtDay = (d) => {
+  const t = new Date(d);
+  return `${t.getDate()}.${t.getMonth() + 1}`;
+};
+
+// One squad slot: the gold card, with the player's numbers and their actual
+// match log beside it. The card keeps only the name — every figure lives in
+// the panel, where it can be read at a proper size.
+function SquadCard({ entry, player, rank, history = [] }) {
+  const winRate = entry.appearances > 0
+    ? Math.round((entry.wins / entry.appearances) * 100)
+    : 0;
+  const goals = history.reduce((s, h) => s + (h.goals || 0), 0);
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12, scale: 0.9 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ delay: 0.07 * rank, type: 'spring', damping: 20, stiffness: 240 }}
-      className="flex flex-col items-center gap-1 w-full"
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.06 * rank, type: 'spring', damping: 22, stiffness: 220 }}
+      className="flex items-stretch gap-3 rounded-2xl bg-slate-950/55 ring-1 ring-white/10 p-2.5 backdrop-blur-[2px]"
     >
+      {/* card */}
       <div
-        className="relative w-full"
+        className="relative shrink-0"
         style={{
-          // Same size as the card a player sees on PlayerHome (280px), just
-          // capped so two still fit across a phone.
-          maxWidth: 'min(280px, calc(50vw - 32px))',
+          width: 'clamp(78px, 24vw, 104px)',
           aspectRatio: '2 / 3',
           backgroundImage: 'url(/gold-card.png)',
           backgroundSize: '100% 100%',
           backgroundRepeat: 'no-repeat',
-          filter: 'drop-shadow(0 10px 22px rgba(0,0,0,0.5))',
+          filter: 'drop-shadow(0 6px 14px rgba(0,0,0,0.5))',
         }}
       >
         {rank === 1 && (
-          <div
-            className="absolute leading-none"
-            style={{ top: '3%', insetInlineStart: '6%', fontSize: 'clamp(0.75rem,3vw,1.15rem)' }}
-          >
+          <div className="absolute leading-none" style={{ top: '2%', insetInlineStart: '5%', fontSize: 'clamp(0.6rem,2.4vw,0.85rem)' }}>
             👑
           </div>
         )}
-
         <div className="absolute left-1/2 -translate-x-1/2" style={{ top: '17%' }}>
           {player?.image ? (
             <img
@@ -69,43 +77,76 @@ function SquadCard({ entry, player, rank }) {
               loading="lazy"
               decoding="async"
               className="rounded-full object-cover"
-              style={{
-                width: 'min(112px, 40%)', aspectRatio: '1',
-                border: '3px solid rgba(200,155,30,0.85)',
-              }}
+              style={{ width: 'min(44px, 42%)', aspectRatio: '1', border: '2px solid rgba(200,155,30,0.9)' }}
             />
           ) : (
             <div
               className="rounded-full flex items-center justify-center font-black"
               style={{
-                width: 'min(112px, 40%)', aspectRatio: '1',
+                width: 'min(44px, 42%)', aspectRatio: '1',
                 background: 'linear-gradient(135deg, rgba(212,175,55,0.4), rgba(180,130,20,0.25))',
-                border: '3px solid rgba(200,155,30,0.85)',
-                color: '#5a3500', fontSize: 'clamp(1rem, 5vw, 2.25rem)',
+                border: '2px solid rgba(200,155,30,0.9)',
+                color: '#5a3500', fontSize: 'clamp(0.7rem, 3vw, 1.1rem)',
               }}
             >
               {entry.name?.charAt(0)}
             </div>
           )}
         </div>
-
-        <div className="absolute left-0 right-0 text-center px-1" style={{ top: '62%' }}>
-          <p
-            className="font-black leading-tight truncate"
-            style={{ color: '#3d2000', fontSize: 'clamp(0.62rem, 2.6vw, 1rem)' }}
-          >
+        <div className="absolute left-0 right-0 text-center px-1" style={{ top: '63%' }}>
+          <p className="font-black leading-tight truncate" style={{ color: '#3d2000', fontSize: 'clamp(0.46rem, 1.9vw, 0.66rem)' }}>
             {entry.name}
           </p>
         </div>
+      </div>
 
-        {/* wins · appearances, on the card face where a FIFA card shows its stats */}
-        <div className="absolute left-0 right-0 text-center" style={{ top: '73%' }}>
-          <span
-            className="font-black tnum"
-            style={{ color: '#5a3500', fontSize: 'clamp(0.5rem, 2vw, 0.78rem)' }}
-          >
-            {entry.wins} נצ׳ · {entry.appearances} הופ׳
+      {/* numbers + match log */}
+      <div className="flex-1 min-w-0 flex flex-col gap-2">
+        <div className="flex items-center gap-1.5">
+          <span className="grid place-items-center w-5 h-5 rounded-md st-foil font-black text-[0.65rem] tnum shrink-0">
+            {rank}
           </span>
+          <p className="font-black text-white text-sm truncate">{entry.name}</p>
+        </div>
+
+        <div className="grid grid-cols-3 gap-1.5">
+          <div className="rounded-lg bg-emerald-500/15 ring-1 ring-emerald-400/30 py-1 text-center">
+            <p className="text-emerald-300 font-black text-base tnum leading-none">{entry.wins}</p>
+            <p className="text-emerald-400/80 text-[0.55rem] font-bold mt-0.5">נצחונות</p>
+          </div>
+          <div className="rounded-lg bg-slate-700/50 ring-1 ring-white/10 py-1 text-center">
+            <p className="text-white font-black text-base tnum leading-none">{entry.appearances}</p>
+            <p className="text-slate-400 text-[0.55rem] font-bold mt-0.5">הופעות</p>
+          </div>
+          <div className="rounded-lg bg-amber-500/15 ring-1 ring-amber-400/30 py-1 text-center">
+            <p className="text-amber-300 font-black text-base tnum leading-none">{winRate}%</p>
+            <p className="text-amber-400/80 text-[0.55rem] font-bold mt-0.5">ניצחון</p>
+          </div>
+        </div>
+
+        {goals > 0 && (
+          <p className="text-amber-300/90 text-[0.65rem] font-black">⚽ {goals} שערים החודש</p>
+        )}
+
+        {/* every round they played, with the score */}
+        <div className="flex flex-wrap gap-1">
+          {history.map((h, i) => (
+            <span
+              key={i}
+              title={h.decided ? (h.won ? 'ניצחון' : 'הפסד') : 'ללא הכרעה'}
+              className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[0.6rem] font-black tnum ring-1 ${
+                !h.decided
+                  ? 'bg-slate-700/40 ring-white/10 text-slate-300'
+                  : h.won
+                    ? 'bg-emerald-500/15 ring-emerald-400/30 text-emerald-300'
+                    : 'bg-rose-500/10 ring-rose-400/25 text-rose-300/80'
+              }`}
+            >
+              <span className="opacity-70">{fmtDay(h.date)}</span>
+              <span dir="ltr">{h.score}</span>
+              {h.goals > 0 && <span className="text-amber-300">⚽{h.goals}</span>}
+            </span>
+          ))}
         </div>
       </div>
     </motion.div>
@@ -134,7 +175,7 @@ export default function TeamOfMonth() {
       if (!supabase) return [];
       const { data, error } = await supabase
         .from('rounds')
-        .select('teams, winningTeam, date')
+        .select('teams, winningTeam, teamWins, player_goals, date')
         .gte('date', start.toISOString())
         .lt('date', end.toISOString());
       if (error) { console.warn('[team-of-month]', error.message); return []; }
@@ -152,6 +193,38 @@ export default function TeamOfMonth() {
     () => new Map(players.map((p) => [p.id, p])),
     [players]
   );
+
+  // Per-player match log for the month, built from the rounds already loaded —
+  // no extra request. Each entry: the date, whether their team won, and the
+  // round's score (teamWins) with their own team's tally first.
+  const historyById = useMemo(() => {
+    const byPlayer = new Map();
+    const sorted = [...(rounds || [])].sort((a, b) => new Date(a.date) - new Date(b.date));
+    for (const round of sorted) {
+      const teams = Array.isArray(round.teams) ? round.teams : [];
+      const wins = round.teamWins && typeof round.teamWins === 'object' ? round.teamWins : {};
+      teams.forEach((teamIds, teamIdx) => {
+        // A round with no recorded winner counts as an appearance, not a loss.
+        const won = round.winningTeam != null && round.winningTeam === teamIdx;
+        const mine = Number(wins[teamIdx] ?? 0);
+        const others = teams
+          .map((_, i) => Number(wins[i] ?? 0))
+          .filter((_, i) => i !== teamIdx);
+        const best = others.length ? Math.max(...others) : 0;
+        (teamIds || []).forEach((pid) => {
+          if (!byPlayer.has(pid)) byPlayer.set(pid, []);
+          byPlayer.get(pid).push({
+            date: round.date,
+            won,
+            decided: round.winningTeam != null,
+            score: `${mine}-${best}`,
+            goals: Number(round.player_goals?.[pid] ?? 0),
+          });
+        });
+      });
+    }
+    return byPlayer;
+  }, [rounds]);
 
   const isLoading = loadingPlayers || loadingRounds;
 
@@ -175,9 +248,9 @@ export default function TeamOfMonth() {
 
         {isLoading ? (
           <div className="rounded-2xl bg-emerald-900/30 ring-1 ring-emerald-400/20 p-3 sm:p-5">
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-3 gap-y-4 sm:gap-x-5 sm:gap-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-2.5">
               {Array.from({ length: SQUAD_SIZE }).map((_, i) => (
-                <Skeleton key={i} className="aspect-[2/3] rounded-lg" />
+                <Skeleton key={i} className="h-32 rounded-2xl" />
               ))}
             </div>
           </div>
@@ -214,13 +287,14 @@ export default function TeamOfMonth() {
                 <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-white/35" />
               </div>
 
-              <div className="relative grid grid-cols-2 sm:grid-cols-3 gap-x-3 gap-y-4 sm:gap-x-5 sm:gap-y-6 justify-items-center">
+              <div className="relative grid grid-cols-1 lg:grid-cols-2 gap-2.5">
                 {squad.map((entry, i) => (
                   <SquadCard
                     key={entry.id}
                     entry={entry}
                     player={playerById.get(entry.id)}
                     rank={i + 1}
+                    history={historyById.get(entry.id) || []}
                   />
                 ))}
               </div>
