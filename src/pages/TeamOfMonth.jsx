@@ -31,10 +31,6 @@ function previousMonthWindow() {
 // One squad slot: the club's gold card, small, as it would sit on a team sheet.
 // Deliberately compact — six of these share one pitch, so the card reads as a
 // counter on a formation rather than a full-size hero card.
-const fmtDay = (d) => {
-  const t = new Date(d);
-  return `${t.getDate()}.${t.getMonth() + 1}`;
-};
 
 // One squad slot: the gold card, with the player's numbers and their actual
 // match log beside it. The card keeps only the name — every figure lives in
@@ -44,6 +40,34 @@ function SquadCard({ entry, player, rank, history = [] }) {
     ? Math.round((entry.wins / entry.appearances) * 100)
     : 0;
   const goals = history.reduce((s, h) => s + (h.goals || 0), 0);
+
+  // A sentence, not a scoreboard: what the month actually looked like for them.
+  const summary = (() => {
+    const came = entry.appearances === 1
+      ? 'הגיע פעם אחת'
+      : `הגיע ל-${entry.appearances} מחזורים`;
+
+    let won;
+    if (entry.wins === 0) won = 'ולא ניצח';
+    else if (entry.wins === entry.appearances && entry.wins > 1) won = 'וניצח בכולם';
+    else if (entry.wins === 1) won = 'וניצח באחד מהם';
+    else won = `וניצח ב-${entry.wins} מהם`;
+
+    let sentence = `${came} ${won}.`;
+
+    // Longest run of wins — the part people actually brag about.
+    let best = 0, run = 0;
+    for (const h of history) {
+      if (h.won) { run += 1; best = Math.max(best, run); } else if (h.decided) { run = 0; }
+    }
+
+    const extras = [];
+    if (goals > 0) extras.push(goals === 1 ? 'כבש שער אחד' : `כבש ${goals} שערים`);
+    if (best >= 3) extras.push(`רצף של ${best} ניצחונות ברציפות`);
+    if (extras.length) sentence += ` ${extras.join(', ')}.`;
+
+    return sentence;
+  })();
 
   return (
     <motion.div
@@ -124,30 +148,9 @@ function SquadCard({ entry, player, rank, history = [] }) {
           </div>
         </div>
 
-        {goals > 0 && (
-          <p className="text-amber-300/90 text-[0.65rem] font-black">⚽ {goals} שערים החודש</p>
-        )}
-
-        {/* every round they played, with the score */}
-        <div className="flex flex-wrap gap-1">
-          {history.map((h, i) => (
-            <span
-              key={i}
-              title={h.decided ? (h.won ? 'ניצחון' : 'הפסד') : 'ללא הכרעה'}
-              className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[0.6rem] font-black tnum ring-1 ${
-                !h.decided
-                  ? 'bg-slate-700/40 ring-white/10 text-slate-300'
-                  : h.won
-                    ? 'bg-emerald-500/15 ring-emerald-400/30 text-emerald-300'
-                    : 'bg-rose-500/10 ring-rose-400/25 text-rose-300/80'
-              }`}
-            >
-              <span className="opacity-70">{fmtDay(h.date)}</span>
-              <span dir="ltr">{h.score}</span>
-              {h.goals > 0 && <span className="text-amber-300">⚽{h.goals}</span>}
-            </span>
-          ))}
-        </div>
+        <p className="text-slate-300 text-[0.72rem] font-bold leading-relaxed">
+          {summary}
+        </p>
       </div>
     </motion.div>
   );
