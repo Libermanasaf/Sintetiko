@@ -2,7 +2,8 @@ import React, { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { Trophy } from 'lucide-react';
-import { Player, Round } from '@/api/entities';
+import { Player } from '@/api/entities';
+import { supabase } from '@/lib/supabase';
 import { PageHeader, Skeleton, EmptyState } from '@/components/ui/lux';
 import { POSITION_LABELS } from '@/lib/positions';
 import {
@@ -148,20 +149,29 @@ export default function TeamOfMonth() {
     queryFn: () => Player.list('name'),
   });
 
+  // Scoped deliberately: only the month's rows, only the three columns the
+  // ranking needs. Round.list() would pull EVERY round with all its jsonb
+  // (teams, goals, MVP votes) on each visit — fine at 60 rounds, but it grows
+  // with the club forever. See EGRESS.md.
   const { data: rounds = [], isLoading: loadingRounds } = useQuery({
     queryKey: ['rounds-team-of-month', start.toISOString()],
-    queryFn: () => Round.list('-date'),
-    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      if (!supabase) return [];
+      const { data, error } = await supabase
+        .from('rounds')
+        .select('teams, winningTeam, date')
+        .gte('date', start.toISOString())
+        .lt('date', end.toISOString());
+      if (error) { console.warn('[team-of-month]', error.message); return []; }
+      return data || [];
+    },
+    staleTime: 10 * 60_000,
   });
 
   const squad = useMemo(() => {
-    const inMonth = (rounds || []).filter((r) => {
-      const d = new Date(r.date);
-      return d >= start && d < end;
-    });
     const nameById = new Map(players.map((p) => [p.id, p.name]));
-    return pickTeamOfMonth(statsFromRounds(inMonth), nameById);
-  }, [rounds, players, start, end]);
+    return pickTeamOfMonth(statsFromRounds(rounds || []), nameById);
+  }, [rounds, players]);
 
   const playerById = useMemo(
     () => new Map(players.map((p) => [p.id, p])),
