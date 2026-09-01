@@ -113,6 +113,25 @@ export default async function handler(req, res) {
     }
   }
 
+  // ---- Team of the month ---------------------------------------------------
+  // Six players ranked by WINS, with appearances as the tie-break, and a hard
+  // floor of MIN_APPEARANCES so someone who showed up twice and won both
+  // cannot outrank a regular. Fewer than six qualifiers just means a shorter
+  // squad — we never pad it with players below the floor.
+  const MIN_APPEARANCES = 3;
+  const SQUAD_SIZE = 6;
+  const nameById = new Map((playersRows || []).map((p) => [p.id, p.name]));
+  const teamOfMonth = [...stats.entries()]
+    .filter(([pid, s]) => s.appearances >= MIN_APPEARANCES && nameById.has(pid))
+    .map(([pid, s]) => ({ id: pid, name: nameById.get(pid), ...s }))
+    .sort((a, b) =>
+      b.wins - a.wins ||
+      b.appearances - a.appearances ||
+      // Last resort so the order is stable run-to-run rather than arbitrary.
+      a.name.localeCompare(b.name, 'he')
+    )
+    .slice(0, SQUAD_SIZE);
+
   // ---- Build + send personalized pushes ------------------------------------
   const messages = [];
   for (const p of playersRows || []) {
@@ -134,6 +153,7 @@ export default async function handler(req, res) {
   if (dry) {
     return res.status(200).json({
       ok: true, dry: true, month: monthKey, rounds: (rounds || []).length,
+      teamOfMonth: teamOfMonth.map(({ name, wins, appearances }) => ({ name, wins, appearances })),
       wouldSend: messages.filter((m) => m.hasSub).length,
       noSubscription: messages.filter((m) => !m.hasSub).length,
       // No emails in the preview — the push body already carries the name.
@@ -160,6 +180,32 @@ export default async function handler(req, res) {
     }
   }
 
+  // ---- Second push: team of the month, to everyone -------------------------
+  // Goes out AFTER the personal summaries so it lands second on the phone.
+  // Restricted players are already excluded from subsByEmail.
+  let squadSent = 0;
+  if (teamOfMonth.length) {
+    const squadLine = teamOfMonth.map((p) => `${p.name} (${p.wins})`).join(' · ');
+    const squadPayload = JSON.stringify({
+      title: `נבחרת ${monthName} 🏆`,
+      body: `${squadLine} — לפי ניצחונות החודש`,
+      url: '/Statistics',
+    });
+    for (const [email, rows] of subsByEmail.entries()) {
+      if (email === ADMIN_EMAIL) continue; // admin gets its own health-check below
+      for (const row of rows) {
+        try {
+          await webpush.sendNotification(row.subscription, squadPayload);
+          squadSent++;
+        } catch (err) {
+          if (err.statusCode === 404 || err.statusCode === 410) {
+            await supabase.from('push_subscriptions').delete().eq('endpoint', row.endpoint);
+          }
+        }
+      }
+    }
+  }
+
   // Log the month so it never sends twice.
   await supabase.from('monthly_summary_log').upsert(
     { month: monthKey, players: messages.length, pushes_sent: sent, sent_at: new Date().toISOString() },
@@ -169,12 +215,16 @@ export default async function handler(req, res) {
   // Admin health-check push.
   const adminPayload = JSON.stringify({
     title: 'סיכום חודשי נשלח ✅',
-    body: `סיכום ${monthName} נשלח ל-${messages.filter((m) => m.hasSub).length} שחקנים (${sent} התראות).`,
+    body: `סיכום ${monthName} נשלח ל-${messages.filter((m) => m.hasSub).length} שחקנים (${sent} התראות). נבחרת החודש: ${teamOfMonth.length ? teamOfMonth.map((p) => p.name).join(', ') : 'אין מספיק נתונים'} (${squadSent} התראות).`,
     url: '/Statistics',
   });
   for (const row of subsByEmail.get(ADMIN_EMAIL) || []) {
     try { await webpush.sendNotification(row.subscription, adminPayload); } catch {}
   }
 
-  return res.status(200).json({ ok: true, month: monthKey, players: messages.length, sent });
+  return res.status(200).json({
+    ok: true, month: monthKey, players: messages.length, sent,
+    teamOfMonth: teamOfMonth.map(({ name, wins, appearances }) => ({ name, wins, appearances })),
+    squadSent,
+  });
 }
