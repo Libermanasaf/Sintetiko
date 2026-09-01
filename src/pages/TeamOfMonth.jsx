@@ -42,6 +42,9 @@ function SquadCard({ entry, player, rank }) {
       <div
         className="relative w-full"
         style={{
+          // Capped, not column-filling: without this the card scales with the
+          // viewport and dwarfs the pitch on a wide screen.
+          maxWidth: 'clamp(46px, 13vw, 62px)',
           aspectRatio: '2 / 3',
           backgroundImage: 'url(/gold-card.png)',
           backgroundSize: '100% 100%',
@@ -52,7 +55,7 @@ function SquadCard({ entry, player, rank }) {
         {rank === 1 && (
           <div
             className="absolute leading-none"
-            style={{ top: '2%', insetInlineStart: '4%', fontSize: 'clamp(0.5rem,2.2vw,0.75rem)' }}
+            style={{ top: '2%', insetInlineStart: '4%', fontSize: 'clamp(0.35rem,1.3vw,0.5rem)' }}
           >
             👑
           </div>
@@ -67,7 +70,7 @@ function SquadCard({ entry, player, rank }) {
               decoding="async"
               className="rounded-full object-cover"
               style={{
-                width: 'clamp(26px, 38%, 52px)', aspectRatio: '1',
+                width: 'clamp(18px, 36%, 30px)', aspectRatio: '1',
                 border: '2px solid rgba(200,155,30,0.9)',
               }}
             />
@@ -75,10 +78,10 @@ function SquadCard({ entry, player, rank }) {
             <div
               className="rounded-full flex items-center justify-center font-black"
               style={{
-                width: 'clamp(26px, 38%, 52px)', aspectRatio: '1',
+                width: 'clamp(18px, 36%, 30px)', aspectRatio: '1',
                 background: 'linear-gradient(135deg, rgba(212,175,55,0.4), rgba(180,130,20,0.25))',
                 border: '2px solid rgba(200,155,30,0.9)',
-                color: '#5a3500', fontSize: 'clamp(0.6rem, 2.6vw, 1rem)',
+                color: '#5a3500', fontSize: 'clamp(0.45rem, 1.6vw, 0.62rem)',
               }}
             >
               {entry.name?.charAt(0)}
@@ -89,7 +92,7 @@ function SquadCard({ entry, player, rank }) {
         <div className="absolute left-0 right-0 text-center px-1" style={{ top: '62%' }}>
           <p
             className="font-black leading-tight truncate"
-            style={{ color: '#3d2000', fontSize: 'clamp(0.4rem, 1.75vw, 0.62rem)' }}
+            style={{ color: '#3d2000', fontSize: 'clamp(0.3rem, 1.05vw, 0.4rem)' }}
           >
             {entry.name}
           </p>
@@ -99,7 +102,7 @@ function SquadCard({ entry, player, rank }) {
         <div className="absolute left-0 right-0 text-center" style={{ top: '73%' }}>
           <span
             className="font-black tnum"
-            style={{ color: '#5a3500', fontSize: 'clamp(0.36rem, 1.6vw, 0.56rem)' }}
+            style={{ color: '#5a3500', fontSize: 'clamp(0.26rem, 0.95vw, 0.36rem)' }}
           >
             {entry.wins} נצ׳ · {entry.appearances} הופ׳
           </span>
