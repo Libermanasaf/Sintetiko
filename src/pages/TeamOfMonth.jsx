@@ -5,7 +5,6 @@ import { Trophy } from 'lucide-react';
 import { Player } from '@/api/entities';
 import { supabase } from '@/lib/supabase';
 import { PageHeader, Skeleton, EmptyState } from '@/components/ui/lux';
-import { POSITION_LABELS } from '@/lib/positions';
 import {
   statsFromRounds, pickTeamOfMonth, MIN_APPEARANCES, SQUAD_SIZE,
 } from '@/lib/teamOfMonth';
@@ -29,17 +28,16 @@ function previousMonthWindow() {
 // /gold-card.png frame and layout as the card on PlayerHome, so a player
 // recognises their own card here. Rank, wins and appearances sit outside the
 // frame so nothing covers the artwork.
+// One squad slot: the club's gold card, small, as it would sit on a team sheet.
+// Deliberately compact — six of these share one pitch, so the card reads as a
+// counter on a formation rather than a full-size hero card.
 function SquadCard({ entry, player, rank }) {
-  const winRate = entry.appearances > 0
-    ? Math.round((entry.wins / entry.appearances) * 100)
-    : 0;
-
   return (
     <motion.div
-      initial={{ opacity: 0, y: 16, scale: 0.96 }}
+      initial={{ opacity: 0, y: 12, scale: 0.9 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ delay: 0.06 * rank, type: 'spring', damping: 22, stiffness: 220 }}
-      className="flex flex-col items-center gap-2"
+      transition={{ delay: 0.07 * rank, type: 'spring', damping: 20, stiffness: 240 }}
+      className="flex flex-col items-center gap-1 w-full"
     >
       <div
         className="relative w-full"
@@ -48,29 +46,19 @@ function SquadCard({ entry, player, rank }) {
           backgroundImage: 'url(/gold-card.png)',
           backgroundSize: '100% 100%',
           backgroundRepeat: 'no-repeat',
-          filter: 'drop-shadow(0 10px 24px rgba(200,150,25,0.35))',
+          filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.45))',
         }}
       >
-        {/* rank badge — top corner, clear of the crest */}
-        <div
-          className="absolute grid place-items-center rounded-lg font-black tnum"
-          style={{
-            top: '4%', insetInlineEnd: '6%',
-            width: '22%', maxWidth: 30, aspectRatio: '1',
-            background: 'rgba(61,32,0,0.85)', color: '#f5d67a',
-            fontSize: 'clamp(0.6rem, 2.6vw, 0.85rem)',
-          }}
-        >
-          {rank}
-        </div>
-
         {rank === 1 && (
-          <div className="absolute" style={{ top: '3%', insetInlineStart: '6%', fontSize: 'clamp(0.8rem,3.4vw,1.1rem)' }}>
+          <div
+            className="absolute leading-none"
+            style={{ top: '2%', insetInlineStart: '4%', fontSize: 'clamp(0.5rem,2.2vw,0.75rem)' }}
+          >
             👑
           </div>
         )}
 
-        <div className="absolute left-1/2 -translate-x-1/2" style={{ top: '18%' }}>
+        <div className="absolute left-1/2 -translate-x-1/2" style={{ top: '17%' }}>
           {player?.image ? (
             <img
               src={player.image}
@@ -79,20 +67,18 @@ function SquadCard({ entry, player, rank }) {
               decoding="async"
               className="rounded-full object-cover"
               style={{
-                width: 'clamp(44px, 34%, 96px)', aspectRatio: '1',
-                border: '3px solid rgba(200,155,30,0.85)',
-                boxShadow: '0 0 18px rgba(200,155,30,0.5)',
+                width: 'clamp(26px, 38%, 52px)', aspectRatio: '1',
+                border: '2px solid rgba(200,155,30,0.9)',
               }}
             />
           ) : (
             <div
               className="rounded-full flex items-center justify-center font-black"
               style={{
-                width: 'clamp(44px, 34%, 96px)', aspectRatio: '1',
-                background: 'linear-gradient(135deg, rgba(212,175,55,0.35), rgba(180,130,20,0.2))',
-                border: '3px solid rgba(200,155,30,0.85)',
-                boxShadow: '0 0 18px rgba(200,155,30,0.5)',
-                color: '#5a3500', fontSize: 'clamp(1rem, 5vw, 1.8rem)',
+                width: 'clamp(26px, 38%, 52px)', aspectRatio: '1',
+                background: 'linear-gradient(135deg, rgba(212,175,55,0.4), rgba(180,130,20,0.25))',
+                border: '2px solid rgba(200,155,30,0.9)',
+                color: '#5a3500', fontSize: 'clamp(0.6rem, 2.6vw, 1rem)',
               }}
             >
               {entry.name?.charAt(0)}
@@ -100,39 +86,25 @@ function SquadCard({ entry, player, rank }) {
           )}
         </div>
 
-        <div className="absolute left-0 right-0 text-center px-2" style={{ top: '64%' }}>
+        <div className="absolute left-0 right-0 text-center px-1" style={{ top: '62%' }}>
           <p
             className="font-black leading-tight truncate"
-            style={{ color: '#3d2000', fontSize: 'clamp(0.6rem, 2.7vw, 0.95rem)' }}
+            style={{ color: '#3d2000', fontSize: 'clamp(0.4rem, 1.75vw, 0.62rem)' }}
           >
             {entry.name}
           </p>
         </div>
 
-        {player?.position && (
-          <div className="absolute left-0 right-0 text-center" style={{ top: '73%' }}>
-            <span
-              className="font-black"
-              style={{ color: '#5a3500', fontSize: 'clamp(0.45rem, 2vw, 0.7rem)' }}
-            >
-              {POSITION_LABELS[player.position]}
-            </span>
-          </div>
-        )}
-      </div>
-
-      {/* The two numbers the ranking is based on, kept off the artwork. */}
-      <div className="w-full grid grid-cols-2 gap-1">
-        <div className="rounded-lg bg-emerald-500/12 ring-1 ring-emerald-400/25 py-1 text-center">
-          <p className="text-emerald-300 font-black text-sm tnum leading-none">{entry.wins}</p>
-          <p className="text-emerald-400/70 text-[0.5rem] font-bold mt-0.5">נצחונות</p>
-        </div>
-        <div className="rounded-lg bg-slate-700/40 ring-1 ring-white/10 py-1 text-center">
-          <p className="text-white font-black text-sm tnum leading-none">{entry.appearances}</p>
-          <p className="text-slate-400 text-[0.5rem] font-bold mt-0.5">הופעות</p>
+        {/* wins · appearances, on the card face where a FIFA card shows its stats */}
+        <div className="absolute left-0 right-0 text-center" style={{ top: '73%' }}>
+          <span
+            className="font-black tnum"
+            style={{ color: '#5a3500', fontSize: 'clamp(0.36rem, 1.6vw, 0.56rem)' }}
+          >
+            {entry.wins} נצ׳ · {entry.appearances} הופ׳
+          </span>
         </div>
       </div>
-      <p className="text-ink-3 text-[0.55rem] font-bold tnum -mt-1">{winRate}% ניצחון</p>
     </motion.div>
   );
 }
@@ -199,10 +171,12 @@ export default function TeamOfMonth() {
         </div>
 
         {isLoading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {Array.from({ length: SQUAD_SIZE }).map((_, i) => (
-              <Skeleton key={i} className="aspect-[2/3] rounded-2xl" />
-            ))}
+          <div className="rounded-2xl bg-emerald-900/30 ring-1 ring-emerald-400/20 p-3 sm:p-5">
+            <div className="grid grid-cols-3 gap-x-2 gap-y-3 sm:gap-x-4 sm:gap-y-5">
+              {Array.from({ length: SQUAD_SIZE }).map((_, i) => (
+                <Skeleton key={i} className="aspect-[2/3] rounded-lg" />
+              ))}
+            </div>
           </div>
         ) : squad.length === 0 ? (
           <EmptyState
@@ -212,16 +186,43 @@ export default function TeamOfMonth() {
           />
         ) : (
           <>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {squad.map((entry, i) => (
-                <SquadCard
-                  key={entry.id}
-                  entry={entry}
-                  player={playerById.get(entry.id)}
-                  rank={i + 1}
+            {/* Pitch: mown stripes + centre circle and halfway line drawn in
+                CSS, so there is no image to download. The six cards sit on it
+                as a 3x2 formation. */}
+            <div
+              className="relative rounded-2xl overflow-hidden ring-1 ring-emerald-400/25 p-3 sm:p-5"
+              style={{
+                backgroundColor: 'hsl(148 42% 22%)',
+                backgroundImage: [
+                  'repeating-linear-gradient(90deg, hsl(148 44% 25%) 0 12.5%, hsl(148 40% 20%) 12.5% 25%)',
+                  'radial-gradient(120% 90% at 50% 0%, hsl(148 50% 30% / .55), transparent 70%)',
+                ].join(','),
+                boxShadow: 'inset 0 0 60px rgba(0,0,0,.45)',
+              }}
+            >
+              {/* markings */}
+              <div aria-hidden className="absolute inset-0 pointer-events-none">
+                <div className="absolute inset-2 sm:inset-3 rounded-lg border border-white/25" />
+                <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 border-t border-white/25" />
+                <div
+                  className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/25"
+                  style={{ width: 'clamp(60px, 26%, 130px)', aspectRatio: '1' }}
                 />
-              ))}
+                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-white/35" />
+              </div>
+
+              <div className="relative grid grid-cols-3 gap-x-2 gap-y-3 sm:gap-x-4 sm:gap-y-5">
+                {squad.map((entry, i) => (
+                  <SquadCard
+                    key={entry.id}
+                    entry={entry}
+                    player={playerById.get(entry.id)}
+                    rank={i + 1}
+                  />
+                ))}
+              </div>
             </div>
+
             {squad.length < SQUAD_SIZE && (
               <p className="text-center text-ink-3 text-xs font-bold">
                 רק {squad.length} שחקנים עברו את הרף של {MIN_APPEARANCES} הופעות ב{monthName}.
