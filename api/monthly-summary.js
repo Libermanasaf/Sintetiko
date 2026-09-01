@@ -168,12 +168,6 @@ export default async function handler(req, res) {
     }
   }
 
-  // Absolute origin for the notification image — a relative URL will not load
-  // in a notification. VERCEL_URL is the deployment host; SITE_URL overrides it
-  // for a custom domain. With neither, the image is simply omitted.
-  const siteUrl = process.env.SITE_URL
-    || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '');
-
   // ---- Second push: team of the month, to everyone -------------------------
   // Goes out AFTER the personal summaries so it lands second on the phone.
   // Restricted players are already excluded from subsByEmail.
@@ -182,11 +176,10 @@ export default async function handler(req, res) {
     const squadLine = teamOfMonth.map((p) => `${p.name} (${p.wins})`).join(' · ');
     const squadPayload = JSON.stringify({
       title: `נבחרת ${monthName} 🏆`,
-      // The names stay in the text: `image` only renders on Android/Chrome, so
-      // on iOS this line IS the notification.
+      // Text-only: the names ARE the notification, and the page carries the
+      // full card view behind the link.
       body: `${squadLine}
 לצפייה לחץ כאן 👈`,
-      ...(siteUrl ? { image: `${siteUrl}/api/team-of-month-image?month=${monthKey}` } : {}),
       url: '/TeamOfMonth',
     });
     for (const [email, rows] of subsByEmail.entries()) {
