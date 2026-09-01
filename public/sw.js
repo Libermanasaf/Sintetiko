@@ -1,6 +1,6 @@
 // Service worker for Sintetiko Holon — web push + offline app shell
 
-const CACHE = 'sintetiko-v4';
+const CACHE = 'sintetiko-v5';
 
 // Pre-cache the offline fallback so a navigation can ALWAYS render something
 // (never a blank screen) even on the very first offline launch. The app's JS/CSS
@@ -93,6 +93,9 @@ self.addEventListener('push', (event) => {
     dir: 'rtl',
     lang: 'he',
     tag: data.tag || 'sintetiko',
+    // Large picture inside the notification. Android/Chrome renders it; iOS
+    // ignores the field, so every push must still read correctly as text.
+    ...(data.image ? { image: data.image } : {}),
     renotify: true,
     data: { url: data.url || '/' },
   };

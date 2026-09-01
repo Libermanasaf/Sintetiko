@@ -17,6 +17,7 @@ export const menuItems = [
   { name: 'עמוד הבית', page: 'PlayerHome',   icon: Home,      player: true },
   { name: 'הפודיום',    page: 'Podium',       icon: Trophy,    admin: true, player: true, group: 'club' },
   { name: 'היכל התהילה', page: 'HallOfFame',  icon: Crown,     admin: true, player: true, group: 'club' },
+  { name: 'נבחרת החודש', page: 'TeamOfMonth', icon: Trophy,    admin: true, player: true, group: 'club' },
   { name: 'סגל שחקנים', page: 'Players',      icon: Users,     admin: true },
   { name: 'סטטיסטיקות', page: 'Statistics',   icon: BarChart3, admin: true, player: true, group: 'club' },
   { name: 'יצירת מחזור', page: 'CreateRound', icon: Shuffle,   admin: true },

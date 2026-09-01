@@ -2,6 +2,7 @@ import webpush from 'web-push';
 import { getSupabaseAdmin } from './_supabaseAdmin.js';
 import { getRestrictedEmails } from './_restrictedEmails.js';
 import { VAPID_PUBLIC_KEY } from '../src/lib/vapidPublic.js';
+import { pickTeamOfMonth, MIN_APPEARANCES, SQUAD_SIZE } from '../src/lib/teamOfMonth.js';
 
 const ADMIN_EMAIL = 'libermanasaf@gmail.com';
 
@@ -114,23 +115,10 @@ export default async function handler(req, res) {
   }
 
   // ---- Team of the month ---------------------------------------------------
-  // Six players ranked by WINS, with appearances as the tie-break, and a hard
-  // floor of MIN_APPEARANCES so someone who showed up twice and won both
-  // cannot outrank a regular. Fewer than six qualifiers just means a shorter
-  // squad — we never pad it with players below the floor.
-  const MIN_APPEARANCES = 3;
-  const SQUAD_SIZE = 6;
+  // Selection lives in src/lib/teamOfMonth.js, shared with the TeamOfMonth
+  // page, so the squad named here is always the squad shown on screen.
   const nameById = new Map((playersRows || []).map((p) => [p.id, p.name]));
-  const teamOfMonth = [...stats.entries()]
-    .filter(([pid, s]) => s.appearances >= MIN_APPEARANCES && nameById.has(pid))
-    .map(([pid, s]) => ({ id: pid, name: nameById.get(pid), ...s }))
-    .sort((a, b) =>
-      b.wins - a.wins ||
-      b.appearances - a.appearances ||
-      // Last resort so the order is stable run-to-run rather than arbitrary.
-      a.name.localeCompare(b.name, 'he')
-    )
-    .slice(0, SQUAD_SIZE);
+  const teamOfMonth = pickTeamOfMonth(stats, nameById);
 
   // ---- Build + send personalized pushes ------------------------------------
   const messages = [];
@@ -180,6 +168,12 @@ export default async function handler(req, res) {
     }
   }
 
+  // Absolute origin for the notification image — a relative URL will not load
+  // in a notification. VERCEL_URL is the deployment host; SITE_URL overrides it
+  // for a custom domain. With neither, the image is simply omitted.
+  const siteUrl = process.env.SITE_URL
+    || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '');
+
   // ---- Second push: team of the month, to everyone -------------------------
   // Goes out AFTER the personal summaries so it lands second on the phone.
   // Restricted players are already excluded from subsByEmail.
@@ -188,8 +182,12 @@ export default async function handler(req, res) {
     const squadLine = teamOfMonth.map((p) => `${p.name} (${p.wins})`).join(' · ');
     const squadPayload = JSON.stringify({
       title: `נבחרת ${monthName} 🏆`,
-      body: `${squadLine} — לפי ניצחונות החודש`,
-      url: '/Statistics',
+      // The names stay in the text: `image` only renders on Android/Chrome, so
+      // on iOS this line IS the notification.
+      body: `${squadLine}
+לצפייה לחץ כאן 👈`,
+      ...(siteUrl ? { image: `${siteUrl}/api/team-of-month-image?month=${monthKey}` } : {}),
+      url: '/TeamOfMonth',
     });
     for (const [email, rows] of subsByEmail.entries()) {
       if (email === ADMIN_EMAIL) continue; // admin gets its own health-check below
