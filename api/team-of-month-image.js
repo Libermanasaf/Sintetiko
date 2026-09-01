@@ -51,73 +51,70 @@ export default async function handler(req) {
     const imageById = new Map((players || []).map((p) => [p.id, p.image]));
     const squad = pickTeamOfMonth(statsFromRounds(rounds || []), nameById);
 
+    // Built with createElement rather than JSX: files under /api are bundled
+    // as plain JS with no JSX transform, so JSX here fails the Vercel build
+    // (and with it the whole deployment, not just this endpoint).
+    const h = (type, props, ...children) => ({
+      type,
+      props: { ...props, children: children.length === 1 ? children[0] : children },
+      key: props && props.key != null ? props.key : null,
+      $$typeof: Symbol.for('react.element'),
+      ref: null,
+    });
+
+    const card = (p, i) => {
+      const img = imageById.get(p.id);
+      return h('div', {
+        key: p.id,
+        style: {
+          display: 'flex', flexDirection: 'column', alignItems: 'center',
+          width: 168, padding: 16, borderRadius: 20,
+          background: 'linear-gradient(180deg,#1e293b,#0b1220)',
+          border: `2px solid ${i === 0 ? GOLD : '#334155'}`,
+        },
+      },
+        h('div', { style: {
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          width: 30, height: 30, borderRadius: 8, background: GOLD,
+          color: '#0a0f1a', fontSize: 20, fontWeight: 900, marginBottom: 10,
+        } }, String(i + 1)),
+        img
+          ? h('img', { src: img, width: 92, height: 92, style: {
+              borderRadius: 18, objectFit: 'cover', border: `3px solid ${GOLD}`,
+            } })
+          : h('div', { style: {
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: 92, height: 92, borderRadius: 18, background: '#334155',
+              border: `3px solid ${GOLD}`, fontSize: 40, color: MUTED,
+            } }, (p.name || '?').charAt(0)),
+        h('div', { style: {
+          fontSize: 22, fontWeight: 900, color: INK, marginTop: 12,
+          maxWidth: 150, overflow: 'hidden', whiteSpace: 'nowrap',
+        } }, p.name),
+        h('div', { style: { display: 'flex', gap: 8, marginTop: 10 } },
+          h('div', { style: {
+            display: 'flex', flexDirection: 'column', alignItems: 'center',
+            padding: '4px 10px', borderRadius: 8, background: 'rgba(16,185,129,0.15)',
+          } },
+            h('div', { style: { fontSize: 22, fontWeight: 900, color: '#6ee7b7' } }, String(p.wins)),
+            h('div', { style: { fontSize: 12, color: '#6ee7b7' } }, 'נצחונות')),
+          h('div', { style: {
+            display: 'flex', flexDirection: 'column', alignItems: 'center',
+            padding: '4px 10px', borderRadius: 8, background: 'rgba(148,163,184,0.15)',
+          } },
+            h('div', { style: { fontSize: 22, fontWeight: 900, color: INK } }, String(p.appearances)),
+            h('div', { style: { fontSize: 12, color: MUTED } }, 'הופעות'))));
+    };
+
     return new ImageResponse(
-      (
-        <div style={{
-          width: '100%', height: '100%', display: 'flex', flexDirection: 'column',
-          background: BG, padding: 40, alignItems: 'center', justifyContent: 'center',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 28 }}>
-            <div style={{ fontSize: 46 }}>🏆</div>
-            <div style={{ fontSize: 52, fontWeight: 900, color: GOLD }}>
-              נבחרת {monthName}
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', gap: 16 }}>
-            {squad.map((p, i) => {
-              const img = imageById.get(p.id);
-              return (
-                <div key={p.id} style={{
-                  display: 'flex', flexDirection: 'column', alignItems: 'center',
-                  width: 168, padding: 16, borderRadius: 20,
-                  background: 'linear-gradient(180deg,#1e293b,#0b1220)',
-                  border: `2px solid ${i === 0 ? GOLD : '#334155'}`,
-                }}>
-                  <div style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    width: 30, height: 30, borderRadius: 8, background: GOLD,
-                    color: '#0a0f1a', fontSize: 20, fontWeight: 900, marginBottom: 10,
-                  }}>{i + 1}</div>
-
-                  {img ? (
-                    <img src={img} width={92} height={92}
-                      style={{ borderRadius: 18, objectFit: 'cover', border: `3px solid ${GOLD}` }} />
-                  ) : (
-                    <div style={{
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      width: 92, height: 92, borderRadius: 18, background: '#334155',
-                      border: `3px solid ${GOLD}`, fontSize: 40, color: MUTED,
-                    }}>{(p.name || '?').charAt(0)}</div>
-                  )}
-
-                  <div style={{
-                    fontSize: 22, fontWeight: 900, color: INK, marginTop: 12,
-                    maxWidth: 150, overflow: 'hidden', whiteSpace: 'nowrap',
-                  }}>{p.name}</div>
-
-                  <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-                    <div style={{
-                      display: 'flex', flexDirection: 'column', alignItems: 'center',
-                      padding: '4px 10px', borderRadius: 8, background: 'rgba(16,185,129,0.15)',
-                    }}>
-                      <div style={{ fontSize: 22, fontWeight: 900, color: '#6ee7b7' }}>{p.wins}</div>
-                      <div style={{ fontSize: 12, color: '#6ee7b7' }}>נצחונות</div>
-                    </div>
-                    <div style={{
-                      display: 'flex', flexDirection: 'column', alignItems: 'center',
-                      padding: '4px 10px', borderRadius: 8, background: 'rgba(148,163,184,0.15)',
-                    }}>
-                      <div style={{ fontSize: 22, fontWeight: 900, color: INK }}>{p.appearances}</div>
-                      <div style={{ fontSize: 12, color: MUTED }}>הופעות</div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      ),
+      h('div', { style: {
+        width: '100%', height: '100%', display: 'flex', flexDirection: 'column',
+        background: BG, padding: 40, alignItems: 'center', justifyContent: 'center',
+      } },
+        h('div', { style: { display: 'flex', alignItems: 'center', gap: 12, marginBottom: 28 } },
+          h('div', { style: { fontSize: 46 } }, '🏆'),
+          h('div', { style: { fontSize: 52, fontWeight: 900, color: GOLD } }, `נבחרת ${monthName}`)),
+        h('div', { style: { display: 'flex', gap: 16 } }, squad.map(card))),
       { width: 1200, height: 480 }
     );
   } catch (err) {
