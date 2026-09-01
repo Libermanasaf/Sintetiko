@@ -42,20 +42,20 @@ function SquadCard({ entry, player, rank }) {
       <div
         className="relative w-full"
         style={{
-          // Capped, not column-filling: without this the card scales with the
-          // viewport and dwarfs the pitch on a wide screen.
-          maxWidth: 'clamp(46px, 13vw, 62px)',
+          // Same size as the card a player sees on PlayerHome (280px), just
+          // capped so two still fit across a phone.
+          maxWidth: 'min(280px, calc(50vw - 32px))',
           aspectRatio: '2 / 3',
           backgroundImage: 'url(/gold-card.png)',
           backgroundSize: '100% 100%',
           backgroundRepeat: 'no-repeat',
-          filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.45))',
+          filter: 'drop-shadow(0 10px 22px rgba(0,0,0,0.5))',
         }}
       >
         {rank === 1 && (
           <div
             className="absolute leading-none"
-            style={{ top: '2%', insetInlineStart: '4%', fontSize: 'clamp(0.35rem,1.3vw,0.5rem)' }}
+            style={{ top: '3%', insetInlineStart: '6%', fontSize: 'clamp(0.75rem,3vw,1.15rem)' }}
           >
             👑
           </div>
@@ -70,18 +70,18 @@ function SquadCard({ entry, player, rank }) {
               decoding="async"
               className="rounded-full object-cover"
               style={{
-                width: 'clamp(18px, 36%, 30px)', aspectRatio: '1',
-                border: '2px solid rgba(200,155,30,0.9)',
+                width: 'min(112px, 40%)', aspectRatio: '1',
+                border: '3px solid rgba(200,155,30,0.85)',
               }}
             />
           ) : (
             <div
               className="rounded-full flex items-center justify-center font-black"
               style={{
-                width: 'clamp(18px, 36%, 30px)', aspectRatio: '1',
+                width: 'min(112px, 40%)', aspectRatio: '1',
                 background: 'linear-gradient(135deg, rgba(212,175,55,0.4), rgba(180,130,20,0.25))',
-                border: '2px solid rgba(200,155,30,0.9)',
-                color: '#5a3500', fontSize: 'clamp(0.45rem, 1.6vw, 0.62rem)',
+                border: '3px solid rgba(200,155,30,0.85)',
+                color: '#5a3500', fontSize: 'clamp(1rem, 5vw, 2.25rem)',
               }}
             >
               {entry.name?.charAt(0)}
@@ -92,7 +92,7 @@ function SquadCard({ entry, player, rank }) {
         <div className="absolute left-0 right-0 text-center px-1" style={{ top: '62%' }}>
           <p
             className="font-black leading-tight truncate"
-            style={{ color: '#3d2000', fontSize: 'clamp(0.3rem, 1.05vw, 0.4rem)' }}
+            style={{ color: '#3d2000', fontSize: 'clamp(0.62rem, 2.6vw, 1rem)' }}
           >
             {entry.name}
           </p>
@@ -102,7 +102,7 @@ function SquadCard({ entry, player, rank }) {
         <div className="absolute left-0 right-0 text-center" style={{ top: '73%' }}>
           <span
             className="font-black tnum"
-            style={{ color: '#5a3500', fontSize: 'clamp(0.26rem, 0.95vw, 0.36rem)' }}
+            style={{ color: '#5a3500', fontSize: 'clamp(0.5rem, 2vw, 0.78rem)' }}
           >
             {entry.wins} נצ׳ · {entry.appearances} הופ׳
           </span>
@@ -175,7 +175,7 @@ export default function TeamOfMonth() {
 
         {isLoading ? (
           <div className="rounded-2xl bg-emerald-900/30 ring-1 ring-emerald-400/20 p-3 sm:p-5">
-            <div className="grid grid-cols-3 gap-x-2 gap-y-3 sm:gap-x-4 sm:gap-y-5">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-3 gap-y-4 sm:gap-x-5 sm:gap-y-6">
               {Array.from({ length: SQUAD_SIZE }).map((_, i) => (
                 <Skeleton key={i} className="aspect-[2/3] rounded-lg" />
               ))}
@@ -214,7 +214,7 @@ export default function TeamOfMonth() {
                 <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-white/35" />
               </div>
 
-              <div className="relative grid grid-cols-3 gap-x-2 gap-y-3 sm:gap-x-4 sm:gap-y-5">
+              <div className="relative grid grid-cols-2 sm:grid-cols-3 gap-x-3 gap-y-4 sm:gap-x-5 sm:gap-y-6 justify-items-center">
                 {squad.map((entry, i) => (
                   <SquadCard
                     key={entry.id}
