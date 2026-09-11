@@ -83,6 +83,8 @@ const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const ComplaintsBox = lazy(() => import('./pages/ComplaintsBox'));
 const HallOfFame = lazy(() => import('./pages/HallOfFame'));
 const TeamOfMonth = lazy(() => import('./pages/TeamOfMonth'));
+const SeasonAwards = lazy(() => import('./pages/SeasonAwards'));
+const SeasonCeremony = lazy(() => import('./pages/SeasonCeremony'));
 const ShamingCorner = lazy(() => import('./pages/ShamingCorner'));
 
 export const PAGES = {
@@ -116,6 +118,8 @@ export const PAGES = {
     "ComplaintsBox": ComplaintsBox,
     "HallOfFame": HallOfFame,
     "TeamOfMonth": TeamOfMonth,
+    "SeasonAwards": SeasonAwards,
+    "SeasonCeremony": SeasonCeremony,
     "ShamingCorner": ShamingCorner,
 }
 

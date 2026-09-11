@@ -18,6 +18,8 @@ export const menuItems = [
   { name: 'הפודיום',    page: 'Podium',       icon: Trophy,    admin: true, player: true, group: 'club' },
   { name: 'היכל התהילה', page: 'HallOfFame',  icon: Crown,     admin: true, player: true, group: 'club' },
   { name: 'נבחרת החודש', page: 'TeamOfMonth', icon: Trophy,    admin: true, player: true, group: 'club' },
+  { name: 'נבחרי העונה', page: 'SeasonAwards', icon: Star,     admin: true, player: true, group: 'club' },
+  { name: 'טקס נבחרי העונה', page: 'SeasonCeremony', icon: Crown, admin: true, player: true, group: 'club' },
   { name: 'סגל שחקנים', page: 'Players',      icon: Users,     admin: true },
   { name: 'סטטיסטיקות', page: 'Statistics',   icon: BarChart3, admin: true, player: true, group: 'club' },
   { name: 'יצירת מחזור', page: 'CreateRound', icon: Shuffle,   admin: true },
