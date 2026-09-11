@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/AuthContext';
 import { PageHeader, Skeleton, EmptyState } from '@/components/ui/lux';
 import { toast } from 'sonner';
+import { callApi } from '@/lib/apiClient';
 
 const AWARD_ID = '2026';
 const CATEGORIES = [
@@ -152,6 +153,25 @@ export default function SeasonCeremony() {
       await queryClient.invalidateQueries({ queryKey: ['season-award', AWARD_ID] });
       await queryClient.invalidateQueries({ queryKey: ['season-results', AWARD_ID] });
       toast.success(message);
+
+      // Opening the vote is the one moment worth interrupting everyone for.
+      // Sent after the flag is saved, so a push never announces a vote that
+      // did not actually open; a failed push is reported but not fatal.
+      if (patch.is_open === true) {
+        try {
+          const res = await callApi('/api/send-notification', {
+            title: 'ההצבעה לנבחרי העונה נפתחה 🏆',
+            body: 'בחר את שחקן העונה ואת הגילוי של העונה — לחץ כאן להצביע 👈',
+            url: '/SeasonAwards',
+          });
+          const pd = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(pd.error || `שגיאת שרת ${res.status}`);
+          toast.success(`נשלחה התראה ל-${pd.sent || 0} מכשירים`);
+        } catch (pushErr) {
+          console.warn('[awards push]', pushErr);
+          toast.warning('ההצבעה נפתחה ✅ אך שליחת ההתראה נכשלה', { duration: 7000 });
+        }
+      }
     } catch (e) {
       toast.error('הפעולה נכשלה', { description: e.message });
     } finally {
