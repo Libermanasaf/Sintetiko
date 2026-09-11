@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy, Search, X, Check, Loader2, Lock, Sparkles, User } from 'lucide-react';
+import { Trophy, Search, X, Check, Loader2, Lock, Sparkles, User, Eye } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/AuthContext';
 import { PageHeader, Skeleton, EmptyState } from '@/components/ui/lux';
@@ -72,7 +72,8 @@ function ConfirmVote({ candidate, category, onCancel, onConfirm, saving }) {
 }
 
 export default function SeasonAwards() {
-  const { user } = useAuth();
+  const { user, role, loginMode } = useAuth();
+  const isAdmin = role === 'admin' && loginMode !== 'player';
   const queryClient = useQueryClient();
   const [activeCat, setActiveCat] = useState(CATEGORIES[0].key);
   const [search, setSearch] = useState('');
@@ -112,6 +113,27 @@ export default function SeasonAwards() {
     },
     enabled: !!user,
   });
+
+  // Admin-only live tally while voting runs, so the admin can watch it come in
+  // and decide when to close. The RPC refuses for everyone else until the
+  // reveal, so this query is the only thing gating it — not the UI.
+  const { data: liveResults = [] } = useQuery({
+    queryKey: ['season-live-results', AWARD_ID],
+    queryFn: async () => {
+      if (!supabase) return [];
+      const { data, error } = await supabase.rpc('season_award_results', { p_award_id: AWARD_ID });
+      if (error) { console.warn('[live results]', error.message); return []; }
+      return data || [];
+    },
+    enabled: isAdmin,
+    refetchInterval: isAdmin ? 30_000 : false,
+  });
+
+  const liveFor = useMemo(() => {
+    const m = {};
+    for (const r of liveResults) (m[r.category] ||= []).push(r);
+    return m;
+  }, [liveResults]);
 
   const myVoteFor = useMemo(
     () => Object.fromEntries(myVotes.map((v) => [v.category, v.candidate_id])),
@@ -200,6 +222,28 @@ export default function SeasonAwards() {
                 );
               })}
             </div>
+
+            {isAdmin && (liveFor[activeCat] || []).length > 0 && (
+              <div className="rounded-2xl bg-slate-900/60 ring-1 ring-amber-400/25 p-3">
+                <p className="flex items-center gap-1.5 font-black text-amber-300 text-xs mb-2">
+                  <Eye className="w-3.5 h-3.5" /> ספירה חיה · לאדמין בלבד
+                </p>
+                <div className="space-y-1.5">
+                  {(liveFor[activeCat] || []).map((r, i) => (
+                    <div key={r.candidate_id} className="flex items-center gap-2">
+                      <span className="w-4 text-ink-3 text-[0.65rem] font-black tnum">{i + 1}</span>
+                      <span className="flex-1 min-w-0 truncate text-white text-xs font-bold">{r.name}</span>
+                      <span className="shrink-0 px-1.5 py-0.5 rounded-md bg-amber-500/15 ring-1 ring-amber-400/30 text-amber-300 text-[0.65rem] font-black tnum">
+                        {r.votes}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-ink-3 text-[0.6rem] font-bold mt-2 leading-relaxed">
+                  השחקנים לא רואים את זה. התוצאות ייחשפו לכולם כשתחשוף אותן במסך הטקס.
+                </p>
+              </div>
+            )}
 
             {alreadyVoted ? (
               <div className="rounded-2xl bg-emerald-500/10 ring-1 ring-emerald-400/30 p-5 text-center">
