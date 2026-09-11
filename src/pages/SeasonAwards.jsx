@@ -129,6 +129,31 @@ export default function SeasonAwards() {
     refetchInterval: isAdmin ? 30_000 : false,
   });
 
+  // ADMIN ONLY: who voted for whom. Gated server-side (season_award_ballots
+  // raises 'forbidden' for anyone else), so this returns nothing for a player
+  // even if the panel were somehow rendered for them.
+  const { data: ballots = [] } = useQuery({
+    queryKey: ['season-ballots', AWARD_ID],
+    queryFn: async () => {
+      if (!supabase) return [];
+      const { data, error } = await supabase.rpc('season_award_ballots', { p_award_id: AWARD_ID });
+      if (error) { console.warn('[ballots]', error.message); return []; }
+      return data || [];
+    },
+    enabled: isAdmin,
+    refetchInterval: isAdmin ? 30_000 : false,
+  });
+
+  // candidate_id -> voter names, for the category currently on screen.
+  const votersByCandidate = useMemo(() => {
+    const m = {};
+    for (const b of ballots) {
+      if (b.category !== activeCat) continue;
+      (m[b.candidate_id] ||= []).push(b.voter_name);
+    }
+    return m;
+  }, [ballots, activeCat]);
+
   const liveFor = useMemo(() => {
     const m = {};
     for (const r of liveResults) (m[r.category] ||= []).push(r);
@@ -228,19 +253,26 @@ export default function SeasonAwards() {
                 <p className="flex items-center gap-1.5 font-black text-amber-300 text-xs mb-2">
                   <Eye className="w-3.5 h-3.5" /> ספירה חיה · לאדמין בלבד
                 </p>
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   {(liveFor[activeCat] || []).map((r, i) => (
-                    <div key={r.candidate_id} className="flex items-center gap-2">
-                      <span className="w-4 text-ink-3 text-[0.65rem] font-black tnum">{i + 1}</span>
-                      <span className="flex-1 min-w-0 truncate text-white text-xs font-bold">{r.name}</span>
-                      <span className="shrink-0 px-1.5 py-0.5 rounded-md bg-amber-500/15 ring-1 ring-amber-400/30 text-amber-300 text-[0.65rem] font-black tnum">
-                        {r.votes}
-                      </span>
+                    <div key={r.candidate_id} className="rounded-lg bg-slate-800/50 ring-1 ring-white/8 p-2">
+                      <div className="flex items-center gap-2">
+                        <span className="w-4 text-ink-3 text-[0.65rem] font-black tnum">{i + 1}</span>
+                        <span className="flex-1 min-w-0 truncate text-white text-xs font-bold">{r.name}</span>
+                        <span className="shrink-0 px-1.5 py-0.5 rounded-md bg-amber-500/15 ring-1 ring-amber-400/30 text-amber-300 text-[0.65rem] font-black tnum">
+                          {r.votes}
+                        </span>
+                      </div>
+                      {(votersByCandidate[r.candidate_id] || []).length > 0 && (
+                        <p className="text-ink-3 text-[0.6rem] font-bold mt-1 pr-6 leading-relaxed">
+                          הצביעו: {votersByCandidate[r.candidate_id].join(' · ')}
+                        </p>
+                      )}
                     </div>
                   ))}
                 </div>
                 <p className="text-ink-3 text-[0.6rem] font-bold mt-2 leading-relaxed">
-                  השחקנים לא רואים את זה. התוצאות ייחשפו לכולם כשתחשוף אותן במסך הטקס.
+                  השחקנים לא רואים את זה — לא את הספירה ולא מי הצביע למי. התוצאות ייחשפו לכולם רק כשתחשוף אותן במסך הטקס.
                 </p>
               </div>
             )}
