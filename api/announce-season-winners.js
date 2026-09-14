@@ -18,9 +18,19 @@ const PLACES = [
   { index: 0, emoji: '🏆', word: 'הזוכה' },
 ];
 
-const GAP_MS = 12_000; // breathing room between places, so they land in order
+// A minute between places, so each lands as its own moment. Trimmed slightly
+// below 60s: 6 places means 5 gaps, and at a flat 60s the gaps alone consume
+// the entire 300s budget, leaving nothing for the sends — the final push (the
+// winner) would be cut off.
+const GAP_MS = 55_000;
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// Six places a minute apart takes ~5 minutes of wall clock, so the default
+// timeout would kill the run partway and the winner would never be announced.
+// 300s is the Hobby-plan ceiling; the last gap is skipped anyway, so the run
+// is 5 gaps = 300s minus the send time. Keep GAP_MS * (places - 1) under this.
+export const config = { maxDuration: 300 };
 
 // Announces the season winners: one push per place, third to first.
 //
