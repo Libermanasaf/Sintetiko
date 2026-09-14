@@ -1,28 +1,50 @@
 {
   "rewrites": [
-    { "source": "/((?!api/).*)", "destination": "/index.html" }
+    {
+      "source": "/((?!api/).*)",
+      "destination": "/index.html"
+    }
   ],
   "crons": [
-    { "path": "/api/mvp-reminder", "schedule": "0 9 * * *" },
-    { "path": "/api/monthly-summary", "schedule": "0 9 1 * *" }
+    {
+      "path": "/api/mvp-reminder",
+      "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/monthly-summary",
+      "schedule": "0 9 1 * *"
+    },
+    {
+      "path": "/api/close-season-vote",
+      "schedule": "0 17 * * *"
+    }
   ],
   "headers": [
     {
       "source": "/",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
       ]
     },
     {
       "source": "/index.html",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
       ]
     },
     {
       "source": "/sw.js",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
       ]
     }
   ]
