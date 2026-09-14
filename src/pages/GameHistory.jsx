@@ -371,7 +371,11 @@ export default function GameHistory() {
       .filter(([, delta]) => delta !== 0)
       .map(([playerId, delta]) => {
         const player = players.find(p => p.id === playerId);
-        return { playerId, wins: Math.max(0, (player?.wins || 0) + delta) };
+        return {
+          playerId,
+          wins: Math.max(0, (player?.wins || 0) + delta),
+          season_wins: Math.max(0, (player?.season_wins || 0) + delta),
+        };
       });
 
     await updateRoundMutation.mutateAsync({ roundId: selectedRound.id, teamWins: tempWins, winningTeam });

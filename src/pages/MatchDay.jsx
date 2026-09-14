@@ -438,7 +438,10 @@ export default function MatchDay() {
             await Promise.all(
               winners.map((pid) => {
                 const p = allPlayers.find((x) => x.id === pid);
-                return p ? Player.update(pid, { wins: (p.wins || 0) + 1 }) : null;
+                return p ? Player.update(pid, {
+                  wins: (p.wins || 0) + 1,
+                  season_wins: (p.season_wins || 0) + 1,
+                }) : null;
               })
             );
             queryClient.invalidateQueries({ queryKey: ['players'] });

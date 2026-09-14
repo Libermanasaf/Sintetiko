@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase';
 import { useQuery } from '@tanstack/react-query';
 import { motion, animate, useReducedMotion } from 'framer-motion';
 import GoldBurst from '@/components/GoldBurst';
-import { Star, Trophy, Zap, Activity, TrendingUp, ShieldQuestion, ShieldOff, Users, Lock, ChevronLeft, Bell, Swords } from 'lucide-react';
+import { Star, Trophy, Zap, Activity, TrendingUp, ShieldQuestion, ShieldOff, Users, Lock, ChevronLeft, Bell, Swords, Crown } from 'lucide-react';
 import ClubCrest from '@/components/ClubCrest';
 import { Player, Round } from '@/api/entities';
 import { SectionTitle, EmptyState, Skeleton } from '@/components/ui/lux';
@@ -456,7 +456,9 @@ export default function PlayerHome() {
   }
 
   const appearances = player.appearances || 0;
+  // Career trophies — never reset when a podium season ends.
   const wins = player.wins || 0;
+  const podiumTitles = player.podium_titles || 0;
   const winRate = appearances > 0 ? Math.round((wins / appearances) * 100) : 0;
   const rankIdx = allPlayers.findIndex(p => p.id === player.id);
   const rank = rankIdx >= 0 ? rankIdx + 1 : null;
@@ -800,6 +802,25 @@ export default function PlayerHome() {
             iconClass="bg-sky-500/15 text-sky-300" valueClass="text-sky-300"
           />
         </div>
+
+        {podiumTitles > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.58 }}
+            className="mt-3 rounded-2xl st-card p-3.5 flex items-center gap-3 ring-1 ring-amber-300/40 shadow-[0_0_30px_-12px_rgba(250,204,21,0.7)]"
+          >
+            <div className="grid place-items-center w-11 h-11 rounded-xl st-foil shrink-0">
+              <Crown className="w-5 h-5" strokeWidth={2.6} />
+            </div>
+            <div className="min-w-0">
+              <p className="font-black text-white text-sm leading-tight">מלך הפודיום 👑</p>
+              <p className="text-ink-3 text-xs font-bold mt-0.5 tnum">
+                {podiumTitles === 1 ? 'זכה פעם אחת' : `זכה ${podiumTitles} פעמים`}
+              </p>
+            </div>
+          </motion.div>
+        )}
 
         {rank && appearances > 0 && (
           <motion.div

@@ -126,7 +126,7 @@ function Avatar({ player, size, textSize, ring, glow }) {
 /* ─── Top-3 card (above pedestal) ──────────────────────────────── */
 function TopCard({ player, tier }) {
   const winRate = (player.appearances || 0) > 0
-    ? Math.round((player.wins / player.appearances) * 100)
+    ? Math.round(((player.season_wins || 0) / player.appearances) * 100)
     : null;
   return (
     <div className={`relative ${tier.cardWidth} st-card`}>
@@ -144,7 +144,7 @@ function TopCard({ player, tier }) {
         <div className="mt-1 sm:mt-1.5 flex items-center gap-1 sm:gap-1.5">
           <Trophy className={`w-3 h-3 sm:w-4 sm:h-4 ${tier.winTone}`} strokeWidth={2.5} fill="currentColor" />
           <CountUp
-            value={player.wins || 0}
+            value={player.season_wins || 0}
             delay={tier.delay + 0.5}
             className={`tnum font-black text-sm sm:text-lg leading-none ${tier.winTone}`}
           />
@@ -405,7 +405,7 @@ function RankRow({ player, idx }) {
     : idx % 2 ? 'bg-slate-900/35' : 'bg-slate-900/15';
 
   const winRate = (player.appearances || 0) > 0
-    ? Math.round((player.wins / player.appearances) * 100)
+    ? Math.round(((player.season_wins || 0) / player.appearances) * 100)
     : null;
 
   return (
@@ -449,7 +449,7 @@ function RankRow({ player, idx }) {
         </div>
       </div>
       <span className={`tnum font-black text-base px-3 py-1.5 rounded-lg ring-1 ${pillClass} shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]`}>
-        {player.wins || 0}
+        {player.season_wins || 0}
       </span>
     </motion.div>
   );
@@ -474,23 +474,23 @@ function LoadingState() {
 export default function Podium() {
   const { data: players = [], isLoading } = useQuery({
     queryKey: ['players'],
-    queryFn: () => Player.list('-wins'),
+    queryFn: () => Player.list('-season_wins'),
   });
 
   // Ordering: wins desc → EFFICIENCY (win rate desc — same trophies with fewer
   // appearances ranks higher) → appearances desc (among 0%-rate players,
   // veterans stay above never-played) → name asc (Hebrew).
   const ranked = useMemo(() => {
-    const rate = (p) => ((p.appearances || 0) > 0 ? (p.wins || 0) / p.appearances : 0);
+    const rate = (p) => ((p.appearances || 0) > 0 ? (p.season_wins || 0) / p.appearances : 0);
     return [...players].sort((a, b) => {
-      if ((b.wins || 0) !== (a.wins || 0)) return (b.wins || 0) - (a.wins || 0);
+      if ((b.season_wins || 0) !== (a.season_wins || 0)) return (b.season_wins || 0) - (a.season_wins || 0);
       if (rate(b) !== rate(a)) return rate(b) - rate(a);
       if ((b.appearances || 0) !== (a.appearances || 0)) return (b.appearances || 0) - (a.appearances || 0);
       return (a.name || '').localeCompare(b.name || '', 'he');
     });
   }, [players]);
 
-  const totalWins = useMemo(() => ranked.reduce((s, p) => s + (p.wins || 0), 0), [ranked]);
+  const totalWins = useMemo(() => ranked.reduce((s, p) => s + (p.season_wins || 0), 0), [ranked]);
   const [first, second, third] = ranked;
 
   return (

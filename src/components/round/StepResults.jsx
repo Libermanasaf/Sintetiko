@@ -77,8 +77,11 @@ export default function StepResults({
           const player = players.find((p) => p.id === playerId);
           if (player) {
             updates.push(
+              // Both counters: `wins` is the career total shown in personal
+              // stats, `season_wins` drives the current podium.
               Player.update(playerId, {
                 wins: (player.wins || 0) + 1,
+                season_wins: (player.season_wins || 0) + 1,
               })
             );
           }
