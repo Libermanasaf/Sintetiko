@@ -33,7 +33,15 @@ export default async function handler(req, res) {
 
   webpush.setVapidDetails('mailto:libermanasaf@gmail.com', VAPID_PUBLIC, VAPID_PRIVATE);
 
-  const { title, body, url, targetEmail } = req.body || {};
+  // sendBeacon (used by the signup page, so the push survives the page
+  // navigating away) can deliver the body as a raw string rather than a parsed
+  // object depending on how the runtime handles the Blob — accept both.
+  let parsedBody = req.body || {};
+  if (typeof parsedBody === 'string') {
+    try { parsedBody = JSON.parse(parsedBody); }
+    catch { return res.status(400).json({ error: 'invalid JSON body' }); }
+  }
+  const { title, body, url, targetEmail } = parsedBody;
 
   // Authorization. The real abuse vector is BROADCAST (a stranger blasting every
   // subscriber with spam/phishing) and targeting arbitrary players. Gate by audience:

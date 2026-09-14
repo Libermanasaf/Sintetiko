@@ -106,28 +106,50 @@ function PlayerRegistration({ players, user, signups, role }) {
     return () => clearTimeout(t);
   }, [done, navigate]);
 
-  const sendAdminPush = async (playerName, dayLabel) => {
+  // Tells the admin a player signed up.
+  //
+  // This fires as the page is about to navigate away (success screen -> 2s ->
+  // PlayerHome), and a normal fetch is cancelled when that happens — on a slow
+  // phone the request died before reaching the server, so the admin silently
+  // got no notification. sendBeacon is built for exactly this: the browser owns
+  // the request and completes it even after the page is gone.
+  //
+  // keepalive fetch is the fallback, and a plain fetch the last resort, so the
+  // push still goes out where sendBeacon is unavailable.
+  const sendAdminPush = (playerName, dayLabel) => {
+    const payload = JSON.stringify({
+      targetEmail: ADMIN_EMAIL,
+      title: 'סינתטיקו — רישום חדש 📝',
+      body: `${playerName} נרשם ל${dayLabel} וממתין לאישור`,
+      url: createPageUrl('Lists'),
+    });
+
     try {
-      const res = await fetch('/api/send-notification', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          targetEmail: ADMIN_EMAIL,
-          title: 'סינתטיקו — רישום חדש 📝',
-          body: `${playerName} נרשם ל${dayLabel} וממתין לאישור`,
-          url: createPageUrl('Lists'),
-        }),
-      });
-      const data = await res.json().catch(() => ({}));
-      console.log('[push to admin]', res.status, data);
-      if (!res.ok) {
-        console.warn('[push to admin] failed:', data.error || res.status);
-      } else if ((data.sent || 0) === 0) {
-        console.warn('[push to admin] no subscriptions for', ADMIN_EMAIL);
+      if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
+        const ok = navigator.sendBeacon(
+          '/api/send-notification',
+          new Blob([payload], { type: 'application/json' })
+        );
+        if (ok) return;
+        console.warn('[push to admin] sendBeacon refused — falling back');
       }
     } catch (e) {
-      console.warn('[push to admin] network error', e);
+      console.warn('[push to admin] sendBeacon threw — falling back', e);
     }
+
+    // keepalive keeps the request alive across the navigation too.
+    fetch('/api/send-notification', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: payload,
+      keepalive: true,
+    })
+      .then(async (res) => {
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) console.warn('[push to admin] failed:', data.error || res.status);
+        else if ((data.sent || 0) === 0) console.warn('[push to admin] no subscriptions for', ADMIN_EMAIL);
+      })
+      .catch((e) => console.warn('[push to admin] network error', e));
   };
 
   const createMutation = useMutation({
