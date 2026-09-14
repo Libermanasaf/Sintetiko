@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Star, Pencil, Trash2, Check, X, Trophy, Users } from 'lucide-react';
 import MvpBadge from '@/components/MvpBadge';
+import PodiumKingBadge from '@/components/PodiumKingBadge';
 import { POSITION_STYLE } from '@/lib/positions';
 import { motion } from 'framer-motion';
 import { Slider } from '@/components/ui/slider';
@@ -63,6 +64,7 @@ export default function PlayerCard({ player, onUpdate, onDelete, onEdit, mvpCoun
           <div className="flex-1 min-w-0">
             <h3 className="font-bold text-white text-lg leading-tight truncate flex items-center gap-1.5">
               <span className="truncate group-hover:text-emerald-300 transition-colors">{player.name}</span>
+              <PodiumKingBadge count={player.podium_titles} />
               <MvpBadge count={mvpCount} />
             </h3>
             <div className="flex items-center gap-3 mt-1">

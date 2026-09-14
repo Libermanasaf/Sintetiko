@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { motion, useReducedMotion, animate } from 'framer-motion';
 import { Trophy, Crown, ListOrdered } from 'lucide-react';
 import MvpBadge from '@/components/MvpBadge';
+import PodiumKingBadge from '@/components/PodiumKingBadge';
 import GoldBurst from '@/components/GoldBurst';
 import { useMvpCounts } from '@/lib/useMvpCounts';
 import { PageHeader, EmptyState, Skeleton } from '@/components/ui/lux';
@@ -141,6 +142,15 @@ function TopCard({ player, tier }) {
         <p className={`mt-2 sm:mt-2.5 font-black text-[0.72rem] sm:text-sm text-center leading-tight truncate max-w-full px-1 ${tier.nameColor}`}>
           {player.name}
         </p>
+        {(player.podium_titles || 0) > 0 && (
+          <span
+            className="mt-1 inline-flex items-center gap-0.5 text-[0.5rem] sm:text-[0.6rem] font-black st-gold-text"
+            title={player.podium_titles === 1 ? 'מלך הפודיום' : `מלך הפודיום ×${player.podium_titles}`}
+          >
+            <Crown className="w-2.5 h-2.5 sm:w-3 sm:h-3" strokeWidth={2.8} />
+            {player.podium_titles > 1 ? `×${player.podium_titles}` : 'מלך'}
+          </span>
+        )}
         <div className="mt-1 sm:mt-1.5 flex items-center gap-1 sm:gap-1.5">
           <Trophy className={`w-3 h-3 sm:w-4 sm:h-4 ${tier.winTone}`} strokeWidth={2.5} fill="currentColor" />
           <CountUp
@@ -437,6 +447,7 @@ function RankRow({ player, idx }) {
         <div className="min-w-0">
           <p className={`font-black text-sm truncate flex items-center gap-1.5 ${isTop3 ? 'text-white' : 'text-slate-200'}`}>
             <span className="truncate">{player.name}</span>
+            <PodiumKingBadge count={player.podium_titles} />
             <MvpBadge count={mvpCounts[player.id]} />
           </p>
           {winRate != null && (

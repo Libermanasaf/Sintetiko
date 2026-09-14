@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { X, User, Trophy, Star, Zap, Heart, Skull } from 'lucide-react';
 import MvpBadge from '@/components/MvpBadge';
+import PodiumKingBadge from '@/components/PodiumKingBadge';
 import { useMvpCounts } from '@/lib/useMvpCounts';
 import { useQuery } from '@tanstack/react-query';
 import { Round } from '@/api/entities';
@@ -91,6 +92,7 @@ export default function PlayerStatsModal({ player, onClose, allPlayers }) {
           <div>
             <p className="text-xl font-black text-white flex items-center gap-2">
               <span>{player.name}</span>
+              <PodiumKingBadge count={player.podium_titles} />
               <MvpBadge count={mvpCounts[player.id]} />
             </p>
             <div className="flex items-center gap-0.5 mt-1">
