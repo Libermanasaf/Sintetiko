@@ -17,6 +17,10 @@
     {
       "path": "/api/close-season-vote",
       "schedule": "0 17 * * *"
+    },
+    {
+      "path": "/api/announce-season-winners",
+      "schedule": "5 17 * * *"
     }
   ],
   "headers": [
