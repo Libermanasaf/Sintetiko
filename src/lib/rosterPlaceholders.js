@@ -5,8 +5,8 @@
 // Two places must agree on this, which is why it lives here:
 //   • Lists.jsx  — the duplicate-name warning (which also blocks publishing)
 //                  must not fire on them.
-//   • QuickRoundModal — each occurrence must claim its own roster slot instead
-//                  of collapsing into one player.
+//   • matchRosterNames — each occurrence must claim its own roster slot
+//                  instead of collapsing into one player.
 //
 // Compare against a name normalized with trim + lowercase.
 export const ROLE_PLACEHOLDERS = new Set(['שוער', 'שוער קבוע', 'אורח', 'חבר']);

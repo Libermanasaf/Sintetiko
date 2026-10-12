@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { Player, Round } from '@/api/entities';
 import { useQuery } from '@tanstack/react-query';
 import { AnimatePresence } from 'framer-motion';
-import { Shuffle, Zap, Check, Users } from 'lucide-react';
+import { Shuffle, Zap, Check, Users, ListChecks } from 'lucide-react';
 import QuickRoundModal from '@/components/round/QuickRoundModal';
+import FixedTeamsModal from '@/components/round/FixedTeamsModal';
 import { toast } from 'sonner';
 import StepSettings from '@/components/round/StepSettings';
 import StepSelectPlayers from '@/components/round/StepSelectPlayers';
@@ -25,6 +26,7 @@ export default function CreateRound() {
   const [captains, setCaptains] = useState([]);
   const [openingTeams, setOpeningTeams] = useState(null);
   const [showQuickModal, setShowQuickModal] = useState(false);
+  const [showFixedModal, setShowFixedModal] = useState(false);
   // Bumped on every reshuffle so the preview re-runs its entry animation —
   // visible feedback even when the optimizer lands on a similar arrangement.
   const [shuffleTick, setShuffleTick] = useState(0);
@@ -322,6 +324,32 @@ export default function CreateRound() {
     setStep(3);
   };
 
+  // Teams decided ahead of time: take the pasted rosters as-is (no balancing)
+  // and jump to the same preview, where they can still be tweaked by drag.
+  const handleFixedTeams = (matchedTeams, unmatched, duplicates) => {
+    if (unmatched.length > 0) {
+      toast.warning(`${unmatched.length} שמות לא זוהו: ${unmatched.join(', ')}`);
+    }
+    if (duplicates.length > 0) {
+      toast.warning(`הופיעו ביותר מקבוצה אחת (נשארו בראשונה): ${duplicates.join(', ')}`);
+    }
+    if (matchedTeams.some((t) => t.length === 0)) {
+      toast.error('לכל קבוצה צריך לפחות שחקן אחד מזוהה');
+      return;
+    }
+    setShowFixedModal(false);
+    const nextTeams = matchedTeams.map((t) => t.map((p) => p.id));
+    setNumTeams(nextTeams.length);
+    setPlayersPerTeam(Math.max(...nextTeams.map((t) => t.length)));
+    setConstraints(null);
+    setTeams(nextTeams);
+    setCaptains(pickCaptains(nextTeams, captaincyCounts));
+    setSelectedPlayers(nextTeams.flat());
+    setGoalkeepers({});
+    setOpeningTeams(null);
+    setStep(3);
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -340,23 +368,40 @@ export default function CreateRound() {
         />
       )}
 
+      {showFixedModal && (
+        <FixedTeamsModal
+          players={players}
+          onClose={() => setShowFixedModal(false)}
+          onConfirm={handleFixedTeams}
+        />
+      )}
+
       {/* Header */}
       <div className="mb-6">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="grid place-items-center w-11 h-11 rounded-xl bg-emerald-500/15 ring-1 ring-emerald-500/30">
-              <Shuffle className="w-5 h-5 text-emerald-300" strokeWidth={2.3} />
-            </div>
-            <h1 className="text-[clamp(1.3rem,5vw,1.65rem)] font-black text-white tracking-tight">
-              יצירת מחזור
-            </h1>
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="grid place-items-center w-11 h-11 rounded-xl bg-emerald-500/15 ring-1 ring-emerald-500/30">
+            <Shuffle className="w-5 h-5 text-emerald-300" strokeWidth={2.3} />
           </div>
+          <h1 className="text-[clamp(1.3rem,5vw,1.65rem)] font-black text-white tracking-tight">
+            יצירת מחזור
+          </h1>
+        </div>
+
+        {/* Shortcuts — side by side, full width so both fit on a phone */}
+        <div className="mt-4 grid grid-cols-2 gap-2.5">
           <button
             onClick={() => setShowQuickModal(true)}
-            className="flex items-center gap-1.5 min-h-[44px] px-3.5 rounded-xl st-foil text-sm font-black shadow-[0_6px_18px_-6px_rgba(212,160,40,0.6)] active:scale-95 transition-transform shrink-0"
+            className="flex items-center justify-center gap-1.5 min-h-[44px] px-3 rounded-xl st-foil text-sm font-black shadow-[0_6px_18px_-6px_rgba(212,160,40,0.6)] active:scale-95 transition-transform touch-manipulation"
           >
-            <Zap className="w-4 h-4" />
+            <Zap className="w-4 h-4 shrink-0" />
             מחזור מהיר
+          </button>
+          <button
+            onClick={() => setShowFixedModal(true)}
+            className="flex items-center justify-center gap-1.5 min-h-[44px] px-3 rounded-xl bg-sky-500/15 ring-1 ring-sky-400/40 text-sky-200 text-sm font-black leading-tight active:scale-95 transition-transform touch-manipulation"
+          >
+            <ListChecks className="w-4 h-4 shrink-0" />
+            קבוצות ידועות מראש
           </button>
         </div>
 
