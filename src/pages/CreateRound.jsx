@@ -338,7 +338,18 @@ export default function CreateRound() {
       return;
     }
     setShowFixedModal(false);
-    const nextTeams = matchedTeams.map((t) => t.map((p) => p.id));
+    // Who plays in which team is fixed, but the ORDER inside each team is
+    // shuffled — the list order sets the goalkeeper rotation, and it must not
+    // follow the order the names were pasted in.
+    const shuffle = (arr) => {
+      const a = [...arr];
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    };
+    const nextTeams = matchedTeams.map((t) => shuffle(t.map((p) => p.id)));
     setNumTeams(nextTeams.length);
     setPlayersPerTeam(Math.max(...nextTeams.map((t) => t.length)));
     setConstraints(null);
