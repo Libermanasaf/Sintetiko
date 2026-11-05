@@ -277,13 +277,25 @@ export default function Home() {
       await Round.update(activeRound.id, { is_published: true });
       queryClient.invalidateQueries({ queryKey: ['latest-round'] });
       queryClient.invalidateQueries({ queryKey: ['latest-round-admin'] });
-      await callApi('/api/send-notification', {
-        title: 'פורסמו הרכבים!',
-        body: 'הרכבי המחזור החדש מוכנים — לחץ לצפייה',
-        url: '/MatchDay',
-      });
       setPublished(true);
-      toast.success('ההרכבים פורסמו ונשלחה הודעה לכל השחקנים!');
+      // callApi resolves on ANY HTTP status, so check the reply — otherwise a
+      // failed send still showed "sent to everyone". The round IS published
+      // at this point; only the notification can still fail, so say which.
+      try {
+        const res = await callApi('/api/send-notification', {
+          title: 'פורסמו הרכבים!',
+          body: 'הרכבי המחזור החדש מוכנים — לחץ לצפייה',
+          url: '/MatchDay',
+        });
+        const pd = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(pd.error || `שגיאת שרת ${res.status}`);
+        toast.success(`ההרכבים פורסמו ונשלחה התראה ל-${pd.sent || 0} מכשירים ✅`);
+      } catch (pushErr) {
+        console.warn('[publish round push]', pushErr);
+        toast.warning('ההרכבים פורסמו ✅ אך שליחת ההתראה נכשלה', {
+          description: pushErr?.message, duration: 7000,
+        });
+      }
     } catch {
       toast.error('שגיאה בפרסום');
     }
