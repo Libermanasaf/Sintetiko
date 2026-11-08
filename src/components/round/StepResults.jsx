@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Trophy, Plus, Minus, Save, CheckCircle, User, Star, Shield, Target } from 'lucide-react';
+import { Trophy, Plus, Minus, Save, CheckCircle, User, Star, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Round, Player } from '@/api/entities';
 import { toast } from 'sonner';
@@ -233,14 +233,10 @@ export default function StepResults({
                 {teamPlayerIds.map((playerId) => {
                   const player = players.find((p) => p.id === playerId);
                   if (!player) return null;
-                  const isGoalkeeper = goalkeepers[teamIndex] === playerId;
-
                   return (
                     <div
                       key={playerId}
-                      className={`flex items-center gap-3 p-3 rounded-xl bg-white/80 ${
-                        isGoalkeeper ? 'ring-2 ring-amber-400 shadow-sm' : ''
-                      }`}
+                      className="flex items-center gap-3 p-3 rounded-xl bg-white/80"
                     >
                       {/* Avatar */}
                       {player.image ? (
@@ -261,12 +257,6 @@ export default function StepResults({
                           <span className="font-medium text-slate-800">
                             {player.name}
                           </span>
-                          {isGoalkeeper && (
-                            <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs rounded-full font-medium flex items-center gap-1">
-                              <Shield className="w-3 h-3" />
-                              שוער
-                            </span>
-                          )}
                         </div>
                         <div className="flex items-center gap-0.5 mt-0.5">
                           {renderStars(player.rating || 3)}

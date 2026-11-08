@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { Round, Player, uploadFile } from '@/api/entities';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { History, Trophy, User, Star, Shield, Plus, Minus, Save, ArrowLeftRight, Camera, Upload, X, CalendarDays, Target } from 'lucide-react';
+import { History, Trophy, User, Star, Plus, Minus, Save, ArrowLeftRight, Camera, Upload, X, CalendarDays, Target } from 'lucide-react';
 import { isSameDay } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { Calendar } from '@/components/ui/calendar';
@@ -676,7 +676,6 @@ export default function GameHistory() {
                           {teamPlayerIds.map((playerId) => {
                             const player = players.find(p => p.id === playerId);
                             if (!player) return null;
-                            const isGoalkeeper = selectedRound.goalkeepers?.[teamIndex] === playerId;
                             const isCaptain = selectedRound.captains?.[teamIndex] === playerId;
                             const goals = selectedRound.player_goals?.[playerId];
                             const RowTag = isAdmin ? 'button' : 'div';
@@ -694,11 +693,6 @@ export default function GameHistory() {
                                   ) : (
                                     <div className="grid place-items-center w-9 h-9 rounded-full bg-slate-700 ring-1 ring-white/10">
                                       <User className="w-4 h-4 text-slate-400" />
-                                    </div>
-                                  )}
-                                  {isGoalkeeper && (
-                                    <div className="absolute -bottom-1 -right-1 grid place-items-center w-4 h-4 bg-sky-500 rounded-full ring-2 ring-slate-900">
-                                      <Shield className="w-2.5 h-2.5 text-white" />
                                     </div>
                                   )}
                                 </div>

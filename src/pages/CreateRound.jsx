@@ -15,6 +15,17 @@ import { callApi } from '@/lib/apiClient';
 import { pickCaptains, countCaptaincies } from '@/lib/captains';
 
 const STEP_LABELS = ['הגדרות', 'בחירה', 'תצוגה', 'שמירה'];
+
+// The order of names inside a team IS the goalkeeper rotation (the players go
+// in goal by list order), so every way of building teams shuffles it.
+const shuffle = (arr) => {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+};
 export default function CreateRound() {
   const [step, setStep] = useState(1);
   const [numTeams, setNumTeams] = useState(2);
@@ -224,7 +235,9 @@ export default function CreateRound() {
     const fresh = pool.filter((t) => !sameAs(t, avoidTeams));
     const choices = fresh.length ? fresh : pool;
     const pick = choices[Math.floor(Math.random() * choices.length)];
-    return idsOf(pick);
+    // Shuffle inside each team: pinned players are placed first by
+    // randomSplit, and would otherwise always go in goal first.
+    return idsOf(pick).map(shuffle);
   };
 
   const handleReshufflePreview = () => {
@@ -339,16 +352,7 @@ export default function CreateRound() {
     }
     setShowFixedModal(false);
     // Who plays in which team is fixed, but the ORDER inside each team is
-    // shuffled — the list order sets the goalkeeper rotation, and it must not
-    // follow the order the names were pasted in.
-    const shuffle = (arr) => {
-      const a = [...arr];
-      for (let i = a.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [a[i], a[j]] = [a[j], a[i]];
-      }
-      return a;
-    };
+    // shuffled — it must not follow the order the names were pasted in.
     const nextTeams = matchedTeams.map((t) => shuffle(t.map((p) => p.id)));
     setNumTeams(nextTeams.length);
     setPlayersPerTeam(Math.max(...nextTeams.map((t) => t.length)));
