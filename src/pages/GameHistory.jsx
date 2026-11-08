@@ -14,6 +14,7 @@ import MvpResultsCard from '@/components/history/MvpResultsCard';
 import { PageHeader, SectionTitle, EmptyState, Skeleton } from '@/components/ui/lux';
 import { useAuth } from '@/lib/AuthContext';
 import { supabase } from '@/lib/supabase';
+import { rosterStatDeltas, remapRoundRefs } from '@/lib/rosterEdit';
 
 const TEAM_COLORS = [
   { name: 'הצהובים', text: 'text-yellow-300' },
@@ -236,19 +237,66 @@ export default function GameHistory() {
   });
 
   const updatePlayersMutation = useMutation({
+    // season_wins too — it was computed below but never sent, so changing a
+    // round's result moved career trophies and left the podium behind.
     mutationFn: (updates) =>
-      Promise.all(updates.map(({ playerId, wins }) => Player.update(playerId, { wins }))),
+      Promise.all(updates.map(({ playerId, wins, season_wins }) =>
+        Player.update(playerId, { wins, season_wins }))),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['players'] });
     },
   });
 
+  // Current podium season — a roster fix on a round from an earlier season
+  // must not move season_wins (the live podium).
+  const { data: seasonStart } = useQuery({
+    queryKey: ['current-season-start'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('podium_seasons').select('started_at').eq('is_current', true).maybeSingle();
+      return data?.started_at || null;
+    },
+    enabled: isAdmin && !!supabase,
+    staleTime: 60 * 60_000,
+  });
+
+  // Saves a corrected roster AND moves the stored counters with it
+  // (appearances / wins / season_wins — see rosterEdit.js). Counters are read
+  // fresh for just the affected players, so a stale cached list can't
+  // overwrite someone else's update.
   const updateTeamsMutation = useMutation({
-    mutationFn: ({ roundId, teams }) => Round.update(roundId, { teams }),
-    onSuccess: () => {
+    mutationFn: async ({ round, teams, replacements }) => {
+      const inCurrentSeason = !!seasonStart && new Date(round.date) >= new Date(seasonStart);
+      const deltas = rosterStatDeltas(round, teams, inCurrentSeason);
+      await Round.update(round.id, { teams, ...remapRoundRefs(round, replacements) });
+
+      const ids = Object.keys(deltas);
+      if (ids.length) {
+        const { data: fresh, error } = await supabase
+          .from('players').select('id, appearances, wins, season_wins').in('id', ids);
+        if (error) throw error;
+        await Promise.all(fresh.map((p) => {
+          const d = deltas[p.id];
+          return Player.update(p.id, {
+            appearances: Math.max(0, (p.appearances || 0) + d.appearances),
+            wins: Math.max(0, (p.wins || 0) + d.wins),
+            season_wins: Math.max(0, (p.season_wins || 0) + d.season_wins),
+          });
+        }));
+      }
+      return ids.length;
+    },
+    onSuccess: (changedCount) => {
       queryClient.invalidateQueries({ queryKey: ['rounds'] });
-      toast.success('סידור הקבוצות עודכן בהצלחה');
+      queryClient.invalidateQueries({ queryKey: ['players'] });
+      toast.success(changedCount
+        ? `שחקני המחזור עודכנו, והסטטיסטיקה תוקנה ל-${changedCount} שחקנים ✅`
+        : 'סידור הקבוצות עודכן ✅');
       setShowMover(false);
+    },
+    onError: (e) => {
+      console.error('[roster edit]', e);
+      toast.error('השמירה נכשלה', { description: e?.message || 'נסה שוב' });
     },
   });
 
@@ -500,7 +548,7 @@ export default function GameHistory() {
                       )}
                       <button
                         onClick={() => setShowMover(true)}
-                        aria-label="העברת שחקנים בין קבוצות"
+                        aria-label="עריכת שחקני המחזור"
                         className="grid place-items-center w-[52px] min-h-[52px] rounded-xl bg-slate-800/90 ring-1 ring-white/10 text-amber-300 active:scale-95 transition-transform touch-manipulation shrink-0"
                       >
                         <ArrowLeftRight className="w-5 h-5" />
@@ -734,8 +782,10 @@ export default function GameHistory() {
         <TeamPlayerMover
           round={selectedRound}
           players={players}
+          inCurrentSeason={!!seasonStart && new Date(selectedRound.date) >= new Date(seasonStart)}
+          saving={updateTeamsMutation.isPending}
           onClose={() => setShowMover(false)}
-          onSave={(newTeams) => updateTeamsMutation.mutate({ roundId: selectedRound.id, teams: newTeams })}
+          onSave={(teams, replacements) => updateTeamsMutation.mutate({ round: selectedRound, teams, replacements })}
         />
       )}
 
