@@ -549,14 +549,15 @@ export default function GameHistory() {
                       <button
                         onClick={() => setShowMover(true)}
                         aria-label="עריכת שחקני המחזור"
-                        className="grid place-items-center w-[52px] min-h-[52px] rounded-xl bg-slate-800/90 ring-1 ring-white/10 text-amber-300 active:scale-95 transition-transform touch-manipulation shrink-0"
+                        className="flex-1 flex items-center justify-center gap-2 min-h-[52px] rounded-xl bg-slate-800/90 ring-1 ring-white/10 text-white font-black text-base active:scale-[0.98] transition-transform touch-manipulation"
                       >
-                        <ArrowLeftRight className="w-5 h-5" />
+                        <ArrowLeftRight className="w-5 h-5 text-amber-300" />
+                        החלף שחקנים
                       </button>
                     </div>
                     <p className="text-[0.65rem] text-ink-3 font-bold text-center flex items-center justify-center gap-1">
                       <Target className="w-3 h-3 text-amber-400" />
-                      לחץ על שחקן לעריכת גולים
+                      לחץ על שחקן לעריכת גולים · להחלפת שחקן לחץ "החלף שחקנים"
                     </p>
 
                     {/* Victory photo + MVP results side-by-side on wide screens,
