@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, ArrowRight, Trophy, Target, Plus, Minus, X, Lock, Check, Crown, Award } from 'lucide-react';
+import { User, ArrowRight, Trophy, Target, Plus, Minus, X, Lock, Check, Crown, Award, ArrowLeftRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
@@ -12,6 +12,8 @@ import { useAuth } from '@/lib/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { useRealtimeSync } from '@/lib/useRealtimeSync';
 import { LuxCard, SectionTitle, EmptyState } from '@/components/ui/lux';
+import TeamPlayerMover from '@/components/history/TeamPlayerMover';
+import { useRosterEdit } from '@/lib/useRosterEdit';
 
 const TEAM = [
   { name: 'הצהובים', bar: 'bg-yellow-400', tint: 'bg-yellow-500/12 ring-yellow-500/30', text: 'text-yellow-300', hdr: 'from-yellow-500/25 to-yellow-600/5', dot: 'bg-yellow-400' },
@@ -268,6 +270,8 @@ export default function MatchDay() {
   const [savingGoals, setSavingGoals] = useState(false);
   const [confirmClose, setConfirmClose] = useState(false);
   const [closingRound, setClosingRound] = useState(false);
+  const [showMover, setShowMover] = useState(false);
+  const rosterEdit = useRosterEdit({ enabled: isAdmin, onSaved: () => setShowMover(false) });
   // Latest-write-wins sequence numbers so rapid clicks don't race
   const winsSaveSeq = useRef(0);
   const goalsSaveSeq = useRef(0);
@@ -693,6 +697,16 @@ export default function MatchDay() {
             one coloured card per player. */}
         <div>
           <SectionTitle icon={User} className="mb-3">ההרכבים</SectionTitle>
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={() => setShowMover(true)}
+              className="w-full mb-3 flex items-center justify-center gap-2 min-h-[48px] rounded-xl bg-slate-800/90 ring-1 ring-white/10 text-white font-black text-sm active:scale-[0.98] transition-transform touch-manipulation"
+            >
+              <ArrowLeftRight className="w-4 h-4 text-amber-300" />
+              החלף שחקנים
+            </button>
+          )}
           <motion.div
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
@@ -802,6 +816,18 @@ export default function MatchDay() {
         </motion.div>
 
       </div>
+
+      {/* Swap / move players in the live round (admin only) */}
+      {isAdmin && showMover && (
+        <TeamPlayerMover
+          round={round}
+          players={allPlayers}
+          inCurrentSeason={rosterEdit.isInCurrentSeason(round)}
+          saving={rosterEdit.saving}
+          onClose={() => setShowMover(false)}
+          onSave={(teams, replacements) => rosterEdit.save({ round, teams, replacements })}
+        />
+      )}
 
       {/* Goal editor (admin only) */}
       <GoalEditorSheet
