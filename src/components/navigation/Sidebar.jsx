@@ -1,21 +1,13 @@
-import React, { useState, useEffect, useMemo } from 'react'; // v2
+import React, { useState, useEffect } from 'react'; // v2
 import { Link, useLocation } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
 import { createPageUrl } from '@/utils';
 import { X, LogOut, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/lib/AuthContext';
-import { supabase } from '@/lib/supabase';
 import { menuItems, adminGroups, RESTRICTED_ALLOWED_PAGES } from '@/lib/navConfig';
 import ClubCrest from '@/components/ClubCrest';
 
 const GROUPS_STORAGE_KEY = 'sb_admin_groups';
-const DAY_OF_PAGE = {
-  DayListSunday: 'sunday',
-  DayListWednesday: 'wednesday',
-  DayListThursday: 'thursday',
-  DayListTuesday: 'tuesday',
-};
 
 /* Crest is the shared ClubCrest component — see components/ClubCrest.jsx */
 
@@ -26,57 +18,11 @@ export default function Sidebar({ isOpen, onClose }) {
   const showPlayerView = loginMode ? loginMode === 'player' : role === 'player';
   const restrictedView = showPlayerView && isRestricted;
 
-  // Restricted player: fetch the published lists + own name once (shared
-  // my-player cache) to decide which day lists they were approved into.
-  const { data: myPlayer } = useQuery({
-    queryKey: ['my-player', user?.id, user?.email],
-    queryFn: async () => {
-      if (!supabase || !user) return null;
-      const { data } = await supabase
-        .from('players').select('*').eq('user_id', user.id).maybeSingle();
-      return data;
-    },
-    enabled: restrictedView && !!user,
-  });
-  const { data: listsState } = useQuery({
-    queryKey: ['lists-state-restricted'],
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_lists_state');
-      return error ? null : data;
-    },
-    enabled: restrictedView && !!supabase,
-    staleTime: 60_000,
-  });
-  const approvedDayPages = useMemo(() => {
-    const pages = new Set();
-    if (!listsState) return pages;
-    const myName = (myPlayer?.name || '').trim();
-    const myEmail = (user?.email || '').toLowerCase();
-    Object.entries(DAY_OF_PAGE).forEach(([page, day]) => {
-      const pub = listsState.publishedLists?.[day];
-      if (!pub || !Array.isArray(pub.rows)) return;
-      // Mirror get_lists_state's 24h window — see the same gate in DayListView.
-      // No-op for real players (the RPC already stripped stale days); needed so
-      // the admin's player-mode preview doesn't list days a player can't open.
-      const publishedAt = Date.parse(pub.publishedAt || '');
-      if (!Number.isFinite(publishedAt) || Date.now() - publishedAt > 24 * 60 * 60 * 1000) return;
-      const inRows = !!myName && pub.rows.some((n) => (n || '').trim() === myName);
-      const inExtra = !!myEmail && (pub.extraConfirmed || []).some(
-        (e) => (e.email || '').toLowerCase() === myEmail
-      );
-      if (inRows || inExtra) pages.add(page);
-    });
-    return pages;
-  }, [listsState, myPlayer, user]);
-
   const visibleItems = menuItems
     .filter((item) => (showPlayerView ? item.player : item.admin))
     .filter((item) => {
       if (!restrictedView) return true;
-      if (!RESTRICTED_ALLOWED_PAGES.has(item.page)) return false;
-      // Day lists appear only once the admin approved this player into them.
-      if (DAY_OF_PAGE[item.page]) return approvedDayPages.has(item.page);
-      return true;
+      return RESTRICTED_ALLOWED_PAGES.has(item.page);
     });
 
   // Admin view only: collapse grouped items under section headers. Player view

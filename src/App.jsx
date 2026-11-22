@@ -41,8 +41,8 @@ function RouteGuard({ pageKey, children }) {
     const home = role === 'player' ? '/PlayerHome' : '/Home';
     return <Navigate to={home} replace />;
   }
-  // Restricted players are locked down to the personal area + signup
-  // (+ day lists, which themselves only show a roster they appear in).
+  // Restricted players are locked down to the personal area + signup +
+  // professionals — no day lists, rounds, teams or history.
   if (role === 'player' && isRestricted && !RESTRICTED_ALLOWED_PAGES.has(pageKey)) {
     return <Navigate to="/PlayerHome" replace />;
   }
