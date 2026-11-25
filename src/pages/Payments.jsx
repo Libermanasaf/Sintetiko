@@ -2,18 +2,55 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Round, Player, Payment } from '@/api/entities';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { CreditCard, User, CheckCircle2, Circle, Save, Minus, Plus } from 'lucide-react';
+import { CreditCard, User, CheckCircle2, Circle, Save, Minus, Plus, BellRing, Check } from 'lucide-react';
 import { format, isSameDay } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { Calendar } from '@/components/ui/calendar';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/ui/lux';
+import { callApi } from '@/lib/apiClient';
+
+const DEFAULT_PRICE = 35;
 
 export default function Payments() {
   const [selectedDate, setSelectedDate] = useState(null);
   const [localPayments, setLocalPayments] = useState({});
-  const [pricePerPlayer, setPricePerPlayer] = useState(40);
+  const [pricePerPlayer, setPricePerPlayer] = useState(DEFAULT_PRICE);
+  // Payment-reminder pushes: who is sending now / who was reminded this visit.
+  const [remindingId, setRemindingId] = useState(null);
+  const [remindedIds, setRemindedIds] = useState(() => new Set());
   const queryClient = useQueryClient();
+
+  // Sends one player a push asking them to pay for the selected round.
+  const sendReminder = async (player) => {
+    if (!player.email) {
+      toast.error(`ל${player.name} אין חשבון מחובר באפליקציה`);
+      return;
+    }
+    setRemindingId(player.id);
+    try {
+      const firstName = player.name.trim().split(/\s+/)[0];
+      const dateLabel = format(new Date(selectedRound.date), 'd.M', { locale: he });
+      const res = await callApi('/api/send-notification', {
+        targetEmail: player.email,
+        title: 'תזכורת תשלום 💰',
+        body: `היי ${firstName}, נשמח שתעביר ₪${pricePerPlayer} על המשחק מ-${dateLabel}. תודה!`,
+        url: '/PlayerHome',
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+      if (data.sent > 0) {
+        setRemindedIds((prev) => new Set(prev).add(player.id));
+        toast.success(`נשלחה תזכורת ל${player.name} ✅`);
+      } else {
+        toast.warning(`לא נשלח — ל${player.name} אין התראות פעילות`);
+      }
+    } catch (e) {
+      toast.error('שליחת התזכורת נכשלה', { description: e.message });
+    } finally {
+      setRemindingId(null);
+    }
+  };
 
   const { data: rounds = [] } = useQuery({
     queryKey: ['rounds'],
@@ -41,12 +78,12 @@ export default function Payments() {
     if (selectedRound) {
       if (selectedPaymentRecord) {
         setLocalPayments(selectedPaymentRecord.payments || {});
-        setPricePerPlayer(selectedPaymentRecord.pricePerPlayer || 40);
+        setPricePerPlayer(selectedPaymentRecord.pricePerPlayer || DEFAULT_PRICE);
       } else {
         const initial = {};
         (selectedRound.teams || []).flat().forEach(id => { initial[id] = false; });
         setLocalPayments(initial);
-        setPricePerPlayer(40);
+        setPricePerPlayer(DEFAULT_PRICE);
       }
     }
   }, [selectedRound?.id, selectedPaymentRecord?.id]);
@@ -199,15 +236,20 @@ export default function Payments() {
               </div>
               {roundPlayers.map((player, idx) => {
                 const paid = !!localPayments[player.id];
+                const reminded = remindedIds.has(player.id);
                 return (
-                  <motion.button
+                  <motion.div
                     key={player.id}
                     initial={{ opacity: 0, x: -8 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: Math.min(idx * 0.02, 0.3) }}
+                    className={`flex items-center border-b border-white/5 last:border-b-0 ${paid ? 'bg-emerald-500/10' : ''}`}
+                  >
+                  <button
+                    type="button"
                     onClick={() => togglePayment(player.id)}
-                    className={`w-full flex items-center gap-3 px-4 py-3.5 border-b border-white/5 last:border-b-0 transition-colors active:opacity-70 ${
-                      paid ? 'bg-emerald-500/10' : 'active:bg-white/5'
+                    className={`flex-1 min-w-0 flex items-center gap-3 ps-4 pe-2 py-3.5 transition-colors active:opacity-70 ${
+                      paid ? '' : 'active:bg-white/5'
                     }`}
                   >
                     {paid ? (
@@ -228,7 +270,28 @@ export default function Payments() {
                     <span className={`tnum text-sm font-black shrink-0 ${paid ? 'text-emerald-300' : 'text-ink-3'}`}>
                       ₪{pricePerPlayer}
                     </span>
-                  </motion.button>
+                  </button>
+                  {/* Payment reminder push — only for players who haven't paid */}
+                  <div className="w-14 shrink-0 grid place-items-center pe-3">
+                    {!paid && (
+                      <button
+                        type="button"
+                        onClick={() => sendReminder(player)}
+                        disabled={remindingId === player.id}
+                        aria-label={`שלח תזכורת תשלום ל${player.name}`}
+                        className={`grid place-items-center w-11 h-11 rounded-xl ring-1 active:scale-95 disabled:opacity-50 transition-transform touch-manipulation ${
+                          reminded
+                            ? 'bg-emerald-500/15 ring-emerald-500/30 text-emerald-300'
+                            : 'bg-amber-500/12 ring-amber-500/30 text-amber-300'
+                        }`}
+                      >
+                        {reminded
+                          ? <Check className="w-5 h-5" strokeWidth={2.6} />
+                          : <BellRing className={`w-5 h-5 ${remindingId === player.id ? 'animate-pulse' : ''}`} />}
+                      </button>
+                    )}
+                  </div>
+                  </motion.div>
                 );
               })}
             </div>
