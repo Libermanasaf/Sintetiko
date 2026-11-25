@@ -10,6 +10,7 @@ import ClubCrest from '@/components/ClubCrest';
 import { Player, Round } from '@/api/entities';
 import { SectionTitle, EmptyState, Skeleton } from '@/components/ui/lux';
 import InstallBanner from '@/components/InstallBanner';
+import UnpaidBanner from '@/components/home/UnpaidBanner';
 import { pushSupported, subscribeToPush } from '@/lib/push';
 import { playPackSound } from '@/lib/packSound';
 import { toast } from 'sonner';
@@ -468,6 +469,9 @@ export default function PlayerHome() {
 
   return (
     <div className="flex flex-col items-center px-6 pt-6 pb-10 gap-6" dir="rtl">
+      {/* ── Open-payment reminder (own unpaid rounds, auto-clears once paid) ── */}
+      <UnpaidBanner userId={user?.id} />
+
       {/* ── Restricted-account notice — shown above the player card ── */}
       {isRestricted && (
         <motion.div
