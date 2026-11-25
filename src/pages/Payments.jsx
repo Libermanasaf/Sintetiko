@@ -21,34 +21,64 @@ export default function Payments() {
   const [remindedIds, setRemindedIds] = useState(() => new Set());
   const queryClient = useQueryClient();
 
-  // Sends one player a push asking them to pay for the selected round.
-  const sendReminder = async (player) => {
-    if (!player.email) {
-      toast.error(`ל${player.name} אין חשבון מחובר באפליקציה`);
-      return;
+  const [bulkState, setBulkState] = useState('idle'); // idle | confirm | sending
+
+  // Pushes one player a personal (by first name) reminder to pay for the
+  // selected round. Returns 'sent' | 'no-account' | 'no-push'; throws on error.
+  const pushReminder = async (player) => {
+    if (!player.email) return 'no-account';
+    const firstName = player.name.trim().split(/\s+/)[0];
+    const dateLabel = format(new Date(selectedRound.date), 'd.M', { locale: he });
+    const res = await callApi('/api/send-notification', {
+      targetEmail: player.email,
+      title: 'תזכורת תשלום 💰',
+      body: `היי ${firstName}, נשמח שתעביר ₪${pricePerPlayer} על המשחק מ-${dateLabel}. תודה!`,
+      url: '/PlayerHome',
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    if (data.sent > 0) {
+      setRemindedIds((prev) => new Set(prev).add(player.id));
+      return 'sent';
     }
+    return 'no-push';
+  };
+
+  const sendReminder = async (player) => {
     setRemindingId(player.id);
     try {
-      const firstName = player.name.trim().split(/\s+/)[0];
-      const dateLabel = format(new Date(selectedRound.date), 'd.M', { locale: he });
-      const res = await callApi('/api/send-notification', {
-        targetEmail: player.email,
-        title: 'תזכורת תשלום 💰',
-        body: `היי ${firstName}, נשמח שתעביר ₪${pricePerPlayer} על המשחק מ-${dateLabel}. תודה!`,
-        url: '/PlayerHome',
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-      if (data.sent > 0) {
-        setRemindedIds((prev) => new Set(prev).add(player.id));
-        toast.success(`נשלחה תזכורת ל${player.name} ✅`);
-      } else {
-        toast.warning(`לא נשלח — ל${player.name} אין התראות פעילות`);
-      }
+      const r = await pushReminder(player);
+      if (r === 'sent') toast.success(`נשלחה תזכורת ל${player.name} ✅`);
+      else if (r === 'no-account') toast.error(`ל${player.name} אין חשבון מחובר באפליקציה`);
+      else toast.warning(`לא נשלח — ל${player.name} אין התראות פעילות`);
     } catch (e) {
       toast.error('שליחת התזכורת נכשלה', { description: e.message });
     } finally {
       setRemindingId(null);
+    }
+  };
+
+  // Everyone unpaid in this round, each with their own name. Sequential so a
+  // big list doesn't fire 20 parallel serverless calls at once.
+  const sendReminderToAll = async (unpaid) => {
+    setBulkState('sending');
+    const missed = [];
+    let sent = 0;
+    for (const p of unpaid) {
+      try {
+        if ((await pushReminder(p)) === 'sent') sent++;
+        else missed.push(p.name);
+      } catch {
+        missed.push(p.name);
+      }
+    }
+    setBulkState('idle');
+    if (sent) toast.success(`נשלחה תזכורת ל-${sent} שחקנים ✅`);
+    if (missed.length) {
+      toast.warning(`לא נשלח ל-${missed.length}`, {
+        description: `${missed.join(', ')} — אין חשבון או שההתראות כבויות`,
+        duration: 8000,
+      });
     }
   };
 
@@ -225,6 +255,44 @@ export default function Payments() {
                 <p className="tnum text-xl font-black text-amber-300">₪{totalCollected}</p>
               </div>
             </div>
+
+            {/* Remind everyone unpaid — personal push per player, two-tap confirm */}
+            {(() => {
+              const unpaid = roundPlayers.filter((p) => !localPayments[p.id]);
+              if (!unpaid.length) return null;
+              if (bulkState === 'confirm') {
+                return (
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => sendReminderToAll(unpaid)}
+                      className="flex-1 flex items-center justify-center gap-2 min-h-[50px] rounded-2xl bg-amber-500/20 ring-1 ring-amber-400/40 text-amber-200 font-black text-sm active:scale-[0.98] transition-transform touch-manipulation"
+                    >
+                      <BellRing className="w-5 h-5" />
+                      כן, שלח ל-{unpaid.length} שחקנים
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setBulkState('idle')}
+                      className="px-5 min-h-[50px] rounded-2xl bg-slate-800 ring-1 ring-white/10 text-slate-300 font-black text-sm active:scale-[0.98] transition-transform touch-manipulation"
+                    >
+                      ביטול
+                    </button>
+                  </div>
+                );
+              }
+              return (
+                <button
+                  type="button"
+                  onClick={() => setBulkState('confirm')}
+                  disabled={bulkState === 'sending'}
+                  className="w-full flex items-center justify-center gap-2 min-h-[50px] rounded-2xl bg-amber-500/12 ring-1 ring-amber-500/30 text-amber-300 font-black text-sm active:scale-[0.98] disabled:opacity-60 transition-transform touch-manipulation"
+                >
+                  <BellRing className={`w-5 h-5 ${bulkState === 'sending' ? 'animate-pulse' : ''}`} />
+                  {bulkState === 'sending' ? 'שולח תזכורות...' : `שלח תזכורת תשלום לכל מי שלא שילם (${unpaid.length})`}
+                </button>
+              );
+            })()}
 
             {/* Player list */}
             <div className="rounded-2xl bg-slate-900/60 ring-1 ring-white/8 overflow-hidden">
