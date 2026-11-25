@@ -2,15 +2,24 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Round, Player, Payment } from '@/api/entities';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { CreditCard, User, CheckCircle2, Circle, Save, Minus, Plus, BellRing, Check } from 'lucide-react';
+import { CreditCard, User, CheckCircle2, Circle, Save, Minus, Plus, BellRing, Check, MessageCircle } from 'lucide-react';
 import { format, isSameDay } from 'date-fns';
 import { he } from 'date-fns/locale';
 import { Calendar } from '@/components/ui/calendar';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/ui/lux';
 import { callApi } from '@/lib/apiClient';
+import { supabase } from '@/lib/supabase';
 
 const DEFAULT_PRICE = 35;
+
+// "050-123 4567" / "+972 50..." → "972501234567" (wa.me format). null if invalid.
+function toWaNumber(input) {
+  let d = String(input || '').replace(/\D/g, '');
+  if (d.startsWith('00')) d = d.slice(2);
+  if (d.startsWith('0')) d = '972' + d.slice(1);
+  return /^\d{10,15}$/.test(d) ? d : null;
+}
 
 export default function Payments() {
   const [selectedDate, setSelectedDate] = useState(null);
@@ -42,6 +51,36 @@ export default function Payments() {
       return 'sent';
     }
     return 'no-push';
+  };
+
+  // WhatsApp numbers (admin-only table player_phones), keyed by player id.
+  const { data: phones = {} } = useQuery({
+    queryKey: ['player-phones'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('player_phones').select('player_id, phone');
+      if (error) { console.warn('[phones]', error.message); return {}; }
+      return Object.fromEntries((data || []).map((r) => [r.player_id, r.phone]));
+    },
+    staleTime: 10 * 60_000,
+  });
+
+  // Opens WhatsApp with a ready personal reminder. No number saved yet → asks
+  // for it once and stores it, so next time it's a single tap.
+  const openWhatsApp = async (player) => {
+    let phone = phones[player.id];
+    if (!phone) {
+      const input = window.prompt(`מספר הוואטסאפ של ${player.name}:`);
+      phone = toWaNumber(input);
+      if (!phone) { if (input) toast.error('מספר לא תקין'); return; }
+      const { error } = await supabase.from('player_phones')
+        .upsert({ player_id: player.id, phone, updated_at: new Date().toISOString() });
+      if (error) { toast.error('שמירת המספר נכשלה', { description: error.message }); return; }
+      queryClient.invalidateQueries({ queryKey: ['player-phones'] });
+    }
+    const firstName = player.name.trim().split(/\s+/)[0];
+    const dateLabel = format(new Date(selectedRound.date), 'd.M', { locale: he });
+    const text = `היי ${firstName}, נשמח שתעביר ₪${pricePerPlayer} על המשחק מ-${dateLabel}. תודה! ⚽`;
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, '_blank');
   };
 
   const sendReminder = async (player) => {
@@ -339,8 +378,22 @@ export default function Payments() {
                       ₪{pricePerPlayer}
                     </span>
                   </button>
-                  {/* Payment reminder push — only for players who haven't paid */}
-                  <div className="w-14 shrink-0 grid place-items-center pe-3">
+                  {/* Payment reminders (WhatsApp + push) — only for players who haven't paid */}
+                  <div className="w-[6.5rem] shrink-0 flex items-center justify-end gap-1.5 pe-3">
+                    {!paid && (
+                      <button
+                        type="button"
+                        onClick={() => openWhatsApp(player)}
+                        aria-label={`שלח וואטסאפ ל${player.name}`}
+                        className={`grid place-items-center w-11 h-11 rounded-xl ring-1 active:scale-95 transition-transform touch-manipulation ${
+                          phones[player.id]
+                            ? 'bg-emerald-500/15 ring-emerald-500/35 text-emerald-300'
+                            : 'bg-slate-800 ring-white/10 text-slate-500'
+                        }`}
+                      >
+                        <MessageCircle className="w-5 h-5" />
+                      </button>
+                    )}
                     {!paid && (
                       <button
                         type="button"
