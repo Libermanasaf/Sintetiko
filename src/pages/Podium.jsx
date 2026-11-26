@@ -491,9 +491,10 @@ export default function Podium() {
   // Ordering: wins desc → EFFICIENCY (win rate desc — same trophies with fewer
   // appearances ranks higher) → appearances desc (among 0%-rate players,
   // veterans stay above never-played) → name asc (Hebrew).
+  // Restricted (blocked) players are left off the podium entirely.
   const ranked = useMemo(() => {
     const rate = (p) => ((p.appearances || 0) > 0 ? (p.season_wins || 0) / p.appearances : 0);
-    return [...players].sort((a, b) => {
+    return players.filter((p) => !p.is_restricted).sort((a, b) => {
       if ((b.season_wins || 0) !== (a.season_wins || 0)) return (b.season_wins || 0) - (a.season_wins || 0);
       if (rate(b) !== rate(a)) return rate(b) - rate(a);
       if ((b.appearances || 0) !== (a.appearances || 0)) return (b.appearances || 0) - (a.appearances || 0);
