@@ -184,13 +184,13 @@ export default function PlayerForm({ isOpen, onClose, onSubmit, player }) {
                   <Slider
                     value={[rating]}
                     onValueChange={(v) => setRating(v[0])}
-                    min={1}
+                    min={0.5}
                     max={5}
                     step={0.5}
                     className="py-2"
                   />
                   <div className="flex justify-between text-[0.65rem] font-bold tnum text-slate-500">
-                    <span>1.0</span>
+                    <span>0.5</span>
                     <span>5.0</span>
                   </div>
                 </div>

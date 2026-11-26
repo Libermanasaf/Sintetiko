@@ -8,7 +8,7 @@ import { Star, Check, ShieldQuestion, Users, X, Loader2, Search } from 'lucide-r
 import { PageHeader, EmptyState, Skeleton } from '@/components/ui/lux';
 import { toast } from 'sonner';
 
-const RATING_VALUES = [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5];
+const RATING_VALUES = [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5];
 
 function RatingChips({ value, onChange }) {
   return (
